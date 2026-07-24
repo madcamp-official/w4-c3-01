@@ -66,6 +66,7 @@ export interface SeedUser {
 }
 
 export interface Session {
+  id: string;
   isAuthenticated: boolean;
   username: string;
   nickname: string;
@@ -76,7 +77,8 @@ export interface Session {
 }
 
 export interface LoginPayload {
-  username: string;
+  /** Either the app username or the account email. */
+  identifier: string;
   password: string;
 }
 

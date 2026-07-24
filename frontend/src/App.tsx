@@ -1,6 +1,7 @@
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import AppShell from '@/components/AppShell';
 import ProtectedLayout from '@/components/ProtectedLayout';
+import PublicOnlyLayout from '@/components/PublicOnlyLayout';
 import { AppStateProvider } from '@/state/AppStateContext';
 import { OverlayProvider } from '@/state/OverlayContext';
 import { PlacementProvider } from '@/state/PlacementContext';
@@ -30,9 +31,11 @@ export default function App() {
             <HashRouter>
               <Routes>
                 <Route element={<AppShell />}>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<OnboardingPage />} />
+                  <Route element={<PublicOnlyLayout />}>
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/signup" element={<OnboardingPage />} />
+                  </Route>
 
                   <Route element={<ProtectedLayout />}>
                     <Route path="/feed" element={<FeedPage />} />

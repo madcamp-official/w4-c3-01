@@ -22,6 +22,10 @@ export default function OnboardingPage() {
   }
 
   function handleNext() {
+    if (!/^[a-zA-Z0-9_.]+$/.test(form.username.trim())) {
+      showToast('아이디는 영문, 숫자, ., _ 만 사용할 수 있어요');
+      return;
+    }
     if (form.password !== form.password2) {
       showToast('비밀번호가 일치하지 않아요');
       return;
@@ -34,15 +38,19 @@ export default function OnboardingPage() {
   }
 
   async function finishOnboarding(heartUrl: string) {
-    await signupUser({
-      username: form.username.trim(),
-      email: form.email.trim(),
-      nickname: form.nickname.trim(),
-      password: form.password,
-      heartUrl
-    });
-    showToast(`손끝에 오신 걸 환영해요, ${form.nickname.trim()}님 🎉`);
-    navigate('/feed', { replace: true });
+    try {
+      await signupUser({
+        username: form.username.trim(),
+        email: form.email.trim(),
+        nickname: form.nickname.trim(),
+        password: form.password,
+        heartUrl
+      });
+      showToast(`손끝에 오신 걸 환영해요, ${form.nickname.trim()}님 🎉`);
+      navigate('/feed', { replace: true });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '회원가입에 실패했어요');
+    }
   }
 
   function handleDone() {

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as authApi from '@/api/authApi';
 import * as postsApi from '@/api/postsApi';
 import * as chatApi from '@/api/chatApi';
@@ -19,6 +19,8 @@ import type {
 
 interface AppStateValue {
   session: Session | null;
+  /** True while the initial Supabase session restore (on page load) is in flight. */
+  sessionLoading: boolean;
   posts: Post[];
   chats: Chat[];
   lounges: Lounge[];
@@ -47,9 +49,23 @@ const AppStateContext = createContext<AppStateValue | null>(null);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
   const [chats, setChats] = useState<Chat[]>([]);
   const [lounges, setLounges] = useState<Lounge[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    authApi.restoreSession().then((restored) => {
+      if (!cancelled) {
+        setSession(restored);
+        setSessionLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const loginUser = useCallback(async (payload: LoginPayload) => {
     const nextSession = await authApi.login(payload);
@@ -144,6 +160,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppStateValue>(
     () => ({
       session,
+      sessionLoading,
       posts,
       chats,
       lounges,
@@ -165,6 +182,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }),
     [
       session,
+      sessionLoading,
       posts,
       chats,
       lounges,

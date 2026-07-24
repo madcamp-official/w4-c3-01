@@ -7,20 +7,22 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { loginUser } = useAppState();
   const { showToast } = useToast();
-  const [username, setUsername] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit() {
-    if (!username.trim() || !password) {
+    if (!identifier.trim() || !password) {
       showToast('아이디와 비밀번호를 입력해주세요');
       return;
     }
     setSubmitting(true);
     try {
-      await loginUser({ username: username.trim(), password });
-      showToast(`손끝에 오신 걸 환영해요, ${username.trim()}님 🎉`);
+      await loginUser({ identifier: identifier.trim(), password });
+      showToast('손끝에 오신 걸 환영해요 🎉');
       navigate('/feed', { replace: true });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '로그인에 실패했어요');
     } finally {
       setSubmitting(false);
     }
@@ -38,10 +40,10 @@ export default function LoginPage() {
       </div>
       <div className="onb-step active" style={{ padding: '6px 14px 20px 0', overflowY: 'auto' }}>
         <div className="screen-title">다시 만나서 반가워요</div>
-        <p className="screen-sub">아이디와 비밀번호를 입력해주세요</p>
+        <p className="screen-sub">아이디 또는 이메일과 비밀번호를 입력해주세요</p>
         <div className="field">
-          <label>아이디</label>
-          <input type="text" className="sk" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <label>아이디 또는 이메일</label>
+          <input type="text" className="sk" value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
         </div>
         <div className="field">
           <label>비밀번호</label>
