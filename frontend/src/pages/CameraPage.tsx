@@ -61,7 +61,7 @@ export default function CameraPage() {
 
   return (
     <section className="screen active" id="screen-camera">
-      <div className="cam-frame sk2" id="cam-stage">
+      <div className="cam-frame sk2" id="cam-stage" style={intent.kind === 'post' ? { margin: 0 } : undefined}>
         <video ref={videoRef} autoPlay playsInline muted style={{ display: cameraAvailable ? 'block' : 'none' }} />
         {!cameraAvailable ? <div className="cam-fallback" /> : null}
         <canvas className="trail-canvas" ref={trail.canvasRef} />

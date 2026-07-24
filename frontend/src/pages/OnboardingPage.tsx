@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import HeartCanvas, { type HeartCanvasHandle } from '@/components/HeartCanvas';
+import HeartAirwriteStage, { type HeartAirwriteHandle } from '@/components/HeartAirwriteStage';
+import { defaultHeartUrl } from '@/mock/store';
 import { useAppState } from '@/state/AppStateContext';
 import { useToast } from '@/state/ToastContext';
 
@@ -12,7 +13,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [form, setForm] = useState({ username: '', email: '', nickname: '', password: '', password2: '' });
   const [hasDrawn, setHasDrawn] = useState(false);
-  const heartRef = useRef<HeartCanvasHandle>(null);
+  const heartRef = useRef<HeartAirwriteHandle>(null);
 
   const step1Filled = Object.values(form).every((v) => v.trim().length > 0);
 
@@ -50,9 +51,7 @@ export default function OnboardingPage() {
   }
 
   function handleSkip() {
-    heartRef.current?.fillDefault();
-    const dataUrl = heartRef.current?.getDataUrl();
-    if (dataUrl) void finishOnboarding(dataUrl);
+    void finishOnboarding(defaultHeartUrl());
   }
 
   return (
@@ -127,10 +126,10 @@ export default function OnboardingPage() {
         <p className="screen-sub">
           이 하트가 앞으로 좋아요 버튼이 돼요
           <br />
-          완벽하지 않아도 괜찮아요
+          카메라 앞에서 손가락으로 허공에 그려보세요
         </p>
         <div className="heart-tools">
-          {step === 2 ? <HeartCanvas ref={heartRef} onDrawStateChange={setHasDrawn} /> : null}
+          {step === 2 ? <HeartAirwriteStage ref={heartRef} onDrawStateChange={setHasDrawn} /> : null}
           <div className="btn-row">
             <button className="btn ghost sk" onClick={() => heartRef.current?.clear()}>
               지우기

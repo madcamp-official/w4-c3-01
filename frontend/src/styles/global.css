@@ -375,6 +375,8 @@ input[type='password'].sk::before {
   margin: 4px auto 12px;
   touch-action: none;
   border-radius: 18px;
+  overflow: hidden;
+  background: #222;
 }
 .heart-canvas {
   position: absolute;
@@ -384,11 +386,11 @@ input[type='password'].sk::before {
   border-radius: 18px;
   touch-action: none;
 }
-.heart-canvas.guide {
-  background: var(--paper-2);
-}
 .heart-canvas.draw {
   cursor: crosshair;
+}
+.heart-stage .cam-fallback {
+  border-radius: 18px;
 }
 .heart-tools {
   display: flex;
