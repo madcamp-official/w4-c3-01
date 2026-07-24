@@ -1,0 +1,80 @@
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Avatar from '@/components/Avatar';
+import { useAppState } from '@/state/AppStateContext';
+import { useOverlay } from '@/state/OverlayContext';
+import { useToast } from '@/state/ToastContext';
+
+export default function MyPage() {
+  const navigate = useNavigate();
+  const { session, posts } = useAppState();
+  const { openViewer } = useOverlay();
+  const { showToast } = useToast();
+  const [tab, setTab] = useState<'posts' | 'likes'>('posts');
+
+  const myPosts = useMemo(() => posts.filter((p) => p.mine), [posts]);
+  const likedPosts = useMemo(() => posts.filter((p) => p.liked), [posts]);
+  const items = tab === 'posts' ? myPosts : likedPosts;
+
+  if (!session) return null;
+
+  return (
+    <section className="screen active" id="screen-mypage">
+      <div className="logo" style={{ fontSize: 19, padding: '0 14px 10px 0' }}>
+        마이페이지
+      </div>
+      <div className="profile-card">
+        <Avatar nickname={session.nickname} color={session.avatarColor} size={54} fontSize={20} />
+        <div className="profile-names">
+          <b>{session.nickname}</b>
+          <span>{session.username ? '@' + session.username : '손끝에서 손글씨로 이야기해요'}</span>
+        </div>
+        <div className="profile-stats">
+          <div>
+            <b>{myPosts.length}</b>
+            <span>게시물</span>
+          </div>
+          <div>
+            <b>{session.followers}</b>
+            <span>팔로워</span>
+          </div>
+          <div>
+            <b>{session.following}</b>
+            <span>팔로잉</span>
+          </div>
+        </div>
+      </div>
+      <div className="profile-actions">
+        <button className="btn ghost sk block" onClick={() => showToast('프로필 수정은 준비 중이에요')}>
+          프로필 수정
+        </button>
+        <button className="btn ghost sk block" onClick={() => navigate('/mypage/heart')}>
+          하트 다시 그리기
+        </button>
+      </div>
+      <div className="tabbar sk-hr-b">
+        <button className={tab === 'posts' ? 'active' : ''} onClick={() => setTab('posts')}>
+          내 게시물
+        </button>
+        <button className={tab === 'likes' ? 'active' : ''} onClick={() => setTab('likes')}>
+          좋아요한 게시물
+        </button>
+      </div>
+      <div className="mypage-body">
+        {items.length === 0 ? (
+          <div className="empty-note">
+            {tab === 'posts' ? '아직 올린 게시물이 없어요. + 버튼으로 첫 손글씨를 남겨보세요.' : '좋아요를 누른 게시물이 여기 모여요.'}
+          </div>
+        ) : (
+          <div className="grid3">
+            {items.map((p) => (
+              <div key={p.id} className="cell" onClick={() => openViewer({ image: p.image, caption: p.caption, strokes: p.strokes })}>
+                <img src={p.image} alt="" />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
