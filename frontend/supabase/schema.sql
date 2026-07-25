@@ -17,14 +17,22 @@ create table if not exists public.profiles (
 alter table public.profiles enable row level security;
 
 -- 피드/검색에서 다른 사람 프로필도 보여야 하므로 조회는 전체 공개.
+drop policy if exists "Profiles are viewable by everyone" on public.profiles;
 create policy "Profiles are viewable by everyone"
   on public.profiles for select
   using (true);
 
 -- 본인 프로필만 수정 가능 (하트 다시 그리기 등).
+drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile"
   on public.profiles for update
   using (auth.uid() = id);
+
+-- "Automatically expose new tables"를 꺼둔 프로젝트에서는 RLS 정책과 별개로
+-- Data API 역할(anon/authenticated)에 테이블 접근 권한을 직접 줘야 합니다.
+-- (실제로 어떤 행을 볼 수 있는지는 위 RLS 정책이 계속 걸러줍니다.)
+grant select on public.profiles to anon, authenticated;
+grant update on public.profiles to authenticated;
 
 -- 2) 회원가입 시 auth.users 에 행이 생기면 profiles 행을 자동으로 만들어주는 트리거.
 --    signUp() 호출 시 options.data 로 넘긴 값(raw_user_meta_data)을 그대로 사용합니다.
