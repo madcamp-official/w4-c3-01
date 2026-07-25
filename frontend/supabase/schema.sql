@@ -9,10 +9,14 @@ create table if not exists public.profiles (
   nickname text not null,
   avatar_color text not null default '#EAE2C9',
   heart_url text,
+  avatar_url text,
   followers integer not null default 0,
   following integer not null default 0,
   created_at timestamptz not null default now()
 );
+
+-- 기존에 이미 만든 프로젝트라면 avatar_url 컬럼만 추가로 붙여줍니다.
+alter table public.profiles add column if not exists avatar_url text;
 
 alter table public.profiles enable row level security;
 
@@ -44,13 +48,14 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, username, nickname, avatar_color, heart_url)
+  insert into public.profiles (id, username, nickname, avatar_color, heart_url, avatar_url)
   values (
     new.id,
     new.raw_user_meta_data ->> 'username',
     new.raw_user_meta_data ->> 'nickname',
     coalesce(new.raw_user_meta_data ->> 'avatar_color', '#EAE2C9'),
-    new.raw_user_meta_data ->> 'heart_url'
+    new.raw_user_meta_data ->> 'heart_url',
+    new.raw_user_meta_data ->> 'avatar_url'
   );
   return new;
 end;

@@ -70,6 +70,7 @@ export interface UserSummary {
   username: string;
   nickname: string;
   avatarColor: string;
+  avatarUrl: string | null;
 }
 
 export interface Session {
@@ -79,6 +80,7 @@ export interface Session {
   nickname: string;
   avatarColor: string;
   heartUrl: string | null;
+  avatarUrl: string | null;
 }
 
 export interface LoginPayload {
@@ -93,4 +95,5 @@ export interface SignupPayload {
   nickname: string;
   password: string;
   heartUrl: string;
+  avatarUrl: string | null;
 }

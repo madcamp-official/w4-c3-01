@@ -10,6 +10,7 @@ interface ProfileRow {
   nickname: string;
   avatar_color: string;
   heart_url: string | null;
+  avatar_url: string | null;
 }
 
 function toSession(userId: string, profile: ProfileRow): Session {
@@ -19,7 +20,8 @@ function toSession(userId: string, profile: ProfileRow): Session {
     username: profile.username,
     nickname: profile.nickname,
     avatarColor: profile.avatar_color,
-    heartUrl: profile.heart_url
+    heartUrl: profile.heart_url,
+    avatarUrl: profile.avatar_url
   };
 }
 
@@ -46,7 +48,8 @@ export async function login(payload: LoginPayload): Promise<Session> {
       username: payload.identifier,
       nickname: payload.identifier,
       avatarColor: AVATAR_TONES[0],
-      heartUrl: defaultHeartUrl()
+      heartUrl: defaultHeartUrl(),
+      avatarUrl: null
     };
   }
 
@@ -65,7 +68,8 @@ export async function signup(payload: SignupPayload): Promise<Session> {
       username: payload.username,
       nickname: payload.nickname,
       avatarColor: AVATAR_TONES[0],
-      heartUrl: payload.heartUrl
+      heartUrl: payload.heartUrl,
+      avatarUrl: payload.avatarUrl
     };
   }
 
@@ -77,7 +81,8 @@ export async function signup(payload: SignupPayload): Promise<Session> {
         username: payload.username,
         nickname: payload.nickname,
         avatar_color: AVATAR_TONES[0],
-        heart_url: payload.heartUrl
+        heart_url: payload.heartUrl,
+        avatar_url: payload.avatarUrl
       }
     }
   });
@@ -95,7 +100,8 @@ export async function signup(payload: SignupPayload): Promise<Session> {
     username: payload.username,
     nickname: payload.nickname,
     avatarColor: AVATAR_TONES[0],
-    heartUrl: payload.heartUrl
+    heartUrl: payload.heartUrl,
+    avatarUrl: payload.avatarUrl
   };
 }
 

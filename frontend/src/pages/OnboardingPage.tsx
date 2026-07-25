@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AvatarPicker from '@/components/AvatarPicker';
 import HeartAirwriteStage, { type HeartAirwriteHandle } from '@/components/HeartAirwriteStage';
-import { defaultHeartUrl } from '@/mock/store';
+import { AVATAR_TONES, defaultHeartUrl } from '@/mock/store';
 import { useAppState } from '@/state/AppStateContext';
 import { useToast } from '@/state/ToastContext';
 
@@ -10,8 +11,9 @@ export default function OnboardingPage() {
   const { signupUser } = useAppState();
   const { showToast } = useToast();
 
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState({ username: '', email: '', nickname: '', password: '', password2: '' });
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
   const [hasDrawn, setHasDrawn] = useState(false);
   const heartRef = useRef<HeartAirwriteHandle>(null);
 
@@ -44,7 +46,8 @@ export default function OnboardingPage() {
         email: form.email.trim(),
         nickname: form.nickname.trim(),
         password: form.password,
-        heartUrl
+        heartUrl,
+        avatarUrl: avatarDataUrl
       });
       showToast(`손끝에 오신 걸 환영해요, ${form.nickname.trim()}님 🎉`);
       navigate('/feed', { replace: true });
@@ -67,6 +70,7 @@ export default function OnboardingPage() {
       <div className="onb-progress">
         <span className={step >= 1 ? 'on' : ''} />
         <span className={step >= 2 ? 'on' : ''} />
+        <span className={step >= 3 ? 'on' : ''} />
       </div>
 
       <div className={'onb-step' + (step === 1 ? ' active' : '')}>
@@ -129,7 +133,33 @@ export default function OnboardingPage() {
         </button>
       </div>
 
-      <div className={'onb-step' + (step === 2 ? ' active' : '')}>
+      <div className={'onb-step' + (step === 2 ? ' active' : '')} style={{ alignItems: 'center' }}>
+        <div className="screen-title">프로필 사진을 넣어볼까요?</div>
+        <p className="screen-sub">
+          나중에 마이페이지에서 언제든 바꿀 수 있어요
+          <br />
+          건너뛰어도 괜찮아요
+        </p>
+        <div style={{ margin: '12px 0 24px' }}>
+          {step === 2 ? (
+            <AvatarPicker
+              dataUrl={avatarDataUrl}
+              nickname={form.nickname || '?'}
+              color={AVATAR_TONES[0]}
+              size={120}
+              onChange={setAvatarDataUrl}
+            />
+          ) : null}
+        </div>
+        <button className="btn primary sk block" onClick={() => setStep(3)}>
+          다음
+        </button>
+        <button className="link-btn" style={{ marginTop: 12 }} onClick={() => setStep(3)}>
+          건너뛸게요
+        </button>
+      </div>
+
+      <div className={'onb-step' + (step === 3 ? ' active' : '')}>
         <div className="screen-title">당신만의 하트를 그려주세요</div>
         <p className="screen-sub">
           이 하트가 앞으로 좋아요 버튼이 돼요
@@ -137,7 +167,7 @@ export default function OnboardingPage() {
           카메라 앞에서 손가락으로 허공에 그려보세요
         </p>
         <div className="heart-tools">
-          {step === 2 ? <HeartAirwriteStage ref={heartRef} onDrawStateChange={setHasDrawn} /> : null}
+          {step === 3 ? <HeartAirwriteStage ref={heartRef} onDrawStateChange={setHasDrawn} /> : null}
           <div className="btn-row">
             <button className="btn ghost sk" onClick={() => heartRef.current?.clear()}>
               지우기

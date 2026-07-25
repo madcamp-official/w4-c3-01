@@ -29,6 +29,7 @@ interface AppStateValue {
   signupUser: (payload: SignupPayload) => Promise<void>;
   logoutUser: () => void;
   setHeart: (heartUrl: string) => Promise<void>;
+  setAvatar: (avatarUrl: string) => Promise<void>;
 
   loadFeed: () => Promise<void>;
   sharePost: (input: { image: string; strokes: StrokePoint[]; caption: string }) => Promise<Post>;
@@ -88,10 +89,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setLounges([]);
   }, []);
 
-  const setHeart = useCallback(async (heartUrl: string) => {
-    await userApi.updateHeart(heartUrl);
-    setSession((prev) => (prev ? { ...prev, heartUrl } : prev));
-  }, []);
+  const setHeart = useCallback(
+    async (heartUrl: string) => {
+      if (!session) return;
+      await userApi.updateHeart(session.id, heartUrl);
+      setSession((prev) => (prev ? { ...prev, heartUrl } : prev));
+    },
+    [session]
+  );
+
+  const setAvatar = useCallback(
+    async (avatarUrl: string) => {
+      if (!session) return;
+      await userApi.updateAvatar(session.id, avatarUrl);
+      setSession((prev) => (prev ? { ...prev, avatarUrl } : prev));
+    },
+    [session]
+  );
 
   const loadFeed = useCallback(async () => {
     setPosts(await postsApi.fetchFeed());
@@ -214,6 +228,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       signupUser,
       logoutUser,
       setHeart,
+      setAvatar,
       loadFeed,
       sharePost,
       likePost,
@@ -239,6 +254,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       signupUser,
       logoutUser,
       setHeart,
+      setAvatar,
       loadFeed,
       sharePost,
       likePost,

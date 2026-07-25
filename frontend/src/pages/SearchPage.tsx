@@ -67,7 +67,7 @@ export default function SearchPage() {
               <h2 className="section-h">사용자</h2>
               {users.map((u) => (
                 <button key={u.id} className="user-row" onClick={() => navigate(`/users/${u.id}`)}>
-                  <Avatar nickname={u.nickname} color={u.avatarColor} size={36} fontSize={14} />
+                  <Avatar nickname={u.nickname} color={u.avatarColor} size={36} fontSize={14} avatarUrl={u.avatarUrl} />
                   <b>{u.nickname}</b>
                 </button>
               ))}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
 import * as followApi from '@/api/followApi';
@@ -11,7 +11,7 @@ import type { UserSummary } from '@/types';
 export default function UserProfilePage() {
   const navigate = useNavigate();
   const { userId = '' } = useParams();
-  const { session, startConversationWith } = useAppState();
+  const { session, posts, startConversationWith } = useAppState();
   const { showToast } = useToast();
 
   const [profile, setProfile] = useState<UserSummary | null>(null);
@@ -41,6 +41,12 @@ export default function UserProfilePage() {
       cancelled = true;
     };
   }, [userId, session, isOwnProfile]);
+
+  // 게시물 기능이 아직 Supabase에 연결되어 있지 않아, 지금 불러와져 있는 피드 안에서만 셀 수 있습니다.
+  const postCount = useMemo(
+    () => (profile ? posts.filter((p) => p.username === profile.nickname).length : 0),
+    [posts, profile]
+  );
 
   if (isOwnProfile) return <Navigate to="/mypage" replace />;
 
@@ -89,12 +95,16 @@ export default function UserProfilePage() {
       ) : (
         <>
           <div className="profile-card">
-            <Avatar nickname={profile.nickname} color={profile.avatarColor} size={54} fontSize={20} />
+            <Avatar nickname={profile.nickname} color={profile.avatarColor} size={54} fontSize={20} avatarUrl={profile.avatarUrl} />
             <div className="profile-names">
               <b>{profile.nickname}</b>
               <span>@{profile.username}</span>
             </div>
             <div className="profile-stats">
+              <div>
+                <b>{postCount}</b>
+                <span>게시물</span>
+              </div>
               <div>
                 <b>{counts.followers}</b>
                 <span>팔로워</span>

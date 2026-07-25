@@ -5,13 +5,11 @@ import * as followApi from '@/api/followApi';
 import type { FollowCounts } from '@/api/followApi';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
-import { useToast } from '@/state/ToastContext';
 
 export default function MyPage() {
   const navigate = useNavigate();
   const { session, posts } = useAppState();
   const { openViewer } = useOverlay();
-  const { showToast } = useToast();
   const [tab, setTab] = useState<'posts' | 'likes'>('posts');
   const [counts, setCounts] = useState<FollowCounts>({ followers: 0, following: 0 });
 
@@ -38,7 +36,7 @@ export default function MyPage() {
         마이페이지
       </div>
       <div className="profile-card">
-        <Avatar nickname={session.nickname} color={session.avatarColor} size={54} fontSize={20} />
+        <Avatar nickname={session.nickname} color={session.avatarColor} size={54} fontSize={20} avatarUrl={session.avatarUrl} />
         <div className="profile-names">
           <b>{session.nickname}</b>
           <span>{session.username ? '@' + session.username : '손끝에서 손글씨로 이야기해요'}</span>
@@ -59,7 +57,7 @@ export default function MyPage() {
         </div>
       </div>
       <div className="profile-actions">
-        <button className="btn ghost sk block" onClick={() => showToast('프로필 수정은 준비 중이에요')}>
+        <button className="btn ghost sk block" onClick={() => navigate('/mypage/photo')}>
           프로필 수정
         </button>
         <button className="btn ghost sk block" onClick={() => navigate('/mypage/heart')}>

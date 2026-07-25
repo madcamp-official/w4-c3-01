@@ -13,12 +13,12 @@ const NAV_ITEMS = [
     )
   },
   {
-    path: '/search',
-    nav: 'search',
+    path: '/lounges',
+    nav: 'loungelist',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="icon-sk">
-        <circle cx={11} cy={11} r={7} />
-        <path d="m21 21-4.3-4.3" />
+        <circle cx={12} cy={10} r={2.7} />
+        <path d="M12 2a8 8 0 0 0-8 8c0 5.5 8 12 8 12s8-6.5 8-12a8 8 0 0 0-8-8Z" />
       </svg>
     )
   },
@@ -34,12 +34,12 @@ const NAV_ITEMS = [
     )
   },
   {
-    path: '/lounges',
-    nav: 'loungelist',
+    path: '/search',
+    nav: 'search',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="icon-sk">
-        <circle cx={12} cy={10} r={2.7} />
-        <path d="M12 2a8 8 0 0 0-8 8c0 5.5 8 12 8 12s8-6.5 8-12a8 8 0 0 0-8-8Z" />
+        <circle cx={11} cy={11} r={7} />
+        <path d="m21 21-4.3-4.3" />
       </svg>
     )
   },
