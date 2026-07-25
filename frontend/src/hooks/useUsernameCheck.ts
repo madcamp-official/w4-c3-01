@@ -45,7 +45,7 @@ export function useUsernameCheck(username: string, excludeUserId?: string): User
 export function usernameStatusMessage(status: UsernameStatus): { text: string; color: string } | null {
   switch (status) {
     case 'checking':
-      return { text: '확인 중...', color: 'var(--ink-soft)' };
+      return null;
     case 'available':
       return { text: '사용할 수 있는 아이디예요', color: 'var(--ink-soft)' };
     case 'taken':
