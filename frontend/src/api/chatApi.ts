@@ -58,9 +58,6 @@ export async function fetchConversations(currentUserId: string): Promise<Chat[]>
   if (error) throw new Error(error.message);
   if (!convRows || convRows.length === 0) return [];
 
-  const otherIds = convRows.map((c) => (c.user_a === currentUserId ? c.user_b : c.user_a));
-  const profiles = await fetchProfilesByIds(otherIds);
-
   const conversationIds = convRows.map((c) => c.id);
   const { data: msgRows } = await supabase
     .from('messages')
@@ -73,15 +70,20 @@ export async function fetchConversations(currentUserId: string): Promise<Chat[]>
     if (!latestByConversation.has(row.conversation_id)) latestByConversation.set(row.conversation_id, row as MessageRow);
   });
 
-  return convRows.map((c) => {
+  // 아직 메시지를 한 번도 안 보낸 대화방(채팅하기만 누르고 나간 경우)은 채팅 목록에 안 보이게 걸러냅니다.
+  const startedConvRows = convRows.filter((c) => latestByConversation.has(c.id));
+  const otherIds = startedConvRows.map((c) => (c.user_a === currentUserId ? c.user_b : c.user_a));
+  const profiles = await fetchProfilesByIds(otherIds);
+
+  return startedConvRows.map((c) => {
     const otherId = c.user_a === currentUserId ? c.user_b : c.user_a;
     const profile = profiles.get(otherId);
-    const latest = latestByConversation.get(c.id);
+    const latest = latestByConversation.get(c.id)!;
     return {
       id: c.id,
       name: profile?.nickname ?? '알 수 없음',
       color: profile?.avatar_color ?? '#EAE2C9',
-      messages: latest ? [mapMessage(latest, currentUserId)] : []
+      messages: [mapMessage(latest, currentUserId)]
     };
   });
 }

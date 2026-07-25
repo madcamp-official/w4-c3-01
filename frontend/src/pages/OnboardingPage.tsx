@@ -9,6 +9,12 @@ import { useToast } from '@/state/ToastContext';
 
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,12}$/;
 
+function passwordHint(password: string): { text: string; color: string } | null {
+  if (!password) return null;
+  if (PASSWORD_RULE.test(password)) return { text: '사용할 수 있는 비밀번호예요', color: 'var(--ink-soft)' };
+  return { text: '8~12자, 영문·숫자·특수문자를 모두 포함해주세요', color: 'var(--danger)' };
+}
+
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { signupUser } = useAppState();
@@ -22,9 +28,11 @@ export default function OnboardingPage() {
 
   const usernameStatus = useUsernameCheck(form.username);
   const usernameHint = usernameStatusMessage(usernameStatus);
+  const pwHint = passwordHint(form.password);
+  const passwordValid = PASSWORD_RULE.test(form.password);
 
   const step1Filled = Object.values(form).every((v) => v.trim().length > 0);
-  const canGoNext = step1Filled && usernameStatus === 'available';
+  const canGoNext = step1Filled && usernameStatus === 'available' && passwordValid;
 
   function updateField(key: keyof typeof form, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -33,10 +41,6 @@ export default function OnboardingPage() {
   function handleNext() {
     if (form.password !== form.password2) {
       showToast('비밀번호가 일치하지 않아요');
-      return;
-    }
-    if (!PASSWORD_RULE.test(form.password)) {
-      showToast('비밀번호는 8~12자, 영문·숫자·특수문자를 모두 포함해야 해요');
       return;
     }
     if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) {
@@ -121,12 +125,11 @@ export default function OnboardingPage() {
           <input
             type="password"
             className="sk"
+            placeholder="8~12자, 영문·숫자·특수문자 포함"
             value={form.password}
             onChange={(e) => updateField('password', e.target.value)}
           />
-          <p style={{ fontSize: 11, color: 'var(--ink-soft)', margin: '6px 0 0' }}>
-            8~12자, 영문·숫자·특수문자를 모두 포함해주세요
-          </p>
+          {pwHint ? <p style={{ fontSize: 11, color: pwHint.color, margin: '6px 0 0' }}>{pwHint.text}</p> : null}
         </div>
         <div className="field">
           <label>비밀번호 확인</label>
