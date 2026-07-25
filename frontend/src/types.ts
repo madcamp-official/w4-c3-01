@@ -79,8 +79,6 @@ export interface Session {
   nickname: string;
   avatarColor: string;
   heartUrl: string | null;
-  followers: number;
-  following: number;
 }
 
 export interface LoginPayload {

@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
+import * as followApi from '@/api/followApi';
+import type { FollowCounts } from '@/api/followApi';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 import { useToast } from '@/state/ToastContext';
@@ -11,10 +13,22 @@ export default function MyPage() {
   const { openViewer } = useOverlay();
   const { showToast } = useToast();
   const [tab, setTab] = useState<'posts' | 'likes'>('posts');
+  const [counts, setCounts] = useState<FollowCounts>({ followers: 0, following: 0 });
 
   const myPosts = useMemo(() => posts.filter((p) => p.mine), [posts]);
   const likedPosts = useMemo(() => posts.filter((p) => p.liked), [posts]);
   const items = tab === 'posts' ? myPosts : likedPosts;
+
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    followApi.fetchFollowCounts(session.id).then((result) => {
+      if (!cancelled) setCounts(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
 
   if (!session) return null;
 
@@ -35,11 +49,11 @@ export default function MyPage() {
             <span>게시물</span>
           </div>
           <div>
-            <b>{session.followers}</b>
+            <b>{counts.followers}</b>
             <span>팔로워</span>
           </div>
           <div>
-            <b>{session.following}</b>
+            <b>{counts.following}</b>
             <span>팔로잉</span>
           </div>
         </div>

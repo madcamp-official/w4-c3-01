@@ -30,3 +30,13 @@ export async function searchUsers(query: string, excludeUserId: string): Promise
   if (error) throw new Error(error.message);
   return (data ?? []).map((p) => ({ id: p.id, username: p.username, nickname: p.nickname, avatarColor: p.avatar_color }));
 }
+
+export async function fetchProfile(userId: string): Promise<UserSummary | undefined> {
+  if (!supabase) {
+    // TODO(backend): Supabase 미설정 상태에서는 실제 유저 id로 프로필을 조회할 수 없음
+    return undefined;
+  }
+  const { data, error } = await supabase.from('profiles').select('id, username, nickname, avatar_color').eq('id', userId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? { id: data.id, username: data.username, nickname: data.nickname, avatarColor: data.avatar_color } : undefined;
+}

@@ -44,8 +44,9 @@ src/
    - `conversations`/`messages` 테이블과 RLS — 1:1 채팅. 대화방은 참여자 두 명만 보고 쓸 수 있습니다.
    - `messages` 테이블을 Realtime publication에 등록 — 채팅방을 열어두면 상대방 메시지가 새로고침 없이 바로 뜹니다.
    - `chat-images`라는 공개(public) Storage 버킷 — 허공 손글씨 메시지 이미지를 저장합니다. 업로드는 로그인한 사용자가 자기 uid 폴더 아래에만 가능하도록 제한했습니다.
+   - `follows` 테이블과 RLS — 팔로우 관계. 팔로워/팔로잉 수는 저장해두지 않고 이 테이블에서 그때그때 세서 보여줍니다.
 4. **Authentication → Settings → Email Auth**에서 **"Confirm email"을 꺼주세요.** (지금 회원가입 흐름은 가입 즉시 로그인시키는데, 이메일 인증이 켜져 있으면 인증 전까지 로그인 세션이 생기지 않아 바로 로그인이 안 됩니다. 나중에 이메일 인증을 붙이려면 회원가입 화면에 "메일함을 확인하세요" 단계를 추가해야 합니다 — `authApi.signup`이 이미 그 경우를 에러로 던지도록 되어 있습니다.)
-5. (확인용) **Database → Replication**에서 `messages` 테이블 옆에 Realtime이 켜져 있는지 한 번 봐주세요. `schema.sql`이 자동으로 등록하긴 하지만, 프로젝트에 따라 `supabase_realtime` publication이 기본 구성과 달라 안 붙는 경우가 있습니다.
+5. (확인용) **Database → Publications**에서 `supabase_realtime` publication에 `messages` 테이블이 포함돼 있는지 한 번 봐주세요 (`supabase_realtime_messages_publication`이라는 비슷한 이름의 항목은 Supabase 내부용이라 무관합니다). `schema.sql`이 자동으로 등록하긴 하지만, 프로젝트에 따라 안 붙는 경우가 있습니다.
 
 로그인 화면은 "아이디 또는 이메일"을 입력받습니다. `@`가 포함되어 있으면 이메일로 바로 로그인 시도하고, 아니면 `email_for_username` RPC로 이메일을 찾아 로그인합니다.
 
@@ -57,6 +58,14 @@ src/
 - 검색(`SearchPage`)에서 실제 `profiles`를 검색해 유저를 탭하면 대화방을 찾거나 새로 만들고 그 채팅방으로 이동합니다.
 - 채팅방을 열면(`ChatThreadPage`) 전체 메시지를 불러오고(`loadThread`), 동시에 그 대화방의 `messages` INSERT 이벤트를 실시간 구독합니다(`subscribeToThread`). 내가 보낸 메시지는 전송 즉시 화면에 반영되고, 실시간 구독으로 같은 메시지가 다시 들어오면 id로 중복을 걸러냅니다.
 - 허공 손글씨 메시지는 캡처한 PNG를 `chat-images` 버킷에 업로드하고, 그 공개 URL만 `messages.image_url`에 저장합니다.
+
+### 검색 · 프로필 · 팔로우
+
+- 검색 화면은 검색어를 입력하기 전에는 아무것도 보여주지 않습니다. 검색어가 있을 때만 `profiles`/게시물을 조회합니다.
+- 검색 결과에서 유저를 탭하면 채팅이 아니라 그 사람의 프로필 화면(`/users/:userId`)으로 이동합니다. 본인 id면 `/mypage`로 리다이렉트됩니다.
+- 다른 사람 프로필에는 **팔로우/팔로잉** 토글 버튼과 **채팅하기** 버튼이 있습니다. 채팅하기는 대화방을 찾거나 새로 만들어 그 채팅방으로 이동합니다 (`chatApi.findOrCreateConversation`과 동일한 로직).
+- 팔로워/팔로잉 수는 `follows` 테이블을 그때그때 세서 보여줍니다 (`followApi.fetchFollowCounts`) — `profiles.followers`/`following` 컬럼은 스키마에는 남아있지만 더는 읽거나 쓰지 않습니다.
+- 다른 사람 프로필 화면에는 아직 게시물 그리드가 없습니다 — 게시물 기능 자체가 아직 Supabase에 연결되어 있지 않아서, 어떤 게시물이 그 사람 것인지 조회할 방법이 없습니다. 게시물을 Supabase로 옮길 때 같이 추가하면 됩니다.
 
 ## 실행
 

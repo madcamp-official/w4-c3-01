@@ -1,4 +1,4 @@
--- 손끝 Supabase 스키마: 로그인/회원가입 + 채팅.
+-- 손끝 Supabase 스키마: 로그인/회원가입 + 채팅 + 팔로우.
 -- Supabase 대시보드 > SQL Editor 에 붙여넣고 실행하세요. (여러 번 실행해도 안전합니다.)
 
 -- 1) 프로필 테이블: auth.users 는 email/password 만 가지고 있어서,
@@ -173,3 +173,34 @@ create policy "Users can upload their own chat images"
     bucket_id = 'chat-images'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- 6) 팔로우 ---------------------------------------------------------------
+--    팔로워/팔로잉 수는 저장해두지 않고 이 테이블에서 그때그때 세서 보여줍니다
+--    (profiles.followers/following 컬럼은 손대지 않음 — 카운터 동기화 버그를 피하려고요).
+create table if not exists public.follows (
+  follower_id uuid not null references public.profiles (id) on delete cascade,
+  following_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (follower_id, following_id),
+  constraint follows_not_self check (follower_id <> following_id)
+);
+
+alter table public.follows enable row level security;
+
+drop policy if exists "Follow edges are viewable by everyone" on public.follows;
+create policy "Follow edges are viewable by everyone"
+  on public.follows for select
+  using (true);
+
+drop policy if exists "Users can follow as themselves" on public.follows;
+create policy "Users can follow as themselves"
+  on public.follows for insert
+  with check (auth.uid() = follower_id);
+
+drop policy if exists "Users can unfollow as themselves" on public.follows;
+create policy "Users can unfollow as themselves"
+  on public.follows for delete
+  using (auth.uid() = follower_id);
+
+grant select on public.follows to anon, authenticated;
+grant insert, delete on public.follows to authenticated;
