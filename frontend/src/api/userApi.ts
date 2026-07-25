@@ -14,6 +14,25 @@ export async function updateAvatar(userId: string, avatarUrl: string): Promise<v
   if (error) throw new Error(error.message);
 }
 
+/** excludeUserId를 넘기면 그 유저 본인은 중복 검사에서 제외합니다 (프로필 수정용). */
+export async function isUsernameAvailable(username: string, excludeUserId?: string): Promise<boolean> {
+  if (!supabase) return true; // 목업 모드
+  let request = supabase.from('profiles').select('id').eq('username', username).limit(1);
+  if (excludeUserId) request = request.neq('id', excludeUserId);
+  const { data, error } = await request;
+  if (error) throw new Error(error.message);
+  return (data ?? []).length === 0;
+}
+
+export async function updateProfile(userId: string, updates: { username: string; nickname: string }): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
+  if (error) {
+    if (error.code === '23505') throw new Error('이미 사용 중인 아이디예요');
+    throw new Error(error.message);
+  }
+}
+
 /** query가 비어있으면 최근 유저 목록을, 아니면 아이디/닉네임으로 필터링해 돌려줍니다. */
 export async function searchUsers(query: string, excludeUserId: string): Promise<UserSummary[]> {
   if (!supabase) {

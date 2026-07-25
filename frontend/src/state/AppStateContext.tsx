@@ -30,6 +30,7 @@ interface AppStateValue {
   logoutUser: () => void;
   setHeart: (heartUrl: string) => Promise<void>;
   setAvatar: (avatarUrl: string) => Promise<void>;
+  updateProfile: (updates: { username: string; nickname: string }) => Promise<void>;
 
   loadFeed: () => Promise<void>;
   sharePost: (input: { image: string; strokes: StrokePoint[]; caption: string }) => Promise<Post>;
@@ -103,6 +104,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       if (!session) return;
       await userApi.updateAvatar(session.id, avatarUrl);
       setSession((prev) => (prev ? { ...prev, avatarUrl } : prev));
+    },
+    [session]
+  );
+
+  const updateProfile = useCallback(
+    async (updates: { username: string; nickname: string }) => {
+      if (!session) return;
+      await userApi.updateProfile(session.id, updates);
+      setSession((prev) => (prev ? { ...prev, ...updates } : prev));
     },
     [session]
   );
@@ -229,6 +239,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       logoutUser,
       setHeart,
       setAvatar,
+      updateProfile,
       loadFeed,
       sharePost,
       likePost,
@@ -255,6 +266,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       logoutUser,
       setHeart,
       setAvatar,
+      updateProfile,
       loadFeed,
       sharePost,
       likePost,

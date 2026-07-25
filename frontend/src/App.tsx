@@ -20,7 +20,7 @@ import AirwritePage from '@/pages/AirwritePage';
 import MyPage from '@/pages/MyPage';
 import UserProfilePage from '@/pages/UserProfilePage';
 import EditHeartPage from '@/pages/EditHeartPage';
-import EditPhotoPage from '@/pages/EditPhotoPage';
+import EditProfilePage from '@/pages/EditProfilePage';
 import LoungeListPage from '@/pages/LoungeListPage';
 import LoungeViewPage from '@/pages/LoungeViewPage';
 
@@ -49,7 +49,7 @@ export default function App() {
                     <Route path="/chats/:chatId/airwrite" element={<AirwritePage />} />
                     <Route path="/mypage" element={<MyPage />} />
                     <Route path="/mypage/heart" element={<EditHeartPage />} />
-                    <Route path="/mypage/photo" element={<EditPhotoPage />} />
+                    <Route path="/mypage/edit" element={<EditProfilePage />} />
                     <Route path="/users/:userId" element={<UserProfilePage />} />
                     <Route path="/lounges" element={<LoungeListPage />} />
                     <Route path="/lounges/:loungeId" element={<LoungeViewPage />} />

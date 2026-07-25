@@ -1,3 +1,4 @@
+import { isUsernameAvailable } from '@/api/userApi';
 import { supabase } from '@/lib/supabaseClient';
 import { AVATAR_TONES, defaultHeartUrl } from '@/mock/store';
 import type { LoginPayload, Session, SignupPayload } from '@/types';
@@ -71,6 +72,11 @@ export async function signup(payload: SignupPayload): Promise<Session> {
       heartUrl: payload.heartUrl,
       avatarUrl: payload.avatarUrl
     };
+  }
+
+  // 회원가입 1단계에서 이미 확인했겠지만, 그사이(하트 그리기 등) 시간이 지났을 수 있어 한 번 더 확인합니다.
+  if (!(await isUsernameAvailable(payload.username))) {
+    throw new Error('이미 사용 중인 아이디예요');
   }
 
   const { data, error } = await supabase.auth.signUp({

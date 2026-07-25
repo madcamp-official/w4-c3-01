@@ -57,7 +57,7 @@ export default function MyPage() {
         </div>
       </div>
       <div className="profile-actions">
-        <button className="btn ghost sk block" onClick={() => navigate('/mypage/photo')}>
+        <button className="btn ghost sk block" onClick={() => navigate('/mypage/edit')}>
           프로필 수정
         </button>
         <button className="btn ghost sk block" onClick={() => navigate('/mypage/heart')}>

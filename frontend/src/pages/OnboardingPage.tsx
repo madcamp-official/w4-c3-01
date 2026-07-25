@@ -2,9 +2,12 @@ import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AvatarPicker from '@/components/AvatarPicker';
 import HeartAirwriteStage, { type HeartAirwriteHandle } from '@/components/HeartAirwriteStage';
+import { useUsernameCheck, usernameStatusMessage } from '@/hooks/useUsernameCheck';
 import { AVATAR_TONES, defaultHeartUrl } from '@/mock/store';
 import { useAppState } from '@/state/AppStateContext';
 import { useToast } from '@/state/ToastContext';
+
+const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,12}$/;
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -17,19 +20,23 @@ export default function OnboardingPage() {
   const [hasDrawn, setHasDrawn] = useState(false);
   const heartRef = useRef<HeartAirwriteHandle>(null);
 
+  const usernameStatus = useUsernameCheck(form.username);
+  const usernameHint = usernameStatusMessage(usernameStatus);
+
   const step1Filled = Object.values(form).every((v) => v.trim().length > 0);
+  const canGoNext = step1Filled && usernameStatus === 'available';
 
   function updateField(key: keyof typeof form, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
   function handleNext() {
-    if (!/^[a-zA-Z0-9_.]+$/.test(form.username.trim())) {
-      showToast('아이디는 영문, 숫자, ., _ 만 사용할 수 있어요');
-      return;
-    }
     if (form.password !== form.password2) {
       showToast('비밀번호가 일치하지 않아요');
+      return;
+    }
+    if (!PASSWORD_RULE.test(form.password)) {
+      showToast('비밀번호는 8~12자, 영문·숫자·특수문자를 모두 포함해야 해요');
       return;
     }
     if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) {
@@ -85,6 +92,9 @@ export default function OnboardingPage() {
             value={form.username}
             onChange={(e) => updateField('username', e.target.value)}
           />
+          {usernameHint ? (
+            <p style={{ fontSize: 11, color: usernameHint.color, margin: '6px 0 0' }}>{usernameHint.text}</p>
+          ) : null}
         </div>
         <div className="field">
           <label>이메일</label>
@@ -101,7 +111,6 @@ export default function OnboardingPage() {
           <input
             type="text"
             className="sk"
-            placeholder="예: 김하은"
             maxLength={16}
             value={form.nickname}
             onChange={(e) => updateField('nickname', e.target.value)}
@@ -115,6 +124,9 @@ export default function OnboardingPage() {
             value={form.password}
             onChange={(e) => updateField('password', e.target.value)}
           />
+          <p style={{ fontSize: 11, color: 'var(--ink-soft)', margin: '6px 0 0' }}>
+            8~12자, 영문·숫자·특수문자를 모두 포함해주세요
+          </p>
         </div>
         <div className="field">
           <label>비밀번호 확인</label>
@@ -125,7 +137,7 @@ export default function OnboardingPage() {
             onChange={(e) => updateField('password2', e.target.value)}
           />
         </div>
-        <button className="btn primary sk block" disabled={!step1Filled} onClick={handleNext}>
+        <button className="btn primary sk block" disabled={!canGoNext} onClick={handleNext}>
           다음
         </button>
         <button className="link-btn" style={{ marginTop: 12, alignSelf: 'center' }} onClick={() => navigate('/login')}>
