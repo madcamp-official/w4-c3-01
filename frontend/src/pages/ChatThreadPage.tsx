@@ -3,25 +3,38 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
+import { useToast } from '@/state/ToastContext';
 
 export default function ChatThreadPage() {
   const navigate = useNavigate();
   const { chatId = '' } = useParams();
-  const { chats, loadChats, sendText, getChat } = useAppState();
+  const { loadThread, sendText, getChat, subscribeToThread } = useAppState();
   const { openViewerForMessage } = useOverlay();
+  const { showToast } = useToast();
   const [text, setText] = useState('');
 
   useEffect(() => {
-    if (chats.length === 0) void loadChats();
+    void loadThread(chatId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [chatId]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToThread(chatId);
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId]);
 
   const chat = getChat(chatId);
 
   async function handleSend() {
     if (!text.trim()) return;
-    await sendText(chatId, text.trim());
+    const value = text.trim();
     setText('');
+    try {
+      await sendText(chatId, value);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '메시지를 보내지 못했어요');
+    }
   }
 
   if (!chat) {

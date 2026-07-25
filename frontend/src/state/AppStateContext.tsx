@@ -36,9 +36,12 @@ interface AppStateValue {
   commentOnPost: (postId: string, text: string) => Promise<void>;
 
   loadChats: () => Promise<void>;
+  loadThread: (chatId: string) => Promise<void>;
   getChat: (chatId: string) => Chat | undefined;
   sendText: (chatId: string, text: string) => Promise<void>;
   sendAir: (chatId: string, image: string, strokes: StrokePoint[]) => Promise<void>;
+  startConversationWith: (otherUserId: string) => Promise<string | null>;
+  subscribeToThread: (chatId: string) => () => void;
 
   loadLounges: () => Promise<void>;
   getLounge: (loungeId: string) => Lounge | undefined;
@@ -128,22 +131,65 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   );
 
   const loadChats = useCallback(async () => {
-    setChats(await chatApi.fetchChats());
-  }, []);
+    if (!session) return;
+    setChats(await chatApi.fetchConversations(session.id));
+  }, [session]);
+
+  const loadThread = useCallback(
+    async (chatId: string) => {
+      if (!session) return;
+      const thread = await chatApi.fetchThread(chatId, session.id);
+      if (!thread) return;
+      setChats((prev) => (prev.some((c) => c.id === chatId) ? prev.map((c) => (c.id === chatId ? thread : c)) : [thread, ...prev]));
+    },
+    [session]
+  );
 
   const getChat = useCallback((chatId: string) => chats.find((c) => c.id === chatId), [chats]);
 
-  const sendText = useCallback(async (chatId: string, text: string) => {
-    const updated = await chatApi.sendTextMessage(chatId, text);
-    if (!updated) return;
-    setChats((prev) => prev.map((c) => (c.id === chatId ? updated : c)));
+  const receiveMessage = useCallback((chatId: string, message: ChatMessage) => {
+    setChats((prev) =>
+      prev.map((c) => {
+        if (c.id !== chatId) return c;
+        if (c.messages.some((m) => m.id === message.id)) return c; // 내가 보낸 메시지는 이미 반영돼 있어 중복 방지
+        return { ...c, messages: [...c.messages, message] };
+      })
+    );
   }, []);
 
-  const sendAir = useCallback(async (chatId: string, image: string, strokes: StrokePoint[]) => {
-    const updated = await chatApi.sendAirMessage(chatId, image, strokes as ChatMessage['strokes']);
-    if (!updated) return;
-    setChats((prev) => prev.map((c) => (c.id === chatId ? updated : c)));
-  }, []);
+  const sendText = useCallback(
+    async (chatId: string, text: string) => {
+      if (!session) return;
+      const message = await chatApi.sendTextMessage(chatId, session.id, text);
+      if (message) receiveMessage(chatId, message);
+    },
+    [session, receiveMessage]
+  );
+
+  const sendAir = useCallback(
+    async (chatId: string, image: string, strokes: StrokePoint[]) => {
+      if (!session) return;
+      const message = await chatApi.sendAirMessage(chatId, session.id, image, strokes);
+      if (message) receiveMessage(chatId, message);
+    },
+    [session, receiveMessage]
+  );
+
+  const startConversationWith = useCallback(
+    async (otherUserId: string) => {
+      if (!session) return null;
+      return chatApi.findOrCreateConversation(session.id, otherUserId);
+    },
+    [session]
+  );
+
+  const subscribeToThread = useCallback(
+    (chatId: string) => {
+      if (!session) return () => {};
+      return chatApi.subscribeToThread(chatId, session.id, (message) => receiveMessage(chatId, message));
+    },
+    [session, receiveMessage]
+  );
 
   const loadLounges = useCallback(async () => {
     setLounges(await loungeApi.fetchLounges());
@@ -173,9 +219,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       likePost,
       commentOnPost,
       loadChats,
+      loadThread,
       getChat,
       sendText,
       sendAir,
+      startConversationWith,
+      subscribeToThread,
       loadLounges,
       getLounge,
       placeInLounge
@@ -195,9 +244,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       likePost,
       commentOnPost,
       loadChats,
+      loadThread,
       getChat,
       sendText,
       sendAir,
+      startConversationWith,
+      subscribeToThread,
       loadLounges,
       getLounge,
       placeInLounge

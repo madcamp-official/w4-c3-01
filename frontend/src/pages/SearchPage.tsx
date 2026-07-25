@@ -1,22 +1,45 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
-import { SEED_USERS } from '@/mock/store';
+import * as userApi from '@/api/userApi';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 import { useToast } from '@/state/ToastContext';
+import type { UserSummary } from '@/types';
 
 export default function SearchPage() {
-  const { posts } = useAppState();
+  const navigate = useNavigate();
+  const { posts, session, startConversationWith } = useAppState();
   const { openViewer } = useOverlay();
   const { showToast } = useToast();
   const [query, setQuery] = useState('');
+  const [users, setUsers] = useState<UserSummary[]>([]);
+
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    userApi.searchUsers(query, session.id).then((result) => {
+      if (!cancelled) setUsers(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [query, session]);
 
   const q = query.trim().toLowerCase();
-  const users = useMemo(() => SEED_USERS.filter((u) => !q || u.nickname.toLowerCase().includes(q)), [q]);
   const results = useMemo(
     () => posts.filter((p) => !q || p.caption.toLowerCase().includes(q) || p.username.toLowerCase().includes(q)),
     [posts, q]
   );
+
+  async function handleUserClick(user: UserSummary) {
+    const chatId = await startConversationWith(user.id);
+    if (!chatId) {
+      showToast(`${user.nickname} 님과의 채팅은 아직 준비 중이에요`);
+      return;
+    }
+    navigate(`/chats/${chatId}`);
+  }
 
   return (
     <section className="screen active" id="screen-search">
@@ -32,7 +55,7 @@ export default function SearchPage() {
           <input
             type="text"
             className="sk"
-            placeholder="아이디 또는 글씨로 검색"
+            placeholder="아이디 또는 닉네임으로 검색"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -49,8 +72,8 @@ export default function SearchPage() {
           <>
             <h2 className="section-h">사용자</h2>
             {users.map((u) => (
-              <button key={u.nickname} className="user-row" onClick={() => showToast(`${u.nickname} 님의 프로필은 준비 중이에요`)}>
-                <Avatar nickname={u.nickname} color={u.color} size={36} fontSize={14} />
+              <button key={u.id} className="user-row" onClick={() => handleUserClick(u)}>
+                <Avatar nickname={u.nickname} color={u.avatarColor} size={36} fontSize={14} />
                 <b>{u.nickname}</b>
               </button>
             ))}

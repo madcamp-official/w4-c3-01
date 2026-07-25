@@ -65,6 +65,13 @@ export interface SeedUser {
   color: string;
 }
 
+export interface UserSummary {
+  id: string;
+  username: string;
+  nickname: string;
+  avatarColor: string;
+}
+
 export interface Session {
   id: string;
   isAuthenticated: boolean;

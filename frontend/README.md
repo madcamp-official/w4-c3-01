@@ -26,8 +26,8 @@ src/
 
 `src/api/*.ts`의 각 함수는 먼저 실제 백엔드 호출을 시도하고, 실패하거나 설정이 비어 있으면 `src/mock/store.ts`의 인메모리 목업으로 폴백합니다. 그래서 지금 당장은 아무 설정 없이 `npm run dev`만으로 전체 플로우가 동작합니다.
 
-- **로그인/회원가입** (`src/api/authApi.ts`)은 [Supabase Auth](https://supabase.com/docs/guides/auth)를 씁니다. 설정 방법은 아래 "Supabase 설정" 참고.
-- 그 외 게시물/채팅/라운지/프로필(`src/api/postsApi.ts` 등)은 아직 커스텀 REST 백엔드 자리만 잡아뒀습니다 — `VITE_API_BASE_URL`을 채우면 그쪽으로 요청하고, 비어 있으면 목업으로 동작합니다. 엔드포인트 경로/payload 형태는 각 파일의 `TODO(backend)` 주석 옆에 정리되어 있습니다.
+- **로그인/회원가입** (`src/api/authApi.ts`)과 **채팅** (`src/api/chatApi.ts`)은 [Supabase](https://supabase.com/docs)(Auth + Postgres + Realtime + Storage)를 씁니다. 설정 방법은 아래 "Supabase 설정" 참고.
+- 그 외 게시물/라운지/프로필(`src/api/postsApi.ts` 등)은 아직 커스텀 REST 백엔드 자리만 잡아뒀습니다 — `VITE_API_BASE_URL`을 채우면 그쪽으로 요청하고, 비어 있으면 목업으로 동작합니다. 엔드포인트 경로/payload 형태는 각 파일의 `TODO(backend)` 주석 옆에 정리되어 있습니다.
 
 ### Supabase 설정
 
@@ -37,15 +37,26 @@ src/
    VITE_SUPABASE_URL=https://xxxx.supabase.co
    VITE_SUPABASE_ANON_KEY=xxxx
    ```
-3. **SQL Editor**에서 [`supabase/schema.sql`](./supabase/schema.sql) 내용을 그대로 실행합니다. 이 스크립트가 만드는 것:
+3. **SQL Editor**에서 [`supabase/schema.sql`](./supabase/schema.sql) 내용을 그대로 실행합니다 (여러 번 실행해도 안전합니다). 이 스크립트가 만드는 것:
    - `profiles` 테이블 — 아이디/닉네임/아바타 색/하트 이미지 등 앱 전용 데이터 (Supabase `auth.users`에는 email/password만 있어서 분리했습니다).
    - 회원가입 시 `auth.users`에 유저가 생기면 `profiles` 행을 자동으로 만들어주는 트리거.
    - "아이디 또는 이메일로 로그인"을 지원하기 위한 `email_for_username` 함수 (username으로 email을 안전하게 조회).
+   - `conversations`/`messages` 테이블과 RLS — 1:1 채팅. 대화방은 참여자 두 명만 보고 쓸 수 있습니다.
+   - `messages` 테이블을 Realtime publication에 등록 — 채팅방을 열어두면 상대방 메시지가 새로고침 없이 바로 뜹니다.
+   - `chat-images`라는 공개(public) Storage 버킷 — 허공 손글씨 메시지 이미지를 저장합니다. 업로드는 로그인한 사용자가 자기 uid 폴더 아래에만 가능하도록 제한했습니다.
 4. **Authentication → Settings → Email Auth**에서 **"Confirm email"을 꺼주세요.** (지금 회원가입 흐름은 가입 즉시 로그인시키는데, 이메일 인증이 켜져 있으면 인증 전까지 로그인 세션이 생기지 않아 바로 로그인이 안 됩니다. 나중에 이메일 인증을 붙이려면 회원가입 화면에 "메일함을 확인하세요" 단계를 추가해야 합니다 — `authApi.signup`이 이미 그 경우를 에러로 던지도록 되어 있습니다.)
+5. (확인용) **Database → Replication**에서 `messages` 테이블 옆에 Realtime이 켜져 있는지 한 번 봐주세요. `schema.sql`이 자동으로 등록하긴 하지만, 프로젝트에 따라 `supabase_realtime` publication이 기본 구성과 달라 안 붙는 경우가 있습니다.
 
 로그인 화면은 "아이디 또는 이메일"을 입력받습니다. `@`가 포함되어 있으면 이메일로 바로 로그인 시도하고, 아니면 `email_for_username` RPC로 이메일을 찾아 로그인합니다.
 
-`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`를 비워두면 로그인/회원가입도 그냥 목업 세션으로 동작합니다 (백엔드 없이 화면 확인용).
+`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`를 비워두면 로그인/회원가입/채팅 전부 목업 데이터로 동작합니다 (단, 목업 모드에서는 검색에서 새 대화를 시작할 수는 없어요 — 실제 유저 id가 없어서요).
+
+### 채팅 데이터 흐름
+
+- 대화방은 두 사람의 id를 사전순으로 정렬해 `user_a < user_b`로 저장합니다 — 누가 먼저 시작하든 같은 대화방 하나만 생기도록요 (`chatApi.findOrCreateConversation`).
+- 검색(`SearchPage`)에서 실제 `profiles`를 검색해 유저를 탭하면 대화방을 찾거나 새로 만들고 그 채팅방으로 이동합니다.
+- 채팅방을 열면(`ChatThreadPage`) 전체 메시지를 불러오고(`loadThread`), 동시에 그 대화방의 `messages` INSERT 이벤트를 실시간 구독합니다(`subscribeToThread`). 내가 보낸 메시지는 전송 즉시 화면에 반영되고, 실시간 구독으로 같은 메시지가 다시 들어오면 id로 중복을 걸러냅니다.
+- 허공 손글씨 메시지는 캡처한 PNG를 `chat-images` 버킷에 업로드하고, 그 공개 URL만 `messages.image_url`에 저장합니다.
 
 ## 실행
 
@@ -62,4 +73,5 @@ npm run dev
 
 - 카메라(`getUserMedia`)는 HTTPS 또는 localhost에서만 동작합니다. 실기기 테스트 시 HTTPS 터널(ngrok 등)이 필요합니다.
 - Capacitor 래핑은 아직 설정하지 않았습니다. 웹 앱이 안정화된 뒤 `npx cap init` → `npx cap add ios/android`로 진행하면 됩니다.
-- 로그인/회원가입 외 나머지 기능(게시물, 채팅, 라운지, 프로필 수정)은 아직 Supabase에 연결되어 있지 않습니다 — 다음 단계로 이어서 붙이면 됩니다.
+- 로그인/회원가입/채팅 외 나머지 기능(게시물, 라운지, 프로필 수정)은 아직 Supabase에 연결되어 있지 않습니다 — 다음 단계로 이어서 붙이면 됩니다.
+- 채팅방 목록(`ChatListPage`)은 실시간으로 갱신되지 않습니다 — 새 메시지 미리보기를 보려면 채팅 목록 화면을 다시 들어가야 합니다. 열려있는 채팅방 안에서는 실시간으로 반영됩니다.

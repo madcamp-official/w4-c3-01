@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import WeightPicker from '@/components/WeightPicker';
 import { drawStrokesStatic } from '@/lib/canvas';
@@ -12,6 +12,7 @@ export default function AirwritePage() {
   const { sendAir } = useAppState();
   const { showToast } = useToast();
   const trail = useTrailCanvas();
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     trail.resize();
@@ -32,9 +33,16 @@ export default function AirwritePage() {
     octx.fillStyle = '#F2ECDA';
     octx.fillRect(0, 0, 260, 260);
     drawStrokesStatic(octx, strokes, 260, 260, 6);
-    await sendAir(chatId, out.toDataURL('image/png'), strokes);
-    showToast('손글씨 메시지를 보냈어요');
-    navigate(`/chats/${chatId}`, { replace: true });
+    setSending(true);
+    try {
+      await sendAir(chatId, out.toDataURL('image/png'), strokes);
+      showToast('손글씨 메시지를 보냈어요');
+      navigate(`/chats/${chatId}`, { replace: true });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '메시지를 보내지 못했어요');
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -56,8 +64,8 @@ export default function AirwritePage() {
               <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
             </svg>
           </button>
-          <button className="btn primary sk" style={{ padding: '14px 30px' }} onClick={handleSend}>
-            보내기
+          <button className="btn primary sk" style={{ padding: '14px 30px' }} disabled={sending} onClick={handleSend}>
+            {sending ? '보내는 중...' : '보내기'}
           </button>
           <div style={{ width: 40 }} />
         </div>

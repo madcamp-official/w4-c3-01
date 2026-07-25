@@ -20,7 +20,7 @@ export default function ChatListPage() {
       <div className="chat-list">
         {chats.map((chat) => {
           const lastMsg = chat.messages[chat.messages.length - 1];
-          const preview = lastMsg?.type === 'text' ? lastMsg.text : '✏️ 손글씨 메시지';
+          const preview = !lastMsg ? '대화를 시작해보세요' : lastMsg.type === 'text' ? lastMsg.text : '✏️ 손글씨 메시지';
           return (
             <div key={chat.id} className="chat-row" onClick={() => navigate(`/chats/${chat.id}`)}>
               <Avatar nickname={chat.name} color={chat.color} size={44} fontSize={16} />
