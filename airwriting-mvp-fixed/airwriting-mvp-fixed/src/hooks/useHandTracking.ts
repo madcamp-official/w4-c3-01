@@ -10,15 +10,45 @@ import { landmarkToStagePoint, smoothPoint } from '../utils/coordinates'
 
 const WASM_ROOT = '/wasm'
 const MODEL_URL = '/models/hand_landmarker.task'
+const WRIST = 0
 const THUMB_TIP = 4
 const INDEX_FINGER_MCP = 5
+const INDEX_FINGER_PIP = 6
 const INDEX_FINGER_TIP = 8
+const MIDDLE_FINGER_MCP = 9
+const MIDDLE_FINGER_PIP = 10
+const MIDDLE_FINGER_TIP = 12
+const RING_FINGER_MCP = 13
+const RING_FINGER_PIP = 14
+const RING_FINGER_TIP = 16
 const PINKY_MCP = 17
+const PINKY_PIP = 18
+const PINKY_TIP = 20
 const PINCH_START_RATIO = 0.35
 const PINCH_RELEASE_RATIO = 0.5
 
 function distanceBetween(first: NormalizedLandmark, second: NormalizedLandmark) {
   return Math.hypot(first.x - second.x, first.y - second.y)
+}
+
+function isFingerExtended(
+  wrist: NormalizedLandmark,
+  mcp: NormalizedLandmark,
+  pip: NormalizedLandmark,
+  tip: NormalizedLandmark,
+) {
+  const towardMcpX = mcp.x - pip.x
+  const towardMcpY = mcp.y - pip.y
+  const towardTipX = tip.x - pip.x
+  const towardTipY = tip.y - pip.y
+  const vectorLength =
+    Math.hypot(towardMcpX, towardMcpY) * Math.hypot(towardTipX, towardTipY)
+  const bendCosine =
+    vectorLength > 0
+      ? (towardMcpX * towardTipX + towardMcpY * towardTipY) / vectorLength
+      : 1
+
+  return bendCosine < -0.55 && distanceBetween(wrist, tip) > distanceBetween(wrist, pip)
 }
 
 interface UseHandTrackingOptions {
@@ -27,7 +57,7 @@ interface UseHandTrackingOptions {
   stream: MediaStream | null
   facingMode: FacingMode
   enabled: boolean
-  onPoint: (point: Point | null, pinching: boolean) => void
+  onPoint: (point: Point | null, pinching: boolean, erasing: boolean) => void
 }
 
 interface UseHandTrackingResult {
@@ -51,6 +81,8 @@ export function useHandTracking({
   const animationFrameRef = useRef<number | null>(null)
   const previousPointRef = useRef<Point | null>(null)
   const pinchingRef = useRef(false)
+  const erasingRef = useRef(false)
+  const eraserGestureScoreRef = useRef(0)
   const lastVideoTimeRef = useRef(-1)
   const onPointRef = useRef(onPoint)
 
@@ -124,34 +156,92 @@ export function useHandTracking({
       const video = videoRef.current
       const stage = stageRef.current
       const landmarks = result.landmarks[0]
+      const wrist = landmarks?.[WRIST]
       const thumbTip = landmarks?.[THUMB_TIP]
       const indexMcp = landmarks?.[INDEX_FINGER_MCP]
+      const indexPip = landmarks?.[INDEX_FINGER_PIP]
       const indexTip = landmarks?.[INDEX_FINGER_TIP]
+      const middleMcp = landmarks?.[MIDDLE_FINGER_MCP]
+      const middlePip = landmarks?.[MIDDLE_FINGER_PIP]
+      const middleTip = landmarks?.[MIDDLE_FINGER_TIP]
+      const ringMcp = landmarks?.[RING_FINGER_MCP]
+      const ringPip = landmarks?.[RING_FINGER_PIP]
+      const ringTip = landmarks?.[RING_FINGER_TIP]
       const pinkyMcp = landmarks?.[PINKY_MCP]
+      const pinkyPip = landmarks?.[PINKY_PIP]
+      const pinkyTip = landmarks?.[PINKY_TIP]
 
-      if (!video || !stage || !thumbTip || !indexMcp || !indexTip || !pinkyMcp) {
+      if (
+        !video ||
+        !stage ||
+        !wrist ||
+        !thumbTip ||
+        !indexMcp ||
+        !indexPip ||
+        !indexTip ||
+        !middleMcp ||
+        !middlePip ||
+        !middleTip ||
+        !ringMcp ||
+        !ringPip ||
+        !ringTip ||
+        !pinkyMcp ||
+        !pinkyPip ||
+        !pinkyTip
+      ) {
         previousPointRef.current = null
         pinchingRef.current = false
+        erasingRef.current = false
+        eraserGestureScoreRef.current = 0
         setHandDetected(false)
-        onPointRef.current(null, false)
+        onPointRef.current(null, false, false)
         return
       }
 
-      const stagePoint = landmarkToStagePoint(indexTip, video, stage, facingMode)
+      const twoFingerGesture =
+        isFingerExtended(wrist, indexMcp, indexPip, indexTip) &&
+        isFingerExtended(wrist, middleMcp, middlePip, middleTip) &&
+        !isFingerExtended(wrist, ringMcp, ringPip, ringTip) &&
+        !isFingerExtended(wrist, pinkyMcp, pinkyPip, pinkyTip)
+
+      eraserGestureScoreRef.current = twoFingerGesture
+        ? Math.min(4, eraserGestureScoreRef.current + 1)
+        : Math.max(0, eraserGestureScoreRef.current - 1)
+
+      const erasing = erasingRef.current
+        ? eraserGestureScoreRef.current > 1
+        : eraserGestureScoreRef.current >= 3
+      const eraserGestureChanged = erasing !== erasingRef.current
+      erasingRef.current = erasing
+
+      const trackingLandmark = erasing
+        ? {
+            ...indexTip,
+            x: (indexTip.x + middleTip.x) / 2,
+            y: (indexTip.y + middleTip.y) / 2,
+            z: (indexTip.z + middleTip.z) / 2,
+          }
+        : indexTip
+      const stagePoint = landmarkToStagePoint(trackingLandmark, video, stage, facingMode)
       if (!stagePoint) return
 
-      const smoothed = smoothPoint(previousPointRef.current, stagePoint)
+      const smoothed = smoothPoint(
+        eraserGestureChanged ? null : previousPointRef.current,
+        stagePoint,
+      )
       const palmWidth = distanceBetween(indexMcp, pinkyMcp)
       const pinchRatio =
         palmWidth > 0 ? distanceBetween(thumbTip, indexTip) / palmWidth : Number.POSITIVE_INFINITY
-      const pinching = pinchingRef.current
-        ? pinchRatio < PINCH_RELEASE_RATIO
-        : pinchRatio < PINCH_START_RATIO
+      const pinching =
+        !erasing &&
+        (pinchingRef.current
+          ? pinchRatio < PINCH_RELEASE_RATIO
+          : pinchRatio < PINCH_START_RATIO)
 
       previousPointRef.current = smoothed
       pinchingRef.current = pinching
       setHandDetected(true)
-      onPointRef.current(smoothed, pinching)
+      onPointRef.current(smoothed, pinching, erasing)
     },
     [facingMode, stageRef, videoRef],
   )
@@ -160,8 +250,10 @@ export function useHandTracking({
     if (!enabled || !stream || !modelReady) {
       previousPointRef.current = null
       pinchingRef.current = false
+      erasingRef.current = false
+      eraserGestureScoreRef.current = 0
       setHandDetected(false)
-      onPointRef.current(null, false)
+      onPointRef.current(null, false, false)
       return
     }
 
@@ -195,9 +287,11 @@ export function useHandTracking({
       }
       previousPointRef.current = null
       pinchingRef.current = false
+      erasingRef.current = false
+      eraserGestureScoreRef.current = 0
       lastVideoTimeRef.current = -1
       setHandDetected(false)
-      onPointRef.current(null, false)
+      onPointRef.current(null, false, false)
     }
   }, [enabled, modelReady, processResult, stream, videoRef])
 

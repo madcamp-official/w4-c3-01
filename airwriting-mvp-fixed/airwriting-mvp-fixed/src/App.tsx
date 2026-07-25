@@ -1,18 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ControlPanel } from './components/ControlPanel'
+import { ColorToolbar, type ColorToolbarHandle } from './components/ColorToolbar'
 import { DrawingCanvas, type DrawingCanvasHandle } from './components/DrawingCanvas'
 import { StatusIndicator } from './components/StatusIndicator'
 import { useCamera } from './hooks/useCamera'
 import { useHandTracking } from './hooks/useHandTracking'
 import type { AppStatus, Point } from './types'
 
+const ERASER_RADIUS = 42
+const DEFAULT_PEN_COLOR = '#ffffff'
+
 export default function App() {
   const stageRef = useRef<HTMLDivElement | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const drawingCanvasRef = useRef<DrawingCanvasHandle | null>(null)
+  const colorToolbarRef = useRef<ColorToolbarHandle | null>(null)
   const [drawing, setDrawing] = useState(false)
   const [pinching, setPinching] = useState(false)
+  const [erasing, setErasing] = useState(false)
   const [cursorPoint, setCursorPoint] = useState<Point | null>(null)
+  const [penColor, setPenColor] = useState(DEFAULT_PEN_COLOR)
 
   const {
     stream,
@@ -34,16 +41,24 @@ export default function App() {
   }, [stream])
 
   const handleTrackedPoint = useCallback(
-    (point: Point | null, isPinching: boolean) => {
+    (point: Point | null, isPinching: boolean, isErasing: boolean) => {
       setCursorPoint(point)
       setPinching(isPinching)
+      setErasing(isErasing)
+
+      const overColorToolbar = colorToolbarRef.current?.handleAirInput(point, isPinching) ?? false
 
       if (!point) {
         drawingCanvasRef.current?.endStroke()
         return
       }
 
-      if (drawing && isPinching) {
+      if (overColorToolbar || !drawing) {
+        drawingCanvasRef.current?.endStroke()
+      } else if (isErasing) {
+        drawingCanvasRef.current?.endStroke()
+        drawingCanvasRef.current?.eraseAt(point, ERASER_RADIUS)
+      } else if (isPinching) {
         drawingCanvasRef.current?.addPoint(point)
       } else {
         drawingCanvasRef.current?.endStroke()
@@ -69,6 +84,7 @@ export default function App() {
     if (!stream) {
       setDrawing(false)
       setPinching(false)
+      setErasing(false)
       setCursorPoint(null)
       drawingCanvasRef.current?.endStroke()
     }
@@ -78,11 +94,12 @@ export default function App() {
     if (cameraError || modelError) return '오류 발생'
     if (!stream) return '카메라 대기'
     if (!modelReady) return '모델 불러오는 중'
+    if (drawing && handDetected && erasing) return '지우는 중'
     if (drawing && handDetected && pinching) return '그리는 중'
     if (drawing && !handDetected) return '손 찾는 중'
     if (handDetected) return '손 인식됨'
     return '그리기 중지'
-  }, [cameraError, drawing, handDetected, modelError, modelReady, pinching, stream])
+  }, [cameraError, drawing, erasing, handDetected, modelError, modelReady, pinching, stream])
 
   const toggleDrawing = useCallback(() => {
     setDrawing((current) => {
@@ -94,10 +111,16 @@ export default function App() {
   const handleSwitchCamera = useCallback(async () => {
     setDrawing(false)
     setPinching(false)
+    setErasing(false)
     setCursorPoint(null)
     drawingCanvasRef.current?.endStroke()
     await switchCamera()
   }, [switchCamera])
+
+  const handleSelectColor = useCallback((color: string) => {
+    drawingCanvasRef.current?.endStroke()
+    setPenColor(color)
+  }, [])
 
   return (
     <main className="app-shell">
@@ -110,11 +133,13 @@ export default function App() {
           autoPlay
         />
 
-        <DrawingCanvas ref={drawingCanvasRef} stageRef={stageRef} />
+        <DrawingCanvas ref={drawingCanvasRef} stageRef={stageRef} color={penColor} />
 
         {cursorPoint && (
           <div
-            className={`finger-cursor ${drawing && pinching ? 'drawing' : ''}`}
+            className={`finger-cursor ${
+              drawing && erasing ? 'erasing' : drawing && pinching ? 'drawing' : ''
+            }`}
             style={{ transform: `translate3d(${cursorPoint.x}px, ${cursorPoint.y}px, 0)` }}
             aria-hidden="true"
           />
@@ -124,7 +149,7 @@ export default function App() {
           <div className="empty-state">
             <div className="hand-icon">☝️</div>
             <h1>Airwriting MVP</h1>
-            <p>엄지와 검지를 맞댄 채 손을 움직여 허공에 그림을 그려보세요.</p>
+            <p>엄지와 검지를 맞대면 그리고, 검지와 중지를 펴면 지울 수 있어요.</p>
           </div>
         )}
 
@@ -138,6 +163,13 @@ export default function App() {
           onToggleDrawing={toggleDrawing}
           onClear={() => drawingCanvasRef.current?.clear()}
           onSwitchCamera={() => void handleSwitchCamera()}
+        />
+
+        <ColorToolbar
+          ref={colorToolbarRef}
+          stageRef={stageRef}
+          selectedColor={penColor}
+          onSelectColor={handleSelectColor}
         />
       </section>
     </main>
