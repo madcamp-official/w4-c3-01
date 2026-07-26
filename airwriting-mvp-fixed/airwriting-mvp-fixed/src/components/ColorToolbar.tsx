@@ -16,7 +16,7 @@ const COLORS = [
   { name: '갈색', value: '#8d5b40' },
 ]
 
-const AIR_SCROLL_INTERVAL = 360
+const COLORS_PER_PAGE = 6
 
 export interface ColorToolbarHandle {
   handleAirInput: (point: Point | null, pinching: boolean) => boolean
@@ -40,32 +40,40 @@ function containsPoint(rect: DOMRect, clientX: number, clientY: number) {
 export const ColorToolbar = forwardRef<ColorToolbarHandle, ColorToolbarProps>(
   function ColorToolbar({ stageRef, selectedColor, onSelectColor }, ref) {
     const toolbarRef = useRef<HTMLDivElement | null>(null)
-    const paletteRef = useRef<HTMLDivElement | null>(null)
+    const toggleRef = useRef<HTMLButtonElement | null>(null)
     const previousArrowRef = useRef<HTMLButtonElement | null>(null)
     const nextArrowRef = useRef<HTMLButtonElement | null>(null)
     const colorButtonRefs = useRef(new Map<string, HTMLButtonElement>())
     const airPinchingRef = useRef(false)
-    const lastAirScrollRef = useRef(0)
+    const swipeStartXRef = useRef<number | null>(null)
+    const swipeStartedOpenRef = useRef(false)
+    const swipeHandledRef = useRef(false)
     const [airHovered, setAirHovered] = useState<string | null>(null)
+    const [page, setPage] = useState(0)
+    const [open, setOpen] = useState(false)
 
-    const scrollPalette = useCallback((direction: -1 | 1) => {
-      const palette = paletteRef.current
-      if (!palette) return
-
-      palette.scrollBy({
-        left: direction * Math.max(144, palette.clientWidth * 0.72),
-        behavior: 'smooth',
-      })
+    const changePage = useCallback((direction: -1 | 1) => {
+      const pageCount = Math.ceil(COLORS.length / COLORS_PER_PAGE)
+      setPage((current) => (current + direction + pageCount) % pageCount)
+      setAirHovered(null)
     }, [])
+
+    const visibleColors = COLORS.slice(
+      page * COLORS_PER_PAGE,
+      (page + 1) * COLORS_PER_PAGE,
+    )
 
     useImperativeHandle(
       ref,
       () => ({
         handleAirInput(point, pinching) {
           const toolbar = toolbarRef.current
+          const toggle = toggleRef.current
           const stage = stageRef.current
-          if (!point || !toolbar || !stage) {
+          if (!point || !toolbar || !toggle || !stage) {
             airPinchingRef.current = pinching
+            swipeStartXRef.current = null
+            swipeHandledRef.current = false
             setAirHovered((current) => (current === null ? current : null))
             return false
           }
@@ -73,6 +81,56 @@ export const ColorToolbar = forwardRef<ColorToolbarHandle, ColorToolbarProps>(
           const stageRect = stage.getBoundingClientRect()
           const clientX = stageRect.left + point.x
           const clientY = stageRect.top + point.y
+          const insideToggle = containsPoint(
+            toggle.getBoundingClientRect(),
+            clientX,
+            clientY,
+          )
+
+          if (swipeHandledRef.current) {
+            const stillNearDrawer =
+              insideToggle ||
+              (open && containsPoint(toolbar.getBoundingClientRect(), clientX, clientY))
+            if (!stillNearDrawer) swipeHandledRef.current = false
+            airPinchingRef.current = pinching
+            return stillNearDrawer
+          }
+
+          if (swipeStartXRef.current === null && insideToggle) {
+            swipeStartXRef.current = clientX
+            swipeStartedOpenRef.current = open
+          }
+
+          if (swipeStartXRef.current !== null) {
+            const distance = clientX - swipeStartXRef.current
+            const shouldOpen = !swipeStartedOpenRef.current && distance >= 42
+            const shouldClose = swipeStartedOpenRef.current && distance <= -42
+
+            if (shouldOpen || shouldClose) {
+              setOpen(shouldOpen)
+              swipeStartXRef.current = null
+              swipeHandledRef.current = true
+            } else if (Math.abs(distance) > 90) {
+              swipeStartXRef.current = null
+            }
+
+            airPinchingRef.current = pinching
+            setAirHovered(null)
+            return true
+          }
+
+          if (insideToggle) {
+            airPinchingRef.current = pinching
+            setAirHovered(null)
+            return true
+          }
+
+          if (!open) {
+            airPinchingRef.current = pinching
+            setAirHovered(null)
+            return false
+          }
+
           const insideToolbar = containsPoint(toolbar.getBoundingClientRect(), clientX, clientY)
 
           if (!insideToolbar) {
@@ -90,26 +148,18 @@ export const ColorToolbar = forwardRef<ColorToolbarHandle, ColorToolbarProps>(
             containsPoint(previousArrow.getBoundingClientRect(), clientX, clientY)
           ) {
             hoveredControl = 'previous'
-            const now = performance.now()
-            if (now - lastAirScrollRef.current >= AIR_SCROLL_INTERVAL) {
-              scrollPalette(-1)
-              lastAirScrollRef.current = now
-            }
+            if (pinching && !airPinchingRef.current) changePage(-1)
           } else if (
             nextArrow &&
             containsPoint(nextArrow.getBoundingClientRect(), clientX, clientY)
           ) {
             hoveredControl = 'next'
-            const now = performance.now()
-            if (now - lastAirScrollRef.current >= AIR_SCROLL_INTERVAL) {
-              scrollPalette(1)
-              lastAirScrollRef.current = now
-            }
+            if (pinching && !airPinchingRef.current) changePage(1)
           } else {
             for (const [color, button] of colorButtonRefs.current) {
               if (containsPoint(button.getBoundingClientRect(), clientX, clientY)) {
                 hoveredControl = color
-                if (pinching && !airPinchingRef.current) onSelectColor(color)
+                if (selectedColor !== color) onSelectColor(color)
                 break
               }
             }
@@ -122,50 +172,63 @@ export const ColorToolbar = forwardRef<ColorToolbarHandle, ColorToolbarProps>(
           return true
         },
       }),
-      [onSelectColor, scrollPalette, stageRef],
+      [changePage, onSelectColor, open, selectedColor, stageRef],
     )
 
     return (
-      <div ref={toolbarRef} className="color-toolbar" aria-label="펜 색상 선택">
+      <div className={`side-drawer color-drawer ${open ? 'open' : ''}`}>
         <button
-          ref={previousArrowRef}
-          className={`palette-arrow ${airHovered === 'previous' ? 'air-hovered' : ''}`}
+          ref={toggleRef}
+          className="drawer-toggle drawer-toggle-left"
           type="button"
-          onClick={() => scrollPalette(-1)}
-          aria-label="이전 색상 보기"
+          onClick={() => setOpen((current) => !current)}
+          aria-label={open ? '색상 팔레트 닫기' : '색상 팔레트 열기'}
+          aria-expanded={open}
         >
-          ‹
+          <span className="drawer-color-icon" style={{ backgroundColor: selectedColor }} />
         </button>
 
-        <div ref={paletteRef} className="color-palette">
-          {COLORS.map((color) => (
-            <button
-              key={color.value}
-              ref={(element) => {
-                if (element) colorButtonRefs.current.set(color.value, element)
-                else colorButtonRefs.current.delete(color.value)
-              }}
-              className={`color-swatch ${
-                selectedColor === color.value ? 'selected' : ''
-              } ${airHovered === color.value ? 'air-hovered' : ''}`}
-              type="button"
-              onClick={() => onSelectColor(color.value)}
-              aria-label={`${color.name} 펜`}
-              aria-pressed={selectedColor === color.value}
-              style={{ backgroundColor: color.value }}
-            />
-          ))}
+        <div ref={toolbarRef} className="color-toolbar" aria-label="펜 색상 선택">
+          <button
+            ref={previousArrowRef}
+            className={`palette-arrow ${airHovered === 'previous' ? 'air-hovered' : ''}`}
+            type="button"
+            onClick={() => changePage(-1)}
+            aria-label="이전 색상 보기"
+          >
+            ‹
+          </button>
+
+          <div className="color-palette">
+            {visibleColors.map((color) => (
+              <button
+                key={color.value}
+                ref={(element) => {
+                  if (element) colorButtonRefs.current.set(color.value, element)
+                  else colorButtonRefs.current.delete(color.value)
+                }}
+                className={`color-swatch ${
+                  selectedColor === color.value ? 'selected' : ''
+                } ${airHovered === color.value ? 'air-hovered' : ''}`}
+                type="button"
+                onClick={() => onSelectColor(color.value)}
+                aria-label={`${color.name} 펜`}
+                aria-pressed={selectedColor === color.value}
+                style={{ backgroundColor: color.value }}
+              />
+            ))}
+          </div>
+
+          <button
+            ref={nextArrowRef}
+            className={`palette-arrow ${airHovered === 'next' ? 'air-hovered' : ''}`}
+            type="button"
+            onClick={() => changePage(1)}
+            aria-label="다음 색상 보기"
+          >
+            ›
+          </button>
         </div>
-
-        <button
-          ref={nextArrowRef}
-          className={`palette-arrow ${airHovered === 'next' ? 'air-hovered' : ''}`}
-          type="button"
-          onClick={() => scrollPalette(1)}
-          aria-label="다음 색상 보기"
-        >
-          ›
-        </button>
       </div>
     )
   },

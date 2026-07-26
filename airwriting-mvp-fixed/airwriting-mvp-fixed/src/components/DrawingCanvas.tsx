@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
-import type { Point, Stroke } from '../types'
+import type { PenTool, Point, Stroke } from '../types'
 
 export interface DrawingCanvasHandle {
   addPoint: (point: Point) => void
@@ -11,14 +11,134 @@ export interface DrawingCanvasHandle {
 interface DrawingCanvasProps {
   stageRef: React.RefObject<HTMLDivElement | null>
   color: string
+  tool: PenTool
+  lineSize: number
 }
 
-const LINE_WIDTH = 6
 const GEOMETRY_EPSILON = 0.0001
 
 interface PaintedStroke {
   points: Stroke
   color: string
+  tool: PenTool
+  lineWidth: number
+}
+
+const TOOL_STYLES: Record<
+  PenTool,
+  {
+    lineWidth: number
+    opacity: number
+    lineCap: CanvasLineCap
+    dash: number[]
+    shadowBlur: number
+    glow: boolean
+  }
+> = {
+  pen: {
+    lineWidth: 6,
+    opacity: 1,
+    lineCap: 'round',
+    dash: [],
+    shadowBlur: 4,
+    glow: false,
+  },
+  highlighter: {
+    lineWidth: 18,
+    opacity: 0.34,
+    lineCap: 'square',
+    dash: [],
+    shadowBlur: 0,
+    glow: false,
+  },
+  spray: {
+    lineWidth: 24,
+    opacity: 0.42,
+    lineCap: 'round',
+    dash: [],
+    shadowBlur: 0,
+    glow: false,
+  },
+  dashed: {
+    lineWidth: 5,
+    opacity: 1,
+    lineCap: 'round',
+    dash: [12, 9],
+    shadowBlur: 2,
+    glow: false,
+  },
+  crayon: {
+    lineWidth: 8,
+    opacity: 0.68,
+    lineCap: 'butt',
+    dash: [2.2, 1.4],
+    shadowBlur: 0,
+    glow: false,
+  },
+  neon: {
+    lineWidth: 5,
+    opacity: 1,
+    lineCap: 'round',
+    dash: [],
+    shadowBlur: 16,
+    glow: true,
+  },
+}
+
+function getToolLineWidth(tool: PenTool, lineSize: number) {
+  if (tool === 'highlighter') return lineSize * 2.4
+  if (tool === 'spray') return lineSize * 3
+  if (tool === 'crayon') return lineSize * 1.3
+  return lineSize
+}
+
+function seededRandom(seed: number) {
+  const value = Math.sin(seed * 12.9898) * 43758.5453
+  return value - Math.floor(value)
+}
+
+function drawSpraySegment(
+  context: CanvasRenderingContext2D,
+  color: string,
+  first: Point,
+  second: Point,
+  segmentIndex: number,
+  sprayWidth: number,
+) {
+  const dx = second.x - first.x
+  const dy = second.y - first.y
+  const distance = Math.hypot(dx, dy)
+  const steps = Math.max(1, Math.ceil(distance / 4))
+
+  context.save()
+  context.globalAlpha = TOOL_STYLES.spray.opacity
+  context.shadowBlur = 0
+  context.fillStyle = color
+
+  for (let step = 0; step < steps; step += 1) {
+    const progress = step / steps
+    const centerX = first.x + dx * progress
+    const centerY = first.y + dy * progress
+
+    const particleCount = Math.max(4, Math.round(sprayWidth / 5))
+    for (let particle = 0; particle < particleCount; particle += 1) {
+      const seed = segmentIndex * 1009 + step * 37 + particle * 7
+      const angle = seededRandom(seed + 1) * Math.PI * 2
+      const radius = Math.sqrt(seededRandom(seed + 2)) * (sprayWidth / 2)
+      const size = 0.7 + seededRandom(seed + 3) * 1.2
+      context.beginPath()
+      context.arc(
+        centerX + Math.cos(angle) * radius,
+        centerY + Math.sin(angle) * radius,
+        size,
+        0,
+        Math.PI * 2,
+      )
+      context.fill()
+    }
+  }
+
+  context.restore()
 }
 
 function splitStrokeOutsideCircle(
@@ -53,7 +173,12 @@ function splitStrokeOutsideCircle(
 
   const finishFragment = () => {
     if (currentFragment && currentFragment.length >= 2) {
-      fragments.push({ points: currentFragment, color: paintedStroke.color })
+      fragments.push({
+        points: currentFragment,
+        color: paintedStroke.color,
+        tool: paintedStroke.tool,
+        lineWidth: paintedStroke.lineWidth,
+      })
     }
     currentFragment = null
   }
@@ -114,7 +239,7 @@ function splitStrokeOutsideCircle(
 }
 
 export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
-  function DrawingCanvas({ stageRef, color }, ref) {
+  function DrawingCanvas({ stageRef, color, tool, lineSize }, ref) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null)
     const strokesRef = useRef<PaintedStroke[]>([])
     const currentStrokeRef = useRef<PaintedStroke | null>(null)
@@ -125,13 +250,22 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
       return canvas.getContext('2d')
     }, [])
 
-    const prepareContext = useCallback((context: CanvasRenderingContext2D, strokeColor: string) => {
-      context.lineCap = 'round'
+    const prepareContext = useCallback((
+      context: CanvasRenderingContext2D,
+      strokeColor: string,
+      strokeTool: PenTool,
+      strokeWidth: number,
+    ) => {
+      const style = TOOL_STYLES[strokeTool]
+      context.globalAlpha = style.opacity
+      context.globalCompositeOperation = 'source-over'
+      context.lineCap = style.lineCap
       context.lineJoin = 'round'
       context.strokeStyle = strokeColor
-      context.lineWidth = LINE_WIDTH
-      context.shadowColor = 'rgba(0, 0, 0, 0.35)'
-      context.shadowBlur = 4
+      context.lineWidth = strokeWidth
+      context.setLineDash(style.dash)
+      context.shadowColor = style.glow ? strokeColor : 'rgba(0, 0, 0, 0.35)'
+      context.shadowBlur = style.shadowBlur
     }, [])
 
     const redraw = useCallback(() => {
@@ -145,7 +279,27 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
       for (const stroke of strokesRef.current) {
         if (stroke.points.length === 0) continue
 
-        prepareContext(context, stroke.color)
+        if (stroke.tool === 'spray') {
+          for (let index = 1; index < stroke.points.length; index += 1) {
+            drawSpraySegment(
+              context,
+              stroke.color,
+              {
+                x: stroke.points[index - 1].x * width,
+                y: stroke.points[index - 1].y * height,
+              },
+              {
+                x: stroke.points[index].x * width,
+                y: stroke.points[index].y * height,
+              },
+              index,
+              stroke.lineWidth,
+            )
+          }
+          continue
+        }
+
+        prepareContext(context, stroke.color, stroke.tool, stroke.lineWidth)
         context.beginPath()
         context.moveTo(stroke.points[0].x * width, stroke.points[0].y * height)
         for (let index = 1; index < stroke.points.length; index += 1) {
@@ -200,7 +354,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
 
           let stroke = currentStrokeRef.current
           if (!stroke) {
-            stroke = { points: [normalized], color }
+            stroke = {
+              points: [normalized],
+              color,
+              tool,
+              lineWidth: getToolLineWidth(tool, lineSize),
+            }
             currentStrokeRef.current = stroke
             strokesRef.current.push(stroke)
             return
@@ -209,7 +368,25 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
           const previous = stroke.points[stroke.points.length - 1]
           stroke.points.push(normalized)
 
-          prepareContext(context, stroke.color)
+          if (stroke.tool === 'spray') {
+            drawSpraySegment(
+              context,
+              stroke.color,
+              {
+                x: previous.x * canvas.clientWidth,
+                y: previous.y * canvas.clientHeight,
+              },
+              {
+                x: normalized.x * canvas.clientWidth,
+                y: normalized.y * canvas.clientHeight,
+              },
+              stroke.points.length - 1,
+              stroke.lineWidth,
+            )
+            return
+          }
+
+          prepareContext(context, stroke.color, stroke.tool, stroke.lineWidth)
           context.beginPath()
           context.moveTo(previous.x * canvas.clientWidth, previous.y * canvas.clientHeight)
           context.lineTo(normalized.x * canvas.clientWidth, normalized.y * canvas.clientHeight)
@@ -220,7 +397,11 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
           if (!canvas || canvas.clientWidth === 0 || canvas.clientHeight === 0) return
 
           currentStrokeRef.current = null
-          const effectiveRadius = radius + LINE_WIDTH / 2
+          const widestStroke = strokesRef.current.reduce(
+            (maximum, stroke) => Math.max(maximum, stroke.lineWidth),
+            getToolLineWidth(tool, lineSize),
+          )
+          const effectiveRadius = radius + widestStroke / 2
           strokesRef.current = strokesRef.current.flatMap((stroke) =>
             splitStrokeOutsideCircle(
               stroke,
@@ -241,11 +422,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
           const canvas = canvasRef.current
           const context = getContext()
           if (canvas && context) {
+            context.globalAlpha = 1
+            context.setLineDash([])
             context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight)
           }
         },
       }),
-      [color, getContext, prepareContext, redraw],
+      [color, getContext, lineSize, prepareContext, redraw, tool],
     )
 
     return <canvas ref={canvasRef} className="drawing-canvas" aria-label="에어라이팅 캔버스" />

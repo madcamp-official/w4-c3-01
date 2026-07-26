@@ -1,5 +1,13 @@
 export type FacingMode = 'user' | 'environment'
 
+export type PenTool =
+  | 'pen'
+  | 'highlighter'
+  | 'spray'
+  | 'dashed'
+  | 'crayon'
+  | 'neon'
+
 export type AppStatus =
   | '카메라 대기'
   | '모델 불러오는 중'

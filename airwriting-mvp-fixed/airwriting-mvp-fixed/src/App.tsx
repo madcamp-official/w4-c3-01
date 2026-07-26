@@ -2,24 +2,33 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ControlPanel } from './components/ControlPanel'
 import { ColorToolbar, type ColorToolbarHandle } from './components/ColorToolbar'
 import { DrawingCanvas, type DrawingCanvasHandle } from './components/DrawingCanvas'
+import {
+  PenStyleToolbar,
+  type PenStyleToolbarHandle,
+} from './components/PenStyleToolbar'
 import { StatusIndicator } from './components/StatusIndicator'
 import { useCamera } from './hooks/useCamera'
 import { useHandTracking } from './hooks/useHandTracking'
-import type { AppStatus, Point } from './types'
+import type { AppStatus, PenTool, Point } from './types'
 
 const ERASER_RADIUS = 42
 const DEFAULT_PEN_COLOR = '#ffffff'
+const DEFAULT_PEN_TOOL: PenTool = 'pen'
+const DEFAULT_LINE_SIZE = 6
 
 export default function App() {
   const stageRef = useRef<HTMLDivElement | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const drawingCanvasRef = useRef<DrawingCanvasHandle | null>(null)
   const colorToolbarRef = useRef<ColorToolbarHandle | null>(null)
+  const penStyleToolbarRef = useRef<PenStyleToolbarHandle | null>(null)
   const [drawing, setDrawing] = useState(false)
   const [pinching, setPinching] = useState(false)
   const [erasing, setErasing] = useState(false)
   const [cursorPoint, setCursorPoint] = useState<Point | null>(null)
   const [penColor, setPenColor] = useState(DEFAULT_PEN_COLOR)
+  const [penTool, setPenTool] = useState<PenTool>(DEFAULT_PEN_TOOL)
+  const [lineSize, setLineSize] = useState(DEFAULT_LINE_SIZE)
 
   const {
     stream,
@@ -47,13 +56,16 @@ export default function App() {
       setErasing(isErasing)
 
       const overColorToolbar = colorToolbarRef.current?.handleAirInput(point, isPinching) ?? false
+      const overPenStyleToolbar =
+        penStyleToolbarRef.current?.handleAirInput(point, isPinching) ?? false
+      const overToolbar = overColorToolbar || overPenStyleToolbar
 
       if (!point) {
         drawingCanvasRef.current?.endStroke()
         return
       }
 
-      if (overColorToolbar || !drawing) {
+      if (overToolbar || !drawing) {
         drawingCanvasRef.current?.endStroke()
       } else if (isErasing) {
         drawingCanvasRef.current?.endStroke()
@@ -122,6 +134,11 @@ export default function App() {
     setPenColor(color)
   }, [])
 
+  const handleSelectPenTool = useCallback((tool: PenTool) => {
+    drawingCanvasRef.current?.endStroke()
+    setPenTool(tool)
+  }, [])
+
   return (
     <main className="app-shell">
       <section ref={stageRef} className="camera-stage">
@@ -133,7 +150,13 @@ export default function App() {
           autoPlay
         />
 
-        <DrawingCanvas ref={drawingCanvasRef} stageRef={stageRef} color={penColor} />
+        <DrawingCanvas
+          ref={drawingCanvasRef}
+          stageRef={stageRef}
+          color={penColor}
+          tool={penTool}
+          lineSize={lineSize}
+        />
 
         {cursorPoint && (
           <div
@@ -170,6 +193,15 @@ export default function App() {
           stageRef={stageRef}
           selectedColor={penColor}
           onSelectColor={handleSelectColor}
+        />
+
+        <PenStyleToolbar
+          ref={penStyleToolbarRef}
+          stageRef={stageRef}
+          selectedTool={penTool}
+          onSelectTool={handleSelectPenTool}
+          lineSize={lineSize}
+          onSelectLineSize={setLineSize}
         />
       </section>
     </main>
