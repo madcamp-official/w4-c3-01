@@ -1,4 +1,4 @@
--- 손끝 Supabase 스키마: 로그인/회원가입 + 채팅 + 팔로우.
+-- 손끝 Supabase 스키마: 로그인/회원가입 + 채팅(+읽음 표시) + 팔로우 + 게시물.
 -- Supabase 대시보드 > SQL Editor 에 붙여넣고 실행하세요. (여러 번 실행해도 안전합니다.)
 
 -- 1) 프로필 테이블: auth.users 는 email/password 만 가지고 있어서,
@@ -239,3 +239,150 @@ create policy "Users can unfollow as themselves"
 
 grant select on public.follows to anon, authenticated;
 grant insert, delete on public.follows to authenticated;
+
+-- 7) 게시물 ---------------------------------------------------------------
+create table if not exists public.posts (
+  id uuid primary key default gen_random_uuid(),
+  author_id uuid not null references public.profiles (id) on delete cascade,
+  image_url text not null,
+  strokes jsonb,
+  drawing jsonb,
+  caption text not null default '',
+  created_at timestamptz not null default now()
+);
+
+alter table public.posts add column if not exists drawing jsonb;
+
+alter table public.posts enable row level security;
+
+drop policy if exists "Posts are viewable by everyone" on public.posts;
+create policy "Posts are viewable by everyone"
+  on public.posts for select
+  using (true);
+
+drop policy if exists "Users can create their own posts" on public.posts;
+create policy "Users can create their own posts"
+  on public.posts for insert
+  with check (auth.uid() = author_id);
+
+drop policy if exists "Users can delete their own posts" on public.posts;
+create policy "Users can delete their own posts"
+  on public.posts for delete
+  using (auth.uid() = author_id);
+
+grant select on public.posts to anon, authenticated;
+grant insert, delete on public.posts to authenticated;
+
+create table if not exists public.post_likes (
+  post_id uuid not null references public.posts (id) on delete cascade,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (post_id, user_id)
+);
+
+alter table public.post_likes enable row level security;
+
+drop policy if exists "Post likes are viewable by everyone" on public.post_likes;
+create policy "Post likes are viewable by everyone"
+  on public.post_likes for select
+  using (true);
+
+drop policy if exists "Users can like as themselves" on public.post_likes;
+create policy "Users can like as themselves"
+  on public.post_likes for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users can unlike as themselves" on public.post_likes;
+create policy "Users can unlike as themselves"
+  on public.post_likes for delete
+  using (auth.uid() = user_id);
+
+grant select on public.post_likes to anon, authenticated;
+grant insert, delete on public.post_likes to authenticated;
+
+create table if not exists public.post_comments (
+  id bigint generated always as identity primary key,
+  post_id uuid not null references public.posts (id) on delete cascade,
+  author_id uuid not null references public.profiles (id) on delete cascade,
+  text text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.post_comments enable row level security;
+
+drop policy if exists "Post comments are viewable by everyone" on public.post_comments;
+create policy "Post comments are viewable by everyone"
+  on public.post_comments for select
+  using (true);
+
+drop policy if exists "Users can comment as themselves" on public.post_comments;
+create policy "Users can comment as themselves"
+  on public.post_comments for insert
+  with check (auth.uid() = author_id);
+
+grant select on public.post_comments to anon, authenticated;
+grant insert on public.post_comments to authenticated;
+
+-- 게시물 이미지를 담을 Storage 버킷. chat-images와 동일한 패턴(공개 조회, 본인 uid 폴더에만 업로드).
+insert into storage.buckets (id, name, public)
+values ('post-images', 'post-images', true)
+on conflict (id) do nothing;
+
+drop policy if exists "Anyone can view post images" on storage.objects;
+create policy "Anyone can view post images"
+  on storage.objects for select
+  using (bucket_id = 'post-images');
+
+drop policy if exists "Users can upload their own post images" on storage.objects;
+create policy "Users can upload their own post images"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'post-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- 8) 채팅 읽음 표시 ---------------------------------------------------------
+--    대화방마다 "내가 마지막으로 읽은 시각"을 저장해두고, 상대방 시각과 비교해서
+--    내가 보낸 메시지가 읽혔는지 판단합니다.
+create table if not exists public.conversation_reads (
+  conversation_id uuid not null references public.conversations (id) on delete cascade,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  last_read_at timestamptz not null default now(),
+  primary key (conversation_id, user_id)
+);
+
+alter table public.conversation_reads enable row level security;
+
+drop policy if exists "Participants can view read receipts" on public.conversation_reads;
+create policy "Participants can view read receipts"
+  on public.conversation_reads for select
+  using (
+    exists (
+      select 1 from public.conversations c
+      where c.id = conversation_reads.conversation_id
+        and (auth.uid() = c.user_a or auth.uid() = c.user_b)
+    )
+  );
+
+drop policy if exists "Users can create their own read receipt" on public.conversation_reads;
+create policy "Users can create their own read receipt"
+  on public.conversation_reads for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users can refresh their own read receipt" on public.conversation_reads;
+create policy "Users can refresh their own read receipt"
+  on public.conversation_reads for update
+  using (auth.uid() = user_id);
+
+grant select, insert, update on public.conversation_reads to authenticated;
+
+-- Realtime으로 상대방이 읽으면 바로 "읽음"이 뜨도록 등록.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'conversation_reads'
+  ) then
+    alter publication supabase_realtime add table public.conversation_reads;
+  end if;
+end $$;

@@ -13,6 +13,7 @@ export interface Comment {
 
 export interface Post {
   id: string;
+  authorId: string;
   username: string;
   avatarColor: string;
   time: string;
@@ -36,6 +37,8 @@ export interface ChatMessage {
   image?: string;
   strokes?: StrokePoint[];
   time: string;
+  /** ISO timestamp — 날짜 구분선/읽음 계산용. time은 화면에 보여주는 포맷된 문자열입니다. */
+  createdAt: string;
 }
 
 export interface Chat {
@@ -43,6 +46,8 @@ export interface Chat {
   name: string;
   color: string;
   messages: ChatMessage[];
+  /** 상대방이 마지막으로 읽은 시각(ISO). 이 시각 이전에 내가 보낸 메시지는 "읽음"으로 표시합니다. */
+  otherReadAt: string | null;
 }
 
 export interface LoungeItem {

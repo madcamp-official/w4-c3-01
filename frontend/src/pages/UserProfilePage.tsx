@@ -24,6 +24,7 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     if (!session || isOwnProfile) return;
+    setLoaded(false); // 다른 프로필로 바로 넘어갈 때 이전 사람 정보가 잠깐 보이지 않도록
     let cancelled = false;
     (async () => {
       const [p, c, isFollowing] = await Promise.all([
@@ -42,9 +43,8 @@ export default function UserProfilePage() {
     };
   }, [userId, session, isOwnProfile]);
 
-  // 게시물 기능이 아직 Supabase에 연결되어 있지 않아, 지금 불러와져 있는 피드 안에서만 셀 수 있습니다.
   const postCount = useMemo(
-    () => (profile ? posts.filter((p) => p.username === profile.nickname).length : 0),
+    () => (profile ? posts.filter((p) => p.authorId === profile.id).length : 0),
     [posts, profile]
   );
 

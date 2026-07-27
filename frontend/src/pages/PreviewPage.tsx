@@ -12,6 +12,7 @@ export default function PreviewPage() {
   const { startPlacing } = usePlacement();
   const { showToast } = useToast();
   const [caption, setCaption] = useState('');
+  const [sharing, setSharing] = useState(false);
   const navState = location.state as PreviewNavState | null;
 
   useEffect(() => {
@@ -28,9 +29,16 @@ export default function PreviewPage() {
       navigate(`/lounges/${intent.loungeId}`, { replace: true });
       return;
     }
-    await sharePost({ image, strokes, drawing, caption: caption.trim() });
-    navigate('/feed', { replace: true });
-    showToast('게시물을 공유했어요 🎉');
+    setSharing(true);
+    try {
+      await sharePost({ image, strokes, drawing, caption: caption.trim() });
+      navigate('/feed', { replace: true });
+      showToast('게시물을 공유했어요 🎉');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '게시물을 공유하지 못했어요');
+    } finally {
+      setSharing(false);
+    }
   }
 
   return (
@@ -54,8 +62,8 @@ export default function PreviewPage() {
             onChange={(e) => setCaption(e.target.value)}
           />
         ) : null}
-        <button className="btn primary sk block" onClick={handleShare}>
-          {intent.kind === 'lounge' ? '이 자리에 배치하기' : '공유하기'}
+        <button className="btn primary sk block" disabled={sharing} onClick={handleShare}>
+          {intent.kind === 'lounge' ? '이 자리에 배치하기' : sharing ? '공유하는 중...' : '공유하기'}
         </button>
       </div>
     </section>

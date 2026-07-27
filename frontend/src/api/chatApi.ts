@@ -33,7 +33,8 @@ function mapMessage(row: MessageRow, currentUserId: string): ChatMessage {
     text: row.text ?? undefined,
     image: row.image_url ?? undefined,
     strokes: row.strokes ?? undefined,
-    time: formatMessageTime(row.created_at)
+    time: formatMessageTime(row.created_at),
+    createdAt: row.created_at
   };
 }
 
@@ -83,7 +84,8 @@ export async function fetchConversations(currentUserId: string): Promise<Chat[]>
       id: c.id,
       name: profile?.nickname ?? '알 수 없음',
       color: profile?.avatar_color ?? '#EAE2C9',
-      messages: [mapMessage(latest, currentUserId)]
+      messages: [mapMessage(latest, currentUserId)],
+      otherReadAt: null // 목록에서는 안 씀 — 스레드를 열면 fetchThread가 채워줍니다.
     };
   });
 }
@@ -112,12 +114,29 @@ export async function fetchThread(chatId: string, currentUserId: string): Promis
     .order('created_at', { ascending: true });
   if (msgError) throw new Error(msgError.message);
 
+  const { data: readRow } = await supabase
+    .from('conversation_reads')
+    .select('last_read_at')
+    .eq('conversation_id', chatId)
+    .eq('user_id', otherId)
+    .maybeSingle();
+
   return {
     id: conv.id,
     name: profile?.nickname ?? '알 수 없음',
     color: profile?.avatar_color ?? '#EAE2C9',
-    messages: (msgRows ?? []).map((row) => mapMessage(row as MessageRow, currentUserId))
+    messages: (msgRows ?? []).map((row) => mapMessage(row as MessageRow, currentUserId)),
+    otherReadAt: readRow?.last_read_at ?? null
   };
+}
+
+/** 대화방을 볼 때마다 호출해서 "내가 여기까지 읽었다"는 시각을 저장합니다 (상대방 화면에 읽음 표시로 반영). */
+export async function markThreadRead(chatId: string, currentUserId: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from('conversation_reads')
+    .upsert({ conversation_id: chatId, user_id: currentUserId, last_read_at: new Date().toISOString() }, { onConflict: 'conversation_id,user_id' });
+  if (error) throw new Error(error.message);
 }
 
 /** 두 사람 사이의 대화방을 찾고, 없으면 새로 만듭니다. Supabase가 없으면 null (검색에서 준비 중 토스트로 처리). */
@@ -156,7 +175,7 @@ export async function findOrCreateConversation(currentUserId: string, otherUserI
 
 export async function sendTextMessage(chatId: string, currentUserId: string, text: string): Promise<ChatMessage | undefined> {
   if (!supabase) {
-    const message: ChatMessage = { id: Date.now(), from: 'me', type: 'text', text, time: '방금' };
+    const message: ChatMessage = { id: Date.now(), from: 'me', type: 'text', text, time: '방금', createdAt: new Date().toISOString() };
     return mockStore.sendMessage(chatId, message) ? message : undefined;
   }
 
@@ -176,7 +195,15 @@ export async function sendAirMessage(
   strokes: StrokePoint[]
 ): Promise<ChatMessage | undefined> {
   if (!supabase) {
-    const message: ChatMessage = { id: Date.now(), from: 'me', type: 'air', image: imageDataUrl, strokes, time: '방금' };
+    const message: ChatMessage = {
+      id: Date.now(),
+      from: 'me',
+      type: 'air',
+      image: imageDataUrl,
+      strokes,
+      time: '방금',
+      createdAt: new Date().toISOString()
+    };
     return mockStore.sendMessage(chatId, message) ? message : undefined;
   }
 
@@ -190,8 +217,16 @@ export async function sendAirMessage(
   return mapMessage(data as MessageRow, currentUserId);
 }
 
-/** 열려있는 대화방에 새 메시지가 오면 실시간으로 알려줍니다. 반환값을 호출하면 구독이 해제됩니다. */
-export function subscribeToThread(chatId: string, currentUserId: string, onMessage: (message: ChatMessage) => void): () => void {
+/**
+ * 열려있는 대화방에 새 메시지가 오거나(onMessage) 상대방이 읽음 표시를 갱신하면(onRead)
+ * 실시간으로 알려줍니다. 반환값을 호출하면 구독이 해제됩니다.
+ */
+export function subscribeToThread(
+  chatId: string,
+  currentUserId: string,
+  onMessage: (message: ChatMessage) => void,
+  onRead?: (readAt: string) => void
+): () => void {
   if (!supabase) return () => {};
 
   const client = supabase;
@@ -201,6 +236,14 @@ export function subscribeToThread(chatId: string, currentUserId: string, onMessa
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${chatId}` },
       (payload) => onMessage(mapMessage(payload.new as MessageRow, currentUserId))
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'conversation_reads', filter: `conversation_id=eq.${chatId}` },
+      (payload) => {
+        const row = payload.new as { user_id: string; last_read_at: string } | undefined;
+        if (row && row.user_id !== currentUserId) onRead?.(row.last_read_at);
+      }
     )
     .subscribe();
 

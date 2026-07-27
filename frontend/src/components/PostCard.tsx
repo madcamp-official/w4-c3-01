@@ -29,10 +29,7 @@ export default function PostCard({ post }: { post: Post }) {
       <div className="post-head">
         <Avatar nickname={post.username} color={post.avatarColor} size={32} fontSize={13} />
         <div className="who">
-          <b>
-            {post.username}
-            {post.mine ? <span style={{ color: 'var(--ink-soft)', fontWeight: 400 }}> (나)</span> : null}
-          </b>
+          <b>{post.username}</b>
           <small>{post.time}</small>
         </div>
       </div>

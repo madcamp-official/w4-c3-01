@@ -11,7 +11,7 @@ export default function MyPage() {
   const { session, posts } = useAppState();
   const { openViewer } = useOverlay();
   const [tab, setTab] = useState<'posts' | 'likes'>('posts');
-  const [counts, setCounts] = useState<FollowCounts>({ followers: 0, following: 0 });
+  const [counts, setCounts] = useState<FollowCounts | null>(null);
 
   const myPosts = useMemo(() => posts.filter((p) => p.mine), [posts]);
   const likedPosts = useMemo(() => posts.filter((p) => p.liked), [posts]);
@@ -47,11 +47,11 @@ export default function MyPage() {
             <span>게시물</span>
           </div>
           <div>
-            <b>{counts.followers}</b>
+            <b>{counts?.followers ?? ''}</b>
             <span>팔로워</span>
           </div>
           <div>
-            <b>{counts.following}</b>
+            <b>{counts?.following ?? ''}</b>
             <span>팔로잉</span>
           </div>
         </div>
