@@ -23,7 +23,7 @@ export default function ChatListPage() {
           const preview = !lastMsg ? '대화를 시작해보세요' : lastMsg.type === 'text' ? lastMsg.text : '✏️ 손글씨 메시지';
           return (
             <div key={chat.id} className="chat-row" onClick={() => navigate(`/chats/${chat.id}`)}>
-              <Avatar nickname={chat.name} color={chat.color} size={44} fontSize={16} />
+              <Avatar nickname={chat.name} color={chat.color} size={44} fontSize={16} avatarUrl={chat.avatarUrl} />
               <div className="info">
                 <b>{chat.name}</b>
                 <span>{preview}</span>

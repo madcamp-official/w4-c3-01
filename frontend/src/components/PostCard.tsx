@@ -27,7 +27,7 @@ export default function PostCard({ post }: { post: Post }) {
   return (
     <article className="post sk-hr-b">
       <div className="post-head">
-        <Avatar nickname={post.username} color={post.avatarColor} size={32} fontSize={13} />
+        <Avatar nickname={post.username} color={post.avatarColor} size={32} fontSize={13} avatarUrl={post.avatarUrl} />
         <div className="who">
           <b>{post.username}</b>
           <small>{post.time}</small>

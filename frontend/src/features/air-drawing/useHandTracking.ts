@@ -8,8 +8,17 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FacingMode, Point } from './types'
 import { landmarkToStagePoint, smoothPoint } from './coordinates'
 
-const WASM_ROOT = '/wasm'
-const MODEL_URL = '/models/hand_landmarker.task'
+// The web app serves these from its own /public root. The RN WebView bundle
+// (see frontend/airview/) sets window.__AIR_ASSET_BASE__ before this module
+// runs, since its assets live alongside a relative index.html instead.
+declare global {
+  interface Window {
+    __AIR_ASSET_BASE__?: string
+  }
+}
+const ASSET_BASE = typeof window !== 'undefined' ? (window.__AIR_ASSET_BASE__ ?? '') : ''
+const WASM_ROOT = `${ASSET_BASE}/wasm`
+const MODEL_URL = `${ASSET_BASE}/models/hand_landmarker.task`
 const WRIST = 0
 const THUMB_TIP = 4
 const INDEX_FINGER_MCP = 5

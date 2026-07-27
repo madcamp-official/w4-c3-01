@@ -18,7 +18,7 @@ export default function PostCard({ post }: { post: Post }) {
   return (
     <View style={styles.card}>
       <View style={styles.head}>
-        <Avatar nickname={post.username} color={post.avatarColor} size={32} fontSize={13} />
+        <Avatar nickname={post.username} color={post.avatarColor} size={32} fontSize={13} avatarUrl={post.avatarUrl} />
         <View style={{ marginLeft: 8 }}>
           <Text style={styles.username}>{post.username}</Text>
           <Text style={styles.time}>{post.time}</Text>

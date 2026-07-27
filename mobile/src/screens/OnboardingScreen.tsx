@@ -1,18 +1,17 @@
 // Adapted from frontend/src/pages/OnboardingPage.tsx — keep in sync.
-// Step 3 (heart air-drawing) is stubbed to the default heart until Phase 4
-// wires up the air-drawing WebView bridge (plan Phase 1 scope note).
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Feather from '@expo/vector-icons/Feather';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import AirDrawingWebView, { type AirDrawingCapture } from '@/components/AirDrawingWebView';
 import AvatarPicker from '@/components/AvatarPicker';
 import { useUsernameCheck, usernameStatusMessage } from '@/hooks/useUsernameCheck';
 import { AVATAR_TONES, defaultHeartUrl } from '@/mock/store';
 import type { AuthStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useToast } from '@/state/ToastContext';
-import { colors } from '@/theme/colors';
+import { colors, radius } from '@/theme/colors';
 import { common } from '@/theme/common';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Onboarding'>;
@@ -29,9 +28,10 @@ export default function OnboardingScreen({ navigation }: Props) {
   const { signupUser, loginWithGoogle } = useAppState();
   const { showToast } = useToast();
 
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState({ username: '', email: '', nickname: '', password: '', password2: '' });
   const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
+  const [heartPreview, setHeartPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const usernameStatus = useUsernameCheck(form.username);
@@ -58,7 +58,7 @@ export default function OnboardingScreen({ navigation }: Props) {
     setStep(2);
   }
 
-  async function handleDone() {
+  async function finishOnboarding(heartUrl: string) {
     setSubmitting(true);
     try {
       await signupUser({
@@ -66,15 +66,22 @@ export default function OnboardingScreen({ navigation }: Props) {
         email: form.email.trim(),
         nickname: form.nickname.trim(),
         password: form.password,
-        heartUrl: defaultHeartUrl(),
+        heartUrl,
         avatarUrl: avatarDataUrl
       });
       showToast(`손끝에 오신 걸 환영해요, ${form.nickname.trim()}님 🎉`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : '회원가입에 실패했어요');
-    } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleHeartCapture(capture: AirDrawingCapture) {
+    setHeartPreview(capture.image);
+  }
+
+  function handleSkipHeart() {
+    void finishOnboarding(defaultHeartUrl());
   }
 
   async function handleGoogle() {
@@ -87,7 +94,43 @@ export default function OnboardingScreen({ navigation }: Props) {
 
   function handleBack() {
     if (step === 1) navigation.goBack();
-    else setStep(1);
+    else setStep((s) => (s - 1) as 1 | 2);
+  }
+
+  if (step === 3 && heartPreview) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.ink }} edges={['top', 'bottom']}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 220, height: 220, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 }}>
+            <Image source={{ uri: heartPreview }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+          </View>
+        </View>
+        <View style={{ padding: 20, gap: 10 }}>
+          <Pressable
+            style={[common.btn, common.btnPrimary, submitting && common.btnDisabled]}
+            disabled={submitting}
+            onPress={() => finishOnboarding(heartPreview)}
+          >
+            <Text style={common.btnPrimaryText}>{submitting ? '가입하는 중...' : '이 하트로 가입 완료'}</Text>
+          </Pressable>
+          <Pressable style={[common.btn, common.btnGhost]} disabled={submitting} onPress={() => setHeartPreview(null)}>
+            <Text style={common.btnGhostText}>다시 그리기</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <AirDrawingWebView
+        mode="heart"
+        outputSize={220}
+        onClose={() => setStep(2)}
+        onCapture={handleHeartCapture}
+        onError={(message) => showToast(message)}
+      />
+    );
   }
 
   return (
@@ -171,12 +214,11 @@ export default function OnboardingScreen({ navigation }: Props) {
             <AvatarPicker dataUrl={avatarDataUrl} nickname={form.nickname || '?'} color={AVATAR_TONES[0]} size={120} onChange={setAvatarDataUrl} />
           </View>
           <View style={{ flex: 1 }} />
-          <Pressable
-            style={[common.btn, common.btnPrimary, submitting && common.btnDisabled, { width: '100%' }]}
-            disabled={submitting}
-            onPress={handleDone}
-          >
-            <Text style={common.btnPrimaryText}>{submitting ? '가입하는 중...' : '가입 완료'}</Text>
+          <Pressable style={[common.btn, common.btnPrimary, { width: '100%' }]} onPress={() => setStep(3)}>
+            <Text style={common.btnPrimaryText}>다음</Text>
+          </Pressable>
+          <Pressable style={common.linkBtn} disabled={submitting} onPress={handleSkipHeart}>
+            <Text style={common.linkBtnText}>{submitting ? '가입하는 중...' : '기본 하트로 시작할게요'}</Text>
           </Pressable>
         </View>
       )}

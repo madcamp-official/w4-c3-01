@@ -1,24 +1,63 @@
-// Placeholder for Phase 4 — real air-drawing heart redraw comes then.
-import { Pressable, Text, View } from 'react-native';
+// Ported from frontend/src/pages/EditHeartPage.tsx — keep in sync.
+import { useState } from 'react';
+import { Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Feather from '@expo/vector-icons/Feather';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import AirDrawingWebView, { type AirDrawingCapture } from '@/components/AirDrawingWebView';
 import type { AppStackParamList } from '@/navigation/types';
-import { colors } from '@/theme/colors';
+import { useAppState } from '@/state/AppStateContext';
+import { useToast } from '@/state/ToastContext';
+import { colors, radius } from '@/theme/colors';
 import { common } from '@/theme/common';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'EditHeart'>;
 
 export default function EditHeartScreen({ navigation }: Props) {
+  const { setHeart } = useAppState();
+  const { showToast } = useToast();
+  const [preview, setPreview] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!preview) return;
+    setSaving(true);
+    try {
+      await setHeart(preview);
+      showToast('하트를 새로 그렸어요 🎉');
+      navigation.goBack();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '저장하지 못했어요');
+      setSaving(false);
+    }
+  }
+
+  if (preview) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.ink }} edges={['top', 'bottom']}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 220, height: 220, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 }}>
+            <Image source={{ uri: preview }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+          </View>
+        </View>
+        <View style={{ padding: 20, gap: 10 }}>
+          <Pressable style={[common.btn, common.btnPrimary, saving && common.btnDisabled]} disabled={saving} onPress={handleSave}>
+            <Text style={common.btnPrimaryText}>{saving ? '저장하는 중...' : '이 하트로 저장'}</Text>
+          </Pressable>
+          <Pressable style={[common.btn, common.btnGhost]} disabled={saving} onPress={() => setPreview(null)}>
+            <Text style={common.btnGhostText}>다시 그리기</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
-      <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
-        <Feather name="chevron-left" size={24} color={colors.ink} />
-      </Pressable>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={common.title}>하트 다시 그리기</Text>
-        <Text style={common.subtitle}>Phase 4에서 구현됩니다.</Text>
-      </View>
-    </SafeAreaView>
+    <AirDrawingWebView
+      mode="heart"
+      outputSize={220}
+      onClose={() => navigation.goBack()}
+      onCapture={(capture: AirDrawingCapture) => setPreview(capture.image)}
+      onError={(message) => showToast(message)}
+    />
   );
 }

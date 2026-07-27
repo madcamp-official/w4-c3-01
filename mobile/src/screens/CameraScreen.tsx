@@ -1,24 +1,33 @@
-// Placeholder for Phase 4 — real air-drawing WebView bridge comes then.
-import { Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Feather from '@expo/vector-icons/Feather';
+// Ported from frontend/src/pages/CameraPage.tsx — keep in sync.
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import AirDrawingWebView, { type AirDrawingCapture } from '@/components/AirDrawingWebView';
 import type { AppStackParamList } from '@/navigation/types';
-import { colors } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { useToast } from '@/state/ToastContext';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Camera'>;
 
-export default function CameraScreen({ navigation }: Props) {
+export default function CameraScreen({ navigation, route }: Props) {
+  const { showToast } = useToast();
+  const intent = route.params?.intent ?? { kind: 'post' as const };
+
+  function handleClose() {
+    if (intent.kind === 'lounge') {
+      navigation.navigate('LoungeView', { loungeId: intent.loungeId });
+    } else {
+      navigation.goBack();
+    }
+  }
+
+  function handleCapture(capture: AirDrawingCapture) {
+    navigation.navigate('Preview', { image: capture.image, strokes: capture.strokes, drawing: capture.drawing, intent });
+  }
+
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
-      <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
-        <Feather name="x" size={24} color={colors.ink} />
-      </Pressable>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={common.title}>에어라이팅 카메라</Text>
-        <Text style={common.subtitle}>Phase 4에서 구현됩니다.</Text>
-      </View>
-    </SafeAreaView>
+    <AirDrawingWebView
+      mode={intent.kind === 'lounge' ? 'lounge' : 'post'}
+      onClose={handleClose}
+      onCapture={handleCapture}
+      onError={(message) => showToast(message)}
+    />
   );
 }

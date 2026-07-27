@@ -1,24 +1,33 @@
-// Placeholder for Phase 4 — real in-chat air-write composer comes then.
-import { Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Feather from '@expo/vector-icons/Feather';
+// Ported from frontend/src/pages/AirwritePage.tsx — keep in sync.
+import AirDrawingWebView, { type AirDrawingCapture } from '@/components/AirDrawingWebView';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '@/navigation/types';
-import { colors } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { useAppState } from '@/state/AppStateContext';
+import { useToast } from '@/state/ToastContext';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Airwrite'>;
 
-export default function AirwriteScreen({ navigation }: Props) {
+export default function AirwriteScreen({ navigation, route }: Props) {
+  const { chatId } = route.params;
+  const { sendAir } = useAppState();
+  const { showToast } = useToast();
+
+  async function handleCapture(capture: AirDrawingCapture) {
+    try {
+      await sendAir(chatId, capture.image, capture.strokes);
+      navigation.goBack();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '메시지를 보내지 못했어요');
+    }
+  }
+
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
-      <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
-        <Feather name="x" size={24} color={colors.ink} />
-      </Pressable>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={common.title}>손글씨 메시지</Text>
-        <Text style={common.subtitle}>Phase 4에서 구현됩니다.</Text>
-      </View>
-    </SafeAreaView>
+    <AirDrawingWebView
+      mode="message"
+      outputSize={260}
+      onClose={() => navigation.goBack()}
+      onCapture={handleCapture}
+      onError={(message) => showToast(message)}
+    />
   );
 }

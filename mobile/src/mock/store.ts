@@ -29,6 +29,7 @@ function buildSeedPosts(): Post[] {
       authorId: 'seed-user-' + i,
       username: d.user.nickname,
       avatarColor: d.user.color,
+      avatarUrl: null,
       time: i + 1 + '시간 전',
       image: DEFAULT_HEART_URL,
       strokes,
@@ -48,6 +49,7 @@ function buildSeedChats(): Chat[] {
       id: 'c1',
       name: SEED_USERS[0].nickname,
       color: SEED_USERS[0].color,
+      avatarUrl: null,
       otherReadAt: null,
       messages: [
         { id: 1, from: 'them', type: 'text', text: '오늘 올린 낙서 완전 좋더라 ㅎㅎ', time: '오후 2:01', createdAt: new Date().toISOString() },
@@ -58,6 +60,7 @@ function buildSeedChats(): Chat[] {
       id: 'c2',
       name: SEED_USERS[2].nickname,
       color: SEED_USERS[2].color,
+      avatarUrl: null,
       otherReadAt: null,
       messages: [
         { id: 1, from: 'them', type: 'air', image: DEFAULT_HEART_URL, strokes: heartMsgStrokes, time: '오전 11:40', createdAt: new Date().toISOString() },

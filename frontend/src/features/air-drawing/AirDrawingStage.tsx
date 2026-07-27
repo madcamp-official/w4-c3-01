@@ -13,6 +13,7 @@ const ERASER_RADIUS = 42
 const DEFAULT_PEN_COLOR = '#ffffff'
 const DEFAULT_PEN_TOOL: PenTool = 'pen'
 const DEFAULT_LINE_SIZE = 6
+const INK_COLOR = '#1E1B16'
 
 export interface AirDrawingCapture {
   image: string
@@ -20,8 +21,21 @@ export interface AirDrawingCapture {
   drawing: AirDrawingDocument
 }
 
+/**
+ * post/lounge: camera frame composited into the capture (today's default).
+ * heart/message: ink-only on a flat paper background, fixed square output —
+ * used by the RN app's WebView bridge (Phase 4) for the profile heart and
+ * in-chat air-write message capture flows.
+ */
+export type AirDrawingMode = 'post' | 'lounge' | 'heart' | 'message'
+
 interface AirDrawingStageProps {
   busy?: boolean
+  mode?: AirDrawingMode
+  /** Square output size in px for heart/message modes (ignored for post/lounge, which use maxDim instead). */
+  outputSize?: number
+  /** Longest-edge cap for post/lounge captures. */
+  maxDim?: number
   onClose: () => void
   onCapture: (capture: AirDrawingCapture) => void
   onError?: (message: string) => void
@@ -74,10 +88,18 @@ function drawVideoCover(
 
 export function AirDrawingStage({
   busy = false,
+  mode = 'post',
+  outputSize,
+  maxDim = 960,
   onClose,
   onCapture,
   onError,
 }: AirDrawingStageProps) {
+  // 하트(좋아요 아이콘)만 카메라 없이 종이+선으로 찍습니다. 채팅 손글씨 메시지와
+  // 게시물/라운지는 카메라 프레임을 그대로 합성합니다.
+  const isPaperMode = mode === 'heart'
+  const showToolbars = mode !== 'heart'
+
   const stageRef = useRef<HTMLDivElement | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const drawingCanvasRef = useRef<DrawingCanvasHandle | null>(null)
@@ -87,7 +109,7 @@ export function AirDrawingStage({
   const [pinching, setPinching] = useState(false)
   const [erasing, setErasing] = useState(false)
   const [cursorPoint, setCursorPoint] = useState<Point | null>(null)
-  const [penColor, setPenColor] = useState(DEFAULT_PEN_COLOR)
+  const [penColor, setPenColor] = useState(isPaperMode ? INK_COLOR : DEFAULT_PEN_COLOR)
   const [penTool, setPenTool] = useState<PenTool>(DEFAULT_PEN_TOOL)
   const [lineSize, setLineSize] = useState(DEFAULT_LINE_SIZE)
   const [capturing, setCapturing] = useState(false)
@@ -184,10 +206,16 @@ export function AirDrawingStage({
     }
 
     const rect = stage.getBoundingClientRect()
-    const MAX_DIM = 960
-    const scale = Math.min(1, MAX_DIM / Math.max(rect.width, rect.height))
-    const width = Math.max(1, Math.round(rect.width * scale))
-    const height = Math.max(1, Math.round(rect.height * scale))
+    let width: number
+    let height: number
+    if (outputSize) {
+      width = outputSize
+      height = outputSize
+    } else {
+      const scale = Math.min(1, maxDim / Math.max(rect.width, rect.height))
+      width = Math.max(1, Math.round(rect.width * scale))
+      height = Math.max(1, Math.round(rect.height * scale))
+    }
     const output = document.createElement('canvas')
     output.width = width
     output.height = height
@@ -196,30 +224,50 @@ export function AirDrawingStage({
 
     setCapturing(true)
     try {
-      drawVideoCover(context, video, width, height, facingMode === 'user')
-      context.fillStyle = 'rgba(242, 236, 218, 0.35)'
-      context.fillRect(0, 0, width, height)
-      context.drawImage(
-        drawingCanvas,
-        0,
-        0,
-        drawingCanvas.width,
-        drawingCanvas.height,
-        0,
-        0,
-        width,
-        height,
-      )
+      if (isPaperMode) {
+        // 배경을 아예 채우지 않고 투명하게 둡니다 — 좋아요 버튼 아이콘으로 쓸 것이라
+        // 그린 선만 남아야 합니다 (캔버스 기본값이 투명이라 따로 지울 것도 없음).
+      } else {
+        drawVideoCover(context, video, width, height, facingMode === 'user')
+        context.fillStyle = 'rgba(242, 236, 218, 0.35)'
+        context.fillRect(0, 0, width, height)
+      }
       const drawing = drawingHandle.getDocument()
+      if (outputSize) {
+        // 정사각형 출력(하트/메시지)은 늘리지 않고 정사각형으로 잘라냅니다 — 그대로
+        // 늘리면 세로로 긴 화면이 눌린 것처럼 찌그러져 보입니다. 캔버스 정중앙이 아니라
+        // 실제로 그린 부분(스트로크의 바운딩 박스) 중심을 기준으로 잘라서, 화면 한쪽에
+        // 치우쳐 그려도 결과물 정중앙에 오도록 합니다.
+        const cropSize = Math.min(drawingCanvas.width, drawingCanvas.height)
+        let minX = 1
+        let minY = 1
+        let maxX = 0
+        let maxY = 0
+        drawing.strokes.forEach((stroke) =>
+          stroke.points.forEach((p) => {
+            minX = Math.min(minX, p.x)
+            maxX = Math.max(maxX, p.x)
+            minY = Math.min(minY, p.y)
+            maxY = Math.max(maxY, p.y)
+          }),
+        )
+        const centerX = ((minX + maxX) / 2) * drawingCanvas.width
+        const centerY = ((minY + maxY) / 2) * drawingCanvas.height
+        const cropX = Math.min(Math.max(centerX - cropSize / 2, 0), drawingCanvas.width - cropSize)
+        const cropY = Math.min(Math.max(centerY - cropSize / 2, 0), drawingCanvas.height - cropSize)
+        context.drawImage(drawingCanvas, cropX, cropY, cropSize, cropSize, 0, 0, width, height)
+      } else {
+        context.drawImage(drawingCanvas, 0, 0, drawingCanvas.width, drawingCanvas.height, 0, 0, width, height)
+      }
       onCapture({
-        image: output.toDataURL('image/jpeg', 0.85),
+        image: isPaperMode ? output.toDataURL('image/png') : output.toDataURL('image/jpeg', 0.85),
         strokes: flattenDrawing(drawing),
         drawing,
       })
     } finally {
       setCapturing(false)
     }
-  }, [busy, capturing, facingMode, onCapture, onError, stream])
+  }, [busy, capturing, facingMode, isPaperMode, maxDim, onCapture, onError, outputSize, stream])
 
   const handleSwitchCamera = useCallback(async () => {
     setPinching(false)
@@ -296,27 +344,31 @@ export function AirDrawingStage({
         </button>
       </div>
 
-      <ColorToolbar
-        ref={colorToolbarRef}
-        stageRef={stageRef}
-        selectedColor={penColor}
-        onSelectColor={(color) => {
-          drawingCanvasRef.current?.endStroke()
-          setPenColor(color)
-        }}
-      />
+      {showToolbars ? (
+        <ColorToolbar
+          ref={colorToolbarRef}
+          stageRef={stageRef}
+          selectedColor={penColor}
+          onSelectColor={(color) => {
+            drawingCanvasRef.current?.endStroke()
+            setPenColor(color)
+          }}
+        />
+      ) : null}
 
-      <PenStyleToolbar
-        ref={penStyleToolbarRef}
-        stageRef={stageRef}
-        selectedTool={penTool}
-        onSelectTool={(tool) => {
-          drawingCanvasRef.current?.endStroke()
-          setPenTool(tool)
-        }}
-        lineSize={lineSize}
-        onSelectLineSize={setLineSize}
-      />
+      {showToolbars ? (
+        <PenStyleToolbar
+          ref={penStyleToolbarRef}
+          stageRef={stageRef}
+          selectedTool={penTool}
+          onSelectTool={(tool) => {
+            drawingCanvasRef.current?.endStroke()
+            setPenTool(tool)
+          }}
+          lineSize={lineSize}
+          onSelectLineSize={setLineSize}
+        />
+      ) : null}
     </div>
   )
 }

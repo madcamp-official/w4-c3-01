@@ -115,7 +115,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
           <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
             <Feather name="chevron-left" size={24} color={colors.ink} />
           </Pressable>
-          <Avatar nickname={chat.name} color={chat.color} size={30} fontSize={12} />
+          <Avatar nickname={chat.name} color={chat.color} size={30} fontSize={12} avatarUrl={chat.avatarUrl} />
           <Text style={{ fontWeight: '700', color: colors.ink, fontSize: 15 }}>{chat.name}</Text>
         </View>
 

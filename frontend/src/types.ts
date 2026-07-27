@@ -16,6 +16,7 @@ export interface Post {
   authorId: string;
   username: string;
   avatarColor: string;
+  avatarUrl: string | null;
   time: string;
   image: string;
   strokes: StrokePoint[];
@@ -45,6 +46,7 @@ export interface Chat {
   id: string;
   name: string;
   color: string;
+  avatarUrl: string | null;
   messages: ChatMessage[];
   /** 상대방이 마지막으로 읽은 시각(ISO). 이 시각 이전에 내가 보낸 메시지는 "읽음"으로 표시합니다. */
   otherReadAt: string | null;

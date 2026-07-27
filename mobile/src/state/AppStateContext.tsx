@@ -5,6 +5,7 @@ import * as postsApi from '@/api/postsApi';
 import * as chatApi from '@/api/chatApi';
 import * as loungeApi from '@/api/loungeApi';
 import * as userApi from '@/api/userApi';
+import type { AirDrawingDocument } from '@/air-drawing-types';
 import type {
   Chat,
   ChatMessage,
@@ -35,7 +36,7 @@ interface AppStateValue {
   updateProfile: (updates: { username: string; nickname: string; onboarded?: boolean }) => Promise<void>;
 
   loadFeed: () => Promise<void>;
-  sharePost: (input: { image: string; strokes: StrokePoint[]; caption: string }) => Promise<Post>;
+  sharePost: (input: { image: string; strokes: StrokePoint[]; drawing?: AirDrawingDocument; caption: string }) => Promise<Post>;
   likePost: (postId: string) => Promise<void>;
   commentOnPost: (postId: string, text: string) => Promise<void>;
   deletePost: (postId: string) => Promise<void>;
@@ -136,14 +137,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [session]);
 
   const sharePost = useCallback(
-    async (input: { image: string; strokes: StrokePoint[]; caption: string }) => {
+    async (input: { image: string; strokes: StrokePoint[]; drawing?: AirDrawingDocument; caption: string }) => {
       if (!session) throw new Error('not authenticated');
       const post = await postsApi.createPost({
         authorId: session.id,
         username: session.nickname,
         avatarColor: session.avatarColor,
+        avatarUrl: session.avatarUrl,
         image: input.image,
         strokes: input.strokes,
+        drawing: input.drawing,
         caption: input.caption
       });
       setPosts((prev) => [post, ...prev]);

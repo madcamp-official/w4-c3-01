@@ -18,6 +18,7 @@ interface ProfileLite {
   id: string;
   nickname: string;
   avatar_color: string;
+  avatar_url: string | null;
 }
 
 interface LikeRow {
@@ -46,7 +47,7 @@ function formatPostTime(iso: string): string {
 
 async function fetchProfilesByIds(userIds: string[]): Promise<Map<string, ProfileLite>> {
   if (userIds.length === 0) return new Map();
-  const { data, error } = await supabase!.from('profiles').select('id, nickname, avatar_color').in('id', userIds);
+  const { data, error } = await supabase!.from('profiles').select('id, nickname, avatar_color, avatar_url').in('id', userIds);
   if (error) throw new Error(error.message);
   return new Map((data ?? []).map((p) => [p.id, p as ProfileLite]));
 }
@@ -92,6 +93,7 @@ function assemblePosts(
       authorId: row.author_id,
       username: profile?.nickname ?? '알 수 없음',
       avatarColor: profile?.avatar_color ?? '#EAE2C9',
+      avatarUrl: profile?.avatar_url ?? null,
       time: formatPostTime(row.created_at),
       image: row.image_url,
       strokes: row.strokes ?? [],
@@ -142,6 +144,7 @@ export interface CreatePostPayload {
   authorId: string;
   username: string;
   avatarColor: string;
+  avatarUrl: string | null;
   image: string;
   strokes: Post['strokes'];
   drawing?: Post['drawing'];
@@ -156,6 +159,7 @@ export async function createPost(payload: CreatePostPayload): Promise<Post> {
       authorId: payload.authorId,
       username: payload.username,
       avatarColor: payload.avatarColor,
+      avatarUrl: payload.avatarUrl,
       time: '방금 전',
       image: payload.image,
       strokes: payload.strokes,
@@ -188,6 +192,7 @@ export async function createPost(payload: CreatePostPayload): Promise<Post> {
     authorId: data.author_id,
     username: payload.username,
     avatarColor: payload.avatarColor,
+    avatarUrl: payload.avatarUrl,
     time: formatPostTime(data.created_at),
     image: data.image_url,
     strokes: data.strokes ?? [],

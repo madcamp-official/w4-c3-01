@@ -29,7 +29,7 @@ export default function ChatListScreen({ navigation }: Props) {
         style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 12 }}
         onPress={() => navigation.navigate('ChatThread', { chatId: item.id })}
       >
-        <Avatar nickname={item.name} color={item.color} size={44} fontSize={16} />
+        <Avatar nickname={item.name} color={item.color} size={44} fontSize={16} avatarUrl={item.avatarUrl} />
         <View style={{ flex: 1 }}>
           <Text style={{ fontWeight: '700', color: colors.ink, fontSize: 14 }}>{item.name}</Text>
           <Text numberOfLines={1} style={{ fontSize: 12, color: colors.inkSoft }}>

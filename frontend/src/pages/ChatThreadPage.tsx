@@ -85,7 +85,7 @@ export default function ChatThreadPage() {
             <path d="m15 18-6-6 6-6" />
           </svg>
         </button>
-        <Avatar nickname={chat.name} color={chat.color} size={30} fontSize={12} />
+        <Avatar nickname={chat.name} color={chat.color} size={30} fontSize={12} avatarUrl={chat.avatarUrl} />
         <b>{chat.name}</b>
       </div>
       <div className="thread-body">

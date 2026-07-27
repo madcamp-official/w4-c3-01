@@ -1,23 +1,68 @@
-// Placeholder for Phase 4 — real preview/share flow comes then.
-import { Pressable, Text, View } from 'react-native';
+// Ported from frontend/src/pages/PreviewPage.tsx — keep in sync.
+import { useState } from 'react';
+import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Feather from '@expo/vector-icons/Feather';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '@/navigation/types';
-import { colors } from '@/theme/colors';
+import { usePlacement } from '@/state/PlacementContext';
+import { useAppState } from '@/state/AppStateContext';
+import { useToast } from '@/state/ToastContext';
+import { colors, radius } from '@/theme/colors';
 import { common } from '@/theme/common';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Preview'>;
 
-export default function PreviewScreen({ navigation }: Props) {
+export default function PreviewScreen({ navigation, route }: Props) {
+  const { image, strokes, drawing, intent } = route.params;
+  const { sharePost } = useAppState();
+  const { startPlacing } = usePlacement();
+  const { showToast } = useToast();
+  const [caption, setCaption] = useState('');
+  const [sharing, setSharing] = useState(false);
+
+  async function handleShare() {
+    if (intent.kind === 'lounge') {
+      startPlacing(image, strokes);
+      navigation.navigate('LoungeView', { loungeId: intent.loungeId });
+      return;
+    }
+    setSharing(true);
+    try {
+      await sharePost({ image, strokes, drawing, caption: caption.trim() });
+      showToast('게시물을 공유했어요 🎉');
+      navigation.navigate('MainTabs');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '게시물을 공유하지 못했어요');
+    } finally {
+      setSharing(false);
+    }
+  }
+
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
-      <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
-        <Feather name="chevron-left" size={24} color={colors.ink} />
-      </Pressable>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={common.title}>미리보기</Text>
-        <Text style={common.subtitle}>Phase 4에서 구현됩니다.</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.paper }} edges={['top', 'bottom']}>
+      <View style={{ flex: 1, borderRadius: radius.lg, overflow: 'hidden', margin: 16, backgroundColor: '#000' }}>
+        <Image source={{ uri: image }} style={{ flex: 1 }} resizeMode="cover" />
+        <Pressable
+          style={{ position: 'absolute', top: 14, left: 14, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}
+          onPress={() => navigation.goBack()}
+        >
+          <Feather name="chevron-left" size={22} color="#fff" />
+        </Pressable>
+      </View>
+      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+        {intent.kind === 'post' ? (
+          <TextInput
+            style={[common.input, { marginBottom: 10 }]}
+            placeholder="문구를 남겨보세요..."
+            maxLength={80}
+            value={caption}
+            onChangeText={setCaption}
+          />
+        ) : null}
+        <Pressable style={[common.btn, common.btnPrimary, sharing && common.btnDisabled]} disabled={sharing} onPress={handleShare}>
+          <Text style={common.btnPrimaryText}>{intent.kind === 'lounge' ? '이 자리에 배치하기' : sharing ? '공유하는 중...' : '공유하기'}</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );

@@ -1,14 +1,14 @@
 // Adapted from frontend/src/pages/CompleteProfilePage.tsx — keep in sync.
-// The heart-redraw step is stubbed to the default heart until Phase 4 wires
-// up the air-drawing WebView bridge (same scope note as OnboardingScreen).
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AirDrawingWebView, { type AirDrawingCapture } from '@/components/AirDrawingWebView';
 import AvatarPicker from '@/components/AvatarPicker';
 import { useUsernameCheck, usernameStatusMessage, type UsernameStatus } from '@/hooks/useUsernameCheck';
 import { defaultHeartUrl } from '@/mock/store';
 import { useAppState } from '@/state/AppStateContext';
 import { useToast } from '@/state/ToastContext';
+import { colors, radius } from '@/theme/colors';
 import { common } from '@/theme/common';
 
 /** Google 등 OAuth로 처음 로그인한 사람이 아이디를 확인하고 프로필을 완성하는 필수 1회 화면. */
@@ -16,9 +16,11 @@ export default function CompleteProfileScreen() {
   const { session, setAvatar, setHeart, updateProfile } = useAppState();
   const { showToast } = useToast();
 
+  const [step, setStep] = useState<1 | 2>(1);
   const [dataUrl, setDataUrl] = useState<string | null>(session?.avatarUrl ?? null);
   const [username, setUsername] = useState(session?.username ?? '');
   const [nickname, setNickname] = useState(session?.nickname ?? '');
+  const [heartPreview, setHeartPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const usernameChanged = username.trim() !== session?.username;
@@ -28,7 +30,7 @@ export default function CompleteProfileScreen() {
 
   if (!session) return null;
 
-  async function handleDone() {
+  function handleNext() {
     if (usernameStatus !== 'available') {
       showToast('아이디를 확인해주세요');
       return;
@@ -37,17 +39,65 @@ export default function CompleteProfileScreen() {
       showToast('이름을 입력해주세요');
       return;
     }
+    // 이미 하트가 있는 계정(예전에 그려둔 적 있는 경우)은 다시 그리라고 하지 않고 바로 완료합니다.
+    if (session!.heartUrl) {
+      void finish(session!.heartUrl);
+      return;
+    }
+    setStep(2);
+  }
+
+  async function finish(heartUrl: string) {
     setSaving(true);
     try {
       if (dataUrl && dataUrl !== session!.avatarUrl) await setAvatar(dataUrl);
-      if (!session!.heartUrl) await setHeart(defaultHeartUrl());
+      if (heartUrl !== session!.heartUrl) await setHeart(heartUrl);
       await updateProfile({ username: username.trim(), nickname: nickname.trim(), onboarded: true });
       showToast(`손끝에 오신 걸 환영해요, ${nickname.trim()}님 🎉`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : '저장하지 못했어요');
-    } finally {
       setSaving(false);
     }
+  }
+
+  function handleHeartCapture(capture: AirDrawingCapture) {
+    setHeartPreview(capture.image);
+  }
+
+  function handleSkipHeart() {
+    void finish(defaultHeartUrl());
+  }
+
+  if (step === 2 && heartPreview) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.ink }} edges={['top', 'bottom']}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 220, height: 220, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 }}>
+            <Image source={{ uri: heartPreview }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+          </View>
+        </View>
+        <View style={{ padding: 20, gap: 10 }}>
+          <Pressable style={[common.btn, common.btnPrimary, saving && common.btnDisabled]} disabled={saving} onPress={() => finish(heartPreview)}>
+            <Text style={common.btnPrimaryText}>{saving ? '저장하는 중...' : '이 하트로 완료'}</Text>
+          </Pressable>
+          <Pressable style={[common.btn, common.btnGhost]} disabled={saving} onPress={() => setHeartPreview(null)}>
+            <Text style={common.btnGhostText}>다시 그리기</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <AirDrawingWebView
+        mode="heart"
+        outputSize={220}
+        onClose={() => setStep(1)}
+        onCapture={handleHeartCapture}
+        onError={(message) => showToast(message)}
+      />
+    );
   }
 
   return (
@@ -70,9 +120,14 @@ export default function CompleteProfileScreen() {
           <TextInput style={common.input} maxLength={16} value={nickname} onChangeText={setNickname} />
         </View>
 
-        <Pressable style={[common.btn, common.btnPrimary, saving && common.btnDisabled]} disabled={saving} onPress={handleDone}>
-          <Text style={common.btnPrimaryText}>{saving ? '저장하는 중...' : '완료'}</Text>
+        <Pressable style={[common.btn, common.btnPrimary, saving && common.btnDisabled]} disabled={saving} onPress={handleNext}>
+          <Text style={common.btnPrimaryText}>{saving ? '저장하는 중...' : '다음'}</Text>
         </Pressable>
+        {!session.heartUrl ? (
+          <Pressable style={common.linkBtn} disabled={saving} onPress={handleSkipHeart}>
+            <Text style={common.linkBtnText}>기본 하트로 시작할게요</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
