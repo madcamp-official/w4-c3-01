@@ -45,6 +45,7 @@ interface AppStateValue {
   sendAir: (chatId: string, image: string, strokes: StrokePoint[]) => Promise<void>;
   startConversationWith: (otherUserId: string) => Promise<string | null>;
   subscribeToThread: (chatId: string) => () => void;
+  markThreadRead: (chatId: string) => Promise<void>;
 
   loadLounges: () => Promise<void>;
   getLounge: (loungeId: string) => Lounge | undefined;
@@ -119,13 +120,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   );
 
   const loadFeed = useCallback(async () => {
-    setPosts(await postsApi.fetchFeed());
-  }, []);
+    if (!session) return;
+    setPosts(await postsApi.fetchFeed(session.id));
+  }, [session]);
 
   const sharePost = useCallback(
     async (input: { image: string; strokes: StrokePoint[]; caption: string }) => {
       if (!session) throw new Error('not authenticated');
       const post = await postsApi.createPost({
+        authorId: session.id,
         username: session.nickname,
         avatarColor: session.avatarColor,
         image: input.image,
@@ -138,17 +141,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [session]
   );
 
-  const likePost = useCallback(async (postId: string) => {
-    const updated = await postsApi.toggleLike(postId);
-    if (!updated) return;
-    setPosts((prev) => prev.map((p) => (p.id === postId ? updated : p)));
-  }, []);
+  const likePost = useCallback(
+    async (postId: string) => {
+      if (!session) return;
+      const currentlyLiked = posts.find((p) => p.id === postId)?.liked ?? false;
+      const updated = await postsApi.toggleLike(postId, session.id, currentlyLiked);
+      if (!updated) return;
+      setPosts((prev) => prev.map((p) => (p.id === postId ? updated : p)));
+    },
+    [session, posts]
+  );
 
   const commentOnPost = useCallback(
     async (postId: string, text: string) => {
       if (!session) return;
       const comment: Comment = { user: session.nickname, text };
-      const updated = await postsApi.addComment(postId, comment);
+      const updated = await postsApi.addComment(postId, session.id, comment);
       if (!updated) return;
       setPosts((prev) => prev.map((p) => (p.id === postId ? updated : p)));
     },
@@ -187,6 +195,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const receiveRead = useCallback((chatId: string, readAt: string) => {
+    setChats((prev) => prev.map((c) => (c.id === chatId ? { ...c, otherReadAt: readAt } : c)));
+  }, []);
+
   const sendText = useCallback(
     async (chatId: string, text: string) => {
       if (!session) return;
@@ -216,9 +228,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const subscribeToThread = useCallback(
     (chatId: string) => {
       if (!session) return () => {};
-      return chatApi.subscribeToThread(chatId, session.id, (message) => receiveMessage(chatId, message));
+      return chatApi.subscribeToThread(
+        chatId,
+        session.id,
+        (message) => receiveMessage(chatId, message),
+        (readAt) => receiveRead(chatId, readAt)
+      );
     },
-    [session, receiveMessage]
+    [session, receiveMessage, receiveRead]
+  );
+
+  const markThreadRead = useCallback(
+    async (chatId: string) => {
+      if (!session) return;
+      await chatApi.markThreadRead(chatId, session.id);
+    },
+    [session]
   );
 
   const loadLounges = useCallback(async () => {
@@ -258,6 +283,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       sendAir,
       startConversationWith,
       subscribeToThread,
+      markThreadRead,
       loadLounges,
       getLounge,
       placeInLounge
@@ -286,6 +312,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       sendAir,
       startConversationWith,
       subscribeToThread,
+      markThreadRead,
       loadLounges,
       getLounge,
       placeInLounge

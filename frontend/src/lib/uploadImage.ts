@@ -1,7 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
 
-const CHAT_IMAGE_BUCKET = 'chat-images';
-
 function dataUrlToBlob(dataUrl: string): Blob {
   const [header, base64] = dataUrl.split(',');
   const mime = /data:(.*?);base64/.exec(header)?.[1] ?? 'image/png';
@@ -11,15 +9,23 @@ function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: mime });
 }
 
-/** Uploads a captured air-write PNG (data URL) to the chat-images bucket and returns its public URL. */
-export async function uploadChatImage(userId: string, dataUrl: string): Promise<string> {
+/** Uploads a captured PNG (data URL) to the given public bucket, under the uploader's own uid folder, and returns its public URL. */
+async function uploadImageToBucket(bucket: string, userId: string, dataUrl: string): Promise<string> {
   if (!supabase) throw new Error('Supabase가 설정되지 않았어요');
   const blob = dataUrlToBlob(dataUrl);
   const path = `${userId}/${Date.now()}.png`;
-  const { error } = await supabase.storage.from(CHAT_IMAGE_BUCKET).upload(path, blob, {
+  const { error } = await supabase.storage.from(bucket).upload(path, blob, {
     contentType: 'image/png',
     upsert: false
   });
   if (error) throw new Error(error.message);
-  return supabase.storage.from(CHAT_IMAGE_BUCKET).getPublicUrl(path).data.publicUrl;
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+}
+
+export function uploadChatImage(userId: string, dataUrl: string): Promise<string> {
+  return uploadImageToBucket('chat-images', userId, dataUrl);
+}
+
+export function uploadPostImage(userId: string, dataUrl: string): Promise<string> {
+  return uploadImageToBucket('post-images', userId, dataUrl);
 }

@@ -26,8 +26,8 @@ src/
 
 `src/api/*.ts`의 각 함수는 먼저 실제 백엔드 호출을 시도하고, 실패하거나 설정이 비어 있으면 `src/mock/store.ts`의 인메모리 목업으로 폴백합니다. 그래서 지금 당장은 아무 설정 없이 `npm run dev`만으로 전체 플로우가 동작합니다.
 
-- **로그인/회원가입** (`src/api/authApi.ts`)과 **채팅** (`src/api/chatApi.ts`)은 [Supabase](https://supabase.com/docs)(Auth + Postgres + Realtime + Storage)를 씁니다. 설정 방법은 아래 "Supabase 설정" 참고.
-- 그 외 게시물/라운지/프로필(`src/api/postsApi.ts` 등)은 아직 커스텀 REST 백엔드 자리만 잡아뒀습니다 — `VITE_API_BASE_URL`을 채우면 그쪽으로 요청하고, 비어 있으면 목업으로 동작합니다. 엔드포인트 경로/payload 형태는 각 파일의 `TODO(backend)` 주석 옆에 정리되어 있습니다.
+- **로그인/회원가입** (`src/api/authApi.ts`), **채팅** (`src/api/chatApi.ts`), **게시물** (`src/api/postsApi.ts`), **팔로우** (`src/api/followApi.ts`)는 [Supabase](https://supabase.com/docs)(Auth + Postgres + Realtime + Storage)를 씁니다. 설정 방법은 아래 "Supabase 설정" 참고.
+- 그 외 라운지(`src/api/loungeApi.ts`)는 아직 커스텀 REST 백엔드 자리만 잡아뒀습니다 — `VITE_API_BASE_URL`을 채우면 그쪽으로 요청하고, 비어 있으면 목업으로 동작합니다. 엔드포인트 경로/payload 형태는 파일의 `TODO(backend)` 주석 옆에 정리되어 있습니다.
 
 ### Supabase 설정
 
@@ -46,12 +46,14 @@ src/
    - `chat-images`라는 공개(public) Storage 버킷 — 허공 손글씨 메시지 이미지를 저장합니다. 업로드는 로그인한 사용자가 자기 uid 폴더 아래에만 가능하도록 제한했습니다.
    - `follows` 테이블과 RLS — 팔로우 관계. 팔로워/팔로잉 수는 저장해두지 않고 이 테이블에서 그때그때 세서 보여줍니다.
    - `profiles.onboarded` 컬럼 — Google 로그인처럼 아이디 없이 생성된 계정을 표시합니다 (아래 "Google 로그인" 참고).
+   - `posts`/`post_likes`/`post_comments` 테이블과 RLS, `post-images` Storage 버킷 — 게시물. 조회는 전체 공개, 작성/좋아요/댓글은 본인 것만 쓸 수 있습니다.
+   - `conversation_reads` 테이블과 RLS — 채팅 읽음 표시. Realtime publication에도 등록해서 상대방이 읽으면 바로 반영됩니다.
 4. **Authentication → Settings → Email Auth**에서 **"Confirm email"을 꺼주세요.** (지금 회원가입 흐름은 가입 즉시 로그인시키는데, 이메일 인증이 켜져 있으면 인증 전까지 로그인 세션이 생기지 않아 바로 로그인이 안 됩니다. 나중에 이메일 인증을 붙이려면 회원가입 화면에 "메일함을 확인하세요" 단계를 추가해야 합니다 — `authApi.signup`이 이미 그 경우를 에러로 던지도록 되어 있습니다.)
 5. (확인용) **Database → Publications**에서 `supabase_realtime` publication에 `messages` 테이블이 포함돼 있는지 한 번 봐주세요 (`supabase_realtime_messages_publication`이라는 비슷한 이름의 항목은 Supabase 내부용이라 무관합니다). `schema.sql`이 자동으로 등록하긴 하지만, 프로젝트에 따라 안 붙는 경우가 있습니다.
 
 로그인 화면은 "아이디 또는 이메일"을 입력받습니다. `@`가 포함되어 있으면 이메일로 바로 로그인 시도하고, 아니면 `email_for_username` RPC로 이메일을 찾아 로그인합니다.
 
-`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`를 비워두면 로그인/회원가입/채팅 전부 목업 데이터로 동작합니다 (단, 목업 모드에서는 검색에서 새 대화를 시작할 수는 없어요 — 실제 유저 id가 없어서요).
+`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`를 비워두면 로그인/회원가입/채팅/게시물 전부 목업 데이터로 동작합니다 (단, 목업 모드에서는 검색에서 새 대화를 시작할 수는 없어요 — 실제 유저 id가 없어서요).
 
 ### 채팅 데이터 흐름
 
@@ -60,6 +62,8 @@ src/
 - 채팅방을 열면(`ChatThreadPage`) 전체 메시지를 불러오고(`loadThread`), 동시에 그 대화방의 `messages` INSERT 이벤트를 실시간 구독합니다(`subscribeToThread`). 내가 보낸 메시지는 전송 즉시 화면에 반영되고, 실시간 구독으로 같은 메시지가 다시 들어오면 id로 중복을 걸러냅니다.
 - 허공 손글씨 메시지는 캡처한 PNG를 `chat-images` 버킷에 업로드하고, 그 공개 URL만 `messages.image_url`에 저장합니다.
 - "채팅하기"를 눌러 대화방이 막 생겼는데 메시지를 한 번도 안 보낸 경우, 채팅 목록(`ChatListPage`)에는 안 보입니다 (`chatApi.fetchConversations`가 메시지 없는 대화방을 걸러냄) — 대화방 자체는 이미 만들어져 있어서, 다시 그 사람 프로필에서 채팅하기를 누르면 같은 방으로 이어집니다. 메시지를 한 번이라도 보내면 그때부터 목록에 뜹니다.
+- 채팅방 안에서는 날짜가 바뀌는 지점마다 구분선이 뜨고, 메시지마다 보낸 시간이 표시됩니다.
+- **읽음 표시**: 대화방을 열 때마다(그리고 새 메시지가 올 때마다) 내가 "여기까지 읽었다"는 시각을 `conversation_reads`에 기록합니다(`markThreadRead`). 내가 보낸 메시지 중 상대방이 그 시각 이후 읽은 가장 최근 메시지에 "읽음"이 붙습니다. 상대방이 대화방을 보고 있는 동안 실시간 구독(`subscribeToThread`의 read 이벤트)으로 바로바로 반영됩니다.
 
 ### 검색 · 프로필 · 팔로우
 
@@ -67,7 +71,7 @@ src/
 - 검색 결과에서 유저를 탭하면 채팅이 아니라 그 사람의 프로필 화면(`/users/:userId`)으로 이동합니다. 본인 id면 `/mypage`로 리다이렉트됩니다.
 - 다른 사람 프로필에는 **팔로우/팔로잉** 토글 버튼과 **채팅하기** 버튼이 있습니다. 채팅하기는 대화방을 찾거나 새로 만들어 그 채팅방으로 이동합니다 (`chatApi.findOrCreateConversation`과 동일한 로직).
 - 팔로워/팔로잉 수는 `follows` 테이블을 그때그때 세서 보여줍니다 (`followApi.fetchFollowCounts`) — `profiles.followers`/`following` 컬럼은 스키마에는 남아있지만 더는 읽거나 쓰지 않습니다.
-- 프로필의 게시물 수는 지금 이 브라우저에 이미 불러와져 있는 피드(`posts`)에서 닉네임이 일치하는 것만 셉니다 — 게시물 자체가 아직 Supabase에 연결되어 있지 않아서(각 사용자 세션에만 존재하는 목업 데이터), 다른 사람이 실제로 올린 게시물 수를 정확히 조회할 방법이 아직 없습니다. 게시물을 Supabase로 옮기면 `author_id`로 정확히 세도록 바꾸면 됩니다.
+- 프로필의 게시물 수는 이미 불러와져 있는 피드(`posts`)에서 `authorId`가 일치하는 것만 셉니다 (`UserProfilePage`) — 게시물이 이제 실제 Supabase 데이터라 정확한 카운트입니다.
 
 ### 프로필 사진
 
@@ -100,10 +104,13 @@ src/
 
 Google은 아이디(username) 개념이 없어서, 처음 Google로 로그인하면 이메일 앞부분으로 아이디를 자동 생성하고(`handle_new_user` 트리거, 중복되면 숫자를 붙여 유니크하게 만듦) `profiles.onboarded = false`로 표시합니다. 로그인 직후 `ProtectedLayout`이 이걸 감지해서 `/complete-profile` 화면으로 보내고, 거기서 아이디·이름·사진을 확인/수정하고 저장하면(`onboarded = true`) 그다음부터는 평소처럼 앱을 씁니다. 이메일/비밀번호로 직접 가입한 계정은 처음부터 `onboarded = true`라 이 화면을 거치지 않습니다.
 
-### 게시물 삭제 · 문구 없이 올리기
+### 게시물
 
-- 게시물 이미지를 탭하면 뷰어가 열리는데, 본인 게시물이면(`post.mine`) 하단에 "삭제하기" 버튼이 뜹니다 (`postsApi.deletePost`, 지금은 다른 게시물 기능들처럼 REST 자리만 있고 없으면 목업 스토어에서 지웁니다). 피드/마이페이지/검색 어디서 열어도 동일하게 동작합니다.
+- 피드/좋아요/댓글/삭제 전부 Supabase에 저장됩니다 — `posts`(게시물), `post_likes`(좋아요, 유저×게시물 유니크), `post_comments`(댓글) 세 테이블로 나눠져 있고, `postsApi.fetchFeed`가 이 셋과 작성자 프로필을 한꺼번에 조회해서 조립합니다.
+- 게시물 이미지는 캡처한 PNG를 `post-images` Storage 버킷에 업로드하고 공개 URL만 `posts.image_url`에 저장합니다 (`chat-images`와 동일한 패턴).
+- 게시물 이미지를 탭하면 뷰어가 열리는데, 본인 게시물이면(`post.mine`) 하단에 "삭제하기" 버튼이 뜹니다 (`postsApi.deletePost`). 피드/마이페이지/검색 어디서 열어도 동일하게 동작합니다.
 - 문구 없이 게시물을 올리면 예전엔 "(문구 없음)"이라고 채워 넣었는데, 이제 캡션 없이 그대로 올라갑니다 — 화면에서도 사용자 이름만 보이고 문구 자리는 비워둡니다.
+- 피드에서 내 게시물에 "(나)"라고 따로 표시하던 것도 없앴습니다.
 
 ## 실행
 
@@ -120,5 +127,5 @@ npm run dev
 
 - 카메라(`getUserMedia`)는 HTTPS 또는 localhost에서만 동작합니다. 실기기 테스트 시 HTTPS 터널(ngrok 등)이 필요합니다.
 - Capacitor 래핑은 아직 설정하지 않았습니다. 웹 앱이 안정화된 뒤 `npx cap init` → `npx cap add ios/android`로 진행하면 됩니다.
-- 로그인/회원가입/채팅/팔로우/프로필 사진 외 나머지 기능(게시물, 라운지)은 아직 Supabase에 연결되어 있지 않습니다 — 다음 단계로 이어서 붙이면 됩니다.
-- 채팅방 목록(`ChatListPage`)은 실시간으로 갱신되지 않습니다 — 새 메시지 미리보기를 보려면 채팅 목록 화면을 다시 들어가야 합니다. 열려있는 채팅방 안에서는 실시간으로 반영됩니다.
+- 라운지는 아직 Supabase에 연결되어 있지 않습니다 — 다음 단계로 이어서 붙이면 됩니다.
+- 채팅방 목록(`ChatListPage`)은 실시간으로 갱신되지 않습니다 — 새 메시지 미리보기를 보려면 채팅 목록 화면을 다시 들어가야 합니다. 열려있는 채팅방 안에서는 메시지·읽음 표시 둘 다 실시간으로 반영됩니다.

@@ -1,17 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 import { useToast } from '@/state/ToastContext';
 
+function isSameDay(isoA: string, isoB: string): boolean {
+  const a = new Date(isoA);
+  const b = new Date(isoB);
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function formatDateDivider(iso: string): string {
+  return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }).format(new Date(iso));
+}
+
 export default function ChatThreadPage() {
   const navigate = useNavigate();
   const { chatId = '' } = useParams();
-  const { loadThread, sendText, getChat, subscribeToThread } = useAppState();
+  const { loadThread, sendText, getChat, subscribeToThread, markThreadRead } = useAppState();
   const { openViewerForMessage } = useOverlay();
   const { showToast } = useToast();
   const [text, setText] = useState('');
+
+  const chat = getChat(chatId);
 
   useEffect(() => {
     void loadThread(chatId);
@@ -24,7 +36,21 @@ export default function ChatThreadPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId]);
 
-  const chat = getChat(chatId);
+  // 대화방을 보고 있는 동안(처음 열 때 + 새 메시지가 올 때) 읽음 시각을 갱신합니다.
+  useEffect(() => {
+    if (chat) void markThreadRead(chatId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId, chat?.messages.length]);
+
+  const lastReadMineId = useMemo(() => {
+    if (!chat?.otherReadAt) return null;
+    const readAt = new Date(chat.otherReadAt).getTime();
+    let result: number | null = null;
+    chat.messages.forEach((m) => {
+      if (m.from === 'me' && new Date(m.createdAt).getTime() <= readAt) result = m.id;
+    });
+    return result;
+  }, [chat]);
 
   async function handleSend() {
     if (!text.trim()) return;
@@ -63,20 +89,37 @@ export default function ChatThreadPage() {
         <b>{chat.name}</b>
       </div>
       <div className="thread-body">
-        {chat.messages.map((m) =>
-          m.type === 'text' ? (
-            <div className={'msg-row' + (m.from === 'me' ? ' me' : '')} key={m.id}>
-              <div className="bubble sk">{m.text}</div>
-            </div>
-          ) : (
-            <div className={'msg-row' + (m.from === 'me' ? ' me' : '')} key={m.id}>
-              <div className="bubble air sk" onClick={() => openViewerForMessage(m)}>
-                <img src={m.image} alt="손글씨 메시지" />
-                <div className="air-tag">✏️ 손글씨 · 눌러서 다시보기</div>
+        {chat.messages.map((m, i) => {
+          const showDateDivider = i === 0 || !isSameDay(chat.messages[i - 1].createdAt, m.createdAt);
+          return (
+            <div key={m.id}>
+              {showDateDivider ? (
+                <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-soft)', margin: '10px 0 4px' }}>
+                  {formatDateDivider(m.createdAt)}
+                </div>
+              ) : null}
+              <div
+                className={'msg-row' + (m.from === 'me' ? ' me' : '')}
+                style={{ flexDirection: 'column', alignItems: m.from === 'me' ? 'flex-end' : 'flex-start', gap: 3 }}
+              >
+                {m.type === 'text' ? (
+                  <div className="bubble sk">{m.text}</div>
+                ) : (
+                  <div className="bubble air sk" onClick={() => openViewerForMessage(m)}>
+                    <img src={m.image} alt="손글씨 메시지" />
+                    <div className="air-tag">✏️ 손글씨 · 눌러서 다시보기</div>
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  {m.from === 'me' && m.id === lastReadMineId ? (
+                    <span style={{ fontSize: 10, color: 'var(--ink-soft)' }}>읽음</span>
+                  ) : null}
+                  <span style={{ fontSize: 10, color: 'var(--ink-soft)' }}>{m.time}</span>
+                </div>
               </div>
             </div>
-          )
-        )}
+          );
+        })}
       </div>
       <div className="thread-input">
         <button className="round-icon sk" onClick={() => navigate(`/chats/${chatId}/airwrite`)} aria-label="에어라이팅 메시지">

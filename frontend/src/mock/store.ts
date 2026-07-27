@@ -19,6 +19,7 @@ function buildSeedPosts(): Post[] {
     const strokes = randomScribble();
     return {
       id: 'seed-' + i,
+      authorId: 'seed-user-' + i,
       username: d.user.nickname,
       avatarColor: d.user.color,
       time: i + 1 + '시간 전',
@@ -41,18 +42,20 @@ function buildSeedChats(): Chat[] {
       id: 'c1',
       name: SEED_USERS[0].nickname,
       color: SEED_USERS[0].color,
+      otherReadAt: null,
       messages: [
-        { id: 1, from: 'them', type: 'text', text: '오늘 올린 낙서 완전 좋더라 ㅎㅎ', time: '오후 2:01' },
-        { id: 2, from: 'me', type: 'text', text: '고마워 ㅋㅋ 손 가는대로 그려봤어', time: '오후 2:03' }
+        { id: 1, from: 'them', type: 'text', text: '오늘 올린 낙서 완전 좋더라 ㅎㅎ', time: '오후 2:01', createdAt: new Date().toISOString() },
+        { id: 2, from: 'me', type: 'text', text: '고마워 ㅋㅋ 손 가는대로 그려봤어', time: '오후 2:03', createdAt: new Date().toISOString() }
       ] as ChatMessage[]
     },
     {
       id: 'c2',
       name: SEED_USERS[2].nickname,
       color: SEED_USERS[2].color,
+      otherReadAt: null,
       messages: [
-        { id: 1, from: 'them', type: 'air', image: heartMsgImg, strokes: heartMsgStrokes, time: '오전 11:40' },
-        { id: 2, from: 'them', type: 'text', text: '허공에 써서 보냈어 💌', time: '오전 11:40' }
+        { id: 1, from: 'them', type: 'air', image: heartMsgImg, strokes: heartMsgStrokes, time: '오전 11:40', createdAt: new Date().toISOString() },
+        { id: 2, from: 'them', type: 'text', text: '허공에 써서 보냈어 💌', time: '오전 11:40', createdAt: new Date().toISOString() }
       ] as ChatMessage[]
     }
   ];
