@@ -53,7 +53,7 @@ export default function CompleteProfileScreen() {
       if (dataUrl && dataUrl !== session!.avatarUrl) await setAvatar(dataUrl);
       if (heartUrl !== session!.heartUrl) await setHeart(heartUrl);
       await updateProfile({ username: username.trim(), nickname: nickname.trim(), onboarded: true });
-      showToast(`손끝에 오신 걸 환영해요, ${nickname.trim()}님 🎉`);
+      showToast(`ALine에 오신 걸 환영해요, ${nickname.trim()}님 🎉`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : '저장하지 못했어요');
       setSaving(false);

@@ -69,7 +69,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         heartUrl,
         avatarUrl: avatarDataUrl
       });
-      showToast(`손끝에 오신 걸 환영해요, ${form.nickname.trim()}님 🎉`);
+      showToast(`ALine에 오신 걸 환영해요, ${form.nickname.trim()}님 🎉`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : '회원가입에 실패했어요');
       setSubmitting(false);
@@ -142,7 +142,7 @@ export default function OnboardingScreen({ navigation }: Props) {
       {step === 1 ? (
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}>
           <Text style={common.title}>반가워요 👋</Text>
-          <Text style={common.subtitle}>손끝에서 활동할 계정을 만들어주세요</Text>
+          <Text style={common.subtitle}>ALine에서 활동할 계정을 만들어주세요</Text>
 
           <View style={common.field}>
             <Text style={common.label}>아이디</Text>

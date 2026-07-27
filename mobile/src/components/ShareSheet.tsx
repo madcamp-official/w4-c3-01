@@ -14,7 +14,7 @@ export default function ShareSheet() {
   async function handleOption(kind: 'link' | 'chat') {
     closeShare();
     if (kind === 'link') {
-      await Clipboard.setStringAsync(`sonkkeut://posts/${sharePostId}`);
+      await Clipboard.setStringAsync(`aline://posts/${sharePostId}`);
       showToast('링크를 복사했어요');
     } else {
       showToast('채팅 목록에서 보낼 친구를 선택하세요');

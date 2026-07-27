@@ -39,7 +39,7 @@ export default function MyPage() {
         <Avatar nickname={session.nickname} color={session.avatarColor} size={54} fontSize={20} avatarUrl={session.avatarUrl} />
         <div className="profile-names">
           <b>{session.nickname}</b>
-          <span>{session.username ? '@' + session.username : '손끝에서 손글씨로 이야기해요'}</span>
+          <span>{session.username ? '@' + session.username : 'ALine에서 손글씨로 이야기해요'}</span>
         </div>
         <div className="profile-stats">
           <div>

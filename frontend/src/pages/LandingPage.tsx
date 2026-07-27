@@ -8,7 +8,7 @@ export default function LandingPage() {
       <div style={{ textAlign: 'center', padding: '0 26px' }}>
         <div className="logo" style={{ fontSize: 36, justifyContent: 'center', marginBottom: 12 }}>
           <span className="dot" />
-          손끝
+          ALine
         </div>
         <p className="screen-sub" style={{ margin: '0 6px 34px' }}>
           손으로 그리고, 허공에 쓰는

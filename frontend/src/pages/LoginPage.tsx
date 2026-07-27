@@ -20,7 +20,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await loginUser({ identifier: identifier.trim(), password });
-      showToast('손끝에 오신 걸 환영해요 🎉');
+      showToast('ALine에 오신 걸 환영해요 🎉');
       navigate('/feed', { replace: true });
     } catch (err) {
       showToast(err instanceof Error ? err.message : '로그인에 실패했어요');

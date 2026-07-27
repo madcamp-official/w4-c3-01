@@ -24,7 +24,7 @@ export default function FeedScreen() {
       <View style={styles.header}>
         <View style={styles.logoRow}>
           <View style={styles.dot} />
-          <Text style={styles.logo}>손끝</Text>
+          <Text style={styles.logo}>ALine</Text>
         </View>
         <Pressable style={styles.iconBtn} onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('ChatList')}>
           <Feather name="send" size={20} color={colors.ink} />

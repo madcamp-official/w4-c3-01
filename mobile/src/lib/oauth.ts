@@ -1,16 +1,17 @@
 // Replaces the web-only window.location redirect flow in
 // frontend/src/api/authApi.ts's signInWithGoogle with a deep-link based flow
-// (D1/Phase1 in the plan). Requires the app's redirect URL (currently the
-// Expo Go dev URL, e.g. exp://<lan-ip>:<port>/--/auth-callback; the stable
-// sonkkeut://auth-callback scheme once Phase 4 moves off Expo Go) to be
-// registered in the Supabase project's Authentication > URL Configuration.
+// (D1/Phase1 in the plan). Requires the app's redirect URL — aline://auth-callback
+// now that the app has a stable scheme (a dev-client/EAS build; back when this
+// still ran in Expo Go, it was the dynamic exp://<lan-ip>:<port>/--/auth-callback
+// dev URL instead) — to be registered in the Supabase project's Authentication >
+// URL Configuration.
 //
 // NOTE: on this project, Supabase's Redirect URLs allow-list didn't seem to
 // match custom-scheme (exp://) redirect URLs even when registered exactly —
 // it kept falling back to Site URL. Site URL was pointed at the dev exp://
-// URL as a workaround. Re-check this once Phase 4 switches to the stable
-// sonkkeut:// scheme; the standard http(s) URLs (e.g. the web app's) matched
-// the allow-list fine, so this looks specific to non-http(s) schemes.
+// URL as a workaround. Re-check whether the same issue affects aline://
+// (standard http(s) URLs, e.g. the web app's, matched the allow-list fine,
+// so this looked specific to non-http(s) schemes).
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { supabase } from '@/lib/supabaseClient';

@@ -16,7 +16,7 @@ export default function LandingScreen({ navigation }: Props) {
       <View style={{ alignItems: 'center', paddingHorizontal: 6 }}>
         <View style={styles.logoRow}>
           <View style={styles.dot} />
-          <Text style={styles.logo}>손끝</Text>
+          <Text style={styles.logo}>ALine</Text>
         </View>
         <Text style={styles.sub}>손으로 그리고, 허공에 쓰는{'\n'}당신만의 SNS</Text>
       </View>

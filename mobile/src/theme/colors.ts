@@ -2,7 +2,7 @@
 export const colors = {
   ink: '#1E1B16',
   inkSoft: '#6B6558',
-  paper: '#FBF8EF',
+  paper: '#FFFFFF',
   paper2: '#F2ECDA',
   paper3: '#EAE2C9',
   line: '#D9D0B4',

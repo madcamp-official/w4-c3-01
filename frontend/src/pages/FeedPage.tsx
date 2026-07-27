@@ -17,7 +17,7 @@ export default function FeedPage() {
       <div className="statusbar" style={{ padding: '0 14px 8px 0' }}>
         <div className="logo">
           <span className="dot" />
-          손끝
+          ALine
         </div>
         <button className="icon-btn sk" onClick={() => navigate('/chats')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="icon-sk">

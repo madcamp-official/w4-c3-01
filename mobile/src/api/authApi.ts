@@ -127,7 +127,7 @@ export async function signup(payload: SignupPayload): Promise<Session> {
   };
 }
 
-/** Google 로그인/가입: 시스템 브라우저로 이동했다가 딥링크(sonkkeut://auth-callback)로 앱에 돌아옵니다. */
+/** Google 로그인/가입: 시스템 브라우저로 이동했다가 딥링크(aline://auth-callback)로 앱에 돌아옵니다. */
 export async function signInWithGoogle(): Promise<void> {
   await signInWithGoogleDeepLink();
 }

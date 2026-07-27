@@ -58,7 +58,7 @@ export default function MyScreen() {
         <Avatar nickname={session.nickname} color={session.avatarColor} size={54} fontSize={20} avatarUrl={session.avatarUrl} />
         <View style={{ marginLeft: 12, flex: 1 }}>
           <Text style={styles.name}>{session.nickname}</Text>
-          <Text style={styles.handle}>{session.username ? '@' + session.username : '손끝에서 손글씨로 이야기해요'}</Text>
+          <Text style={styles.handle}>{session.username ? '@' + session.username : 'ALine에서 손글씨로 이야기해요'}</Text>
         </View>
       </View>
       <View style={styles.stats}>

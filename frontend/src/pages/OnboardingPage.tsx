@@ -61,7 +61,7 @@ export default function OnboardingPage() {
         heartUrl,
         avatarUrl: avatarDataUrl
       });
-      showToast(`손끝에 오신 걸 환영해요, ${form.nickname.trim()}님 🎉`);
+      showToast(`ALine에 오신 걸 환영해요, ${form.nickname.trim()}님 🎉`);
       navigate('/feed', { replace: true });
     } catch (err) {
       showToast(err instanceof Error ? err.message : '회원가입에 실패했어요');
@@ -108,7 +108,7 @@ export default function OnboardingPage() {
 
       <div className={'onb-step' + (step === 1 ? ' active' : '')}>
         <div className="screen-title">반가워요 👋</div>
-        <p className="screen-sub">손끝에서 활동할 계정을 만들어주세요</p>
+        <p className="screen-sub">ALine에서 활동할 계정을 만들어주세요</p>
         <div className="field">
           <label>아이디</label>
           <input

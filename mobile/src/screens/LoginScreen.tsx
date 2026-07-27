@@ -27,7 +27,7 @@ export default function LoginScreen({ navigation }: Props) {
     setSubmitting(true);
     try {
       await loginUser({ identifier: identifier.trim(), password });
-      showToast('손끝에 오신 걸 환영해요 🎉');
+      showToast('ALine에 오신 걸 환영해요 🎉');
       // RootNavigator가 session 값을 보고 자동으로 App 스택으로 전환합니다.
     } catch (err) {
       showToast(err instanceof Error ? err.message : '로그인에 실패했어요');
