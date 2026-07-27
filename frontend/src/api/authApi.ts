@@ -90,9 +90,7 @@ export async function signup(payload: SignupPayload): Promise<Session> {
       data: {
         username: payload.username,
         nickname: payload.nickname,
-        avatar_color: AVATAR_TONES[0],
-        heart_url: payload.heartUrl,
-        avatar_url: payload.avatarUrl
+        avatar_color: AVATAR_TONES[0]
       }
     }
   });
@@ -103,6 +101,16 @@ export async function signup(payload: SignupPayload): Promise<Session> {
     // Supabase 프로젝트에서 "Confirm email"이 켜져 있으면 로그인 세션 없이 유저만 생성됩니다.
     throw new Error('가입 확인 이메일을 보냈어요. 메일함을 확인한 뒤 로그인해주세요.');
   }
+
+  // 하트/프로필 사진은 base64 이미지라 auth metadata(raw_user_meta_data)에 넣으면 안 됩니다 —
+  // 거기 들어간 값은 이후 발급되는 모든 JWT(Authorization 헤더)에 그대로 실려서, Storage 업로드 같은
+  // 일부 요청이 헤더 크기 제한에 걸려 알 수 없는 400으로 깨지는 원인이 됩니다. 그래서 로그인 세션이
+  // 생긴 뒤 profiles 테이블에 별도로 저장합니다.
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update({ heart_url: payload.heartUrl, avatar_url: payload.avatarUrl })
+    .eq('id', data.user.id);
+  if (profileError) throw new Error(profileError.message);
 
   return {
     id: data.user.id,
