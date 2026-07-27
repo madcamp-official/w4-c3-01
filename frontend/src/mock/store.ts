@@ -134,6 +134,11 @@ class MockStore {
     return post;
   }
 
+  deletePost(postId: string) {
+    this.ensureSeeded();
+    this.posts = this.posts.filter((p) => p.id !== postId);
+  }
+
   sendMessage(chatId: string, message: ChatMessage): Chat | undefined {
     this.ensureSeeded();
     const chat = this.chats.find((c) => c.id === chatId);

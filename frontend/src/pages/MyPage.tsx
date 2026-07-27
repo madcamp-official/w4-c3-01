@@ -80,7 +80,11 @@ export default function MyPage() {
         ) : (
           <div className="grid3">
             {items.map((p) => (
-              <div key={p.id} className="cell" onClick={() => openViewer({ image: p.image, caption: p.caption, strokes: p.strokes })}>
+              <div
+                key={p.id}
+                className="cell"
+                onClick={() => openViewer({ image: p.image, caption: p.caption, strokes: p.strokes, postId: p.id })}
+              >
                 <img src={p.image} alt="" />
               </div>
             ))}

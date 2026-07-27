@@ -82,7 +82,7 @@ export default function SearchPage() {
                 <div
                   key={p.id}
                   className="cell"
-                  onClick={() => openViewer({ image: p.image, caption: p.caption, strokes: p.strokes })}
+                  onClick={() => openViewer({ image: p.image, caption: p.caption, strokes: p.strokes, postId: p.id })}
                 >
                   <img src={p.image} alt="" />
                 </div>

@@ -32,7 +32,7 @@ export async function createPost(payload: CreatePostPayload): Promise<Post> {
       time: '방금 전',
       image: payload.image,
       strokes: payload.strokes,
-      caption: payload.caption || '(문구 없음)',
+      caption: payload.caption,
       liked: false,
       likes: 0,
       comments: [],
@@ -60,5 +60,14 @@ export async function addComment(postId: string, comment: Comment): Promise<Post
   } catch {
     // TODO(backend): replace with POST /posts/:id/comments
     return mockStore.addComment(postId, comment);
+  }
+}
+
+export async function deletePost(postId: string): Promise<void> {
+  try {
+    await apiRequest<void>(`/posts/${postId}`, { method: 'DELETE' });
+  } catch {
+    // TODO(backend): replace with DELETE /posts/:id
+    mockStore.deletePost(postId);
   }
 }

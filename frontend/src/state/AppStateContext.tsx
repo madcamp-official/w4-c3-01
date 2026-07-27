@@ -36,6 +36,7 @@ interface AppStateValue {
   sharePost: (input: { image: string; strokes: StrokePoint[]; caption: string }) => Promise<Post>;
   likePost: (postId: string) => Promise<void>;
   commentOnPost: (postId: string, text: string) => Promise<void>;
+  deletePost: (postId: string) => Promise<void>;
 
   loadChats: () => Promise<void>;
   loadThread: (chatId: string) => Promise<void>;
@@ -154,6 +155,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [session]
   );
 
+  const deletePost = useCallback(async (postId: string) => {
+    await postsApi.deletePost(postId);
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+  }, []);
+
   const loadChats = useCallback(async () => {
     if (!session) return;
     setChats(await chatApi.fetchConversations(session.id));
@@ -244,6 +250,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       sharePost,
       likePost,
       commentOnPost,
+      deletePost,
       loadChats,
       loadThread,
       getChat,
@@ -271,6 +278,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       sharePost,
       likePost,
       commentOnPost,
+      deletePost,
       loadChats,
       loadThread,
       getChat,

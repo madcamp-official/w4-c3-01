@@ -5,6 +5,8 @@ interface ViewerPayload {
   image: string;
   caption: string;
   strokes?: StrokePoint[];
+  /** 게시물을 보여줄 때만 넘겨줍니다 — 있으면 본인 글일 때 삭제 버튼을 보여줍니다. */
+  postId?: string;
 }
 
 interface OverlayValue {

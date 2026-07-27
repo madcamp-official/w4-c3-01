@@ -36,7 +36,10 @@ export default function PostCard({ post }: { post: Post }) {
           <small>{post.time}</small>
         </div>
       </div>
-      <div className="post-media" onClick={() => openViewer({ image: post.image, caption: post.caption, strokes: post.strokes })}>
+      <div
+        className="post-media"
+        onClick={() => openViewer({ image: post.image, caption: post.caption, strokes: post.strokes, postId: post.id })}
+      >
         <img src={post.image} alt="" />
       </div>
       <div className="post-actions">

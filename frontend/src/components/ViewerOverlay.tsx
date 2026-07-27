@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { replayStrokes, setupHiDPI } from '@/lib/canvas';
+import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 
 export default function ViewerOverlay() {
   const { viewer, closeViewer } = useOverlay();
+  const { posts, deletePost } = useAppState();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 
@@ -17,11 +19,20 @@ export default function ViewerOverlay() {
 
   if (!viewer) return null;
 
+  const post = viewer.postId ? posts.find((p) => p.id === viewer.postId) : undefined;
+
   function handleReplay() {
     const canvas = canvasRef.current;
     if (!canvas || !ctxRef.current || !viewer?.strokes) return;
     const rect = canvas.getBoundingClientRect();
     replayStrokes(viewer.strokes, ctxRef.current, rect.width, rect.height, 5, 1400);
+  }
+
+  async function handleDelete() {
+    if (!post) return;
+    if (!window.confirm('이 게시물을 삭제할까요?')) return;
+    await deletePost(post.id);
+    closeViewer();
   }
 
   return (
@@ -42,6 +53,11 @@ export default function ViewerOverlay() {
         {viewer.strokes ? (
           <button className="btn primary sk" onClick={handleReplay}>
             ✏️ 다시 쓰는 순간 보기
+          </button>
+        ) : null}
+        {post?.mine ? (
+          <button className="btn ghost sk" style={{ color: 'var(--danger)' }} onClick={handleDelete}>
+            삭제하기
           </button>
         ) : null}
       </div>
