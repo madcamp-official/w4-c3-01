@@ -313,9 +313,6 @@ input[type='password'].sk::before {
 }
 
 /* ---------- onboarding ---------- */
-#screen-onboarding {
-  padding-top: 18px;
-}
 .onb-progress {
   display: flex;
   gap: 6px;

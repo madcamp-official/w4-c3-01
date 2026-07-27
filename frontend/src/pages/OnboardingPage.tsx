@@ -85,8 +85,21 @@ export default function OnboardingPage() {
     }
   }
 
+  function handleBack() {
+    if (step === 1) navigate('/');
+    else setStep((s) => (s - 1) as 1 | 2 | 3);
+  }
+
   return (
     <section className="screen active" id="screen-onboarding">
+      <div className="statusbar" style={{ padding: '0 14px 8px 0' }}>
+        <button className="icon-btn sk" onClick={handleBack}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+        <div style={{ width: 36 }} />
+      </div>
       <div className="onb-progress">
         <span className={step >= 1 ? 'on' : ''} />
         <span className={step >= 2 ? 'on' : ''} />
