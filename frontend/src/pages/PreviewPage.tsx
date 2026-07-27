@@ -20,7 +20,7 @@ export default function PreviewPage() {
   }, []);
 
   if (!navState) return null;
-  const { image, strokes, intent } = navState;
+  const { image, strokes, drawing, intent } = navState;
 
   async function handleShare() {
     if (intent.kind === 'lounge') {
@@ -28,7 +28,7 @@ export default function PreviewPage() {
       navigate(`/lounges/${intent.loungeId}`, { replace: true });
       return;
     }
-    await sharePost({ image, strokes, caption: caption.trim() });
+    await sharePost({ image, strokes, drawing, caption: caption.trim() });
     navigate('/feed', { replace: true });
     showToast('게시물을 공유했어요 🎉');
   }

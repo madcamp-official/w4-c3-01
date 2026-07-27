@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import type { PenTool, Point } from '../types'
+import type { PenTool, Point } from './types'
 
 const PEN_STYLES = [
   { name: '펜', tool: 'pen' as const, icon: 'pen' },

@@ -16,6 +16,7 @@ import type {
   SignupPayload,
   StrokePoint
 } from '@/types';
+import type { AirDrawingDocument } from '@/features/air-drawing/types';
 
 interface AppStateValue {
   session: Session | null;
@@ -33,7 +34,12 @@ interface AppStateValue {
   updateProfile: (updates: { username: string; nickname: string; onboarded?: boolean }) => Promise<void>;
 
   loadFeed: () => Promise<void>;
-  sharePost: (input: { image: string; strokes: StrokePoint[]; caption: string }) => Promise<Post>;
+  sharePost: (input: {
+    image: string;
+    strokes: StrokePoint[];
+    drawing?: AirDrawingDocument;
+    caption: string;
+  }) => Promise<Post>;
   likePost: (postId: string) => Promise<void>;
   commentOnPost: (postId: string, text: string) => Promise<void>;
   deletePost: (postId: string) => Promise<void>;
@@ -123,13 +129,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const sharePost = useCallback(
-    async (input: { image: string; strokes: StrokePoint[]; caption: string }) => {
+    async (input: {
+      image: string;
+      strokes: StrokePoint[];
+      drawing?: AirDrawingDocument;
+      caption: string;
+    }) => {
       if (!session) throw new Error('not authenticated');
       const post = await postsApi.createPost({
         username: session.nickname,
         avatarColor: session.avatarColor,
         image: input.image,
         strokes: input.strokes,
+        drawing: input.drawing,
         caption: input.caption
       });
       setPosts((prev) => [post, ...prev]);

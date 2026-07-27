@@ -1,5 +1,5 @@
 import type { NormalizedLandmark } from '@mediapipe/tasks-vision'
-import type { FacingMode, Point } from '../types'
+import type { FacingMode, Point } from './types'
 
 /**
  * MediaPipe 좌표는 원본 비디오 기준 0~1 값이다.

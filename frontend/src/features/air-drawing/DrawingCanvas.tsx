@@ -1,11 +1,14 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
-import type { PenTool, Point, Stroke } from '../types'
+import type { AirDrawingDocument, PenTool, Point, Stroke } from './types'
 
 export interface DrawingCanvasHandle {
   addPoint: (point: Point) => void
   eraseAt: (point: Point, radius: number) => void
   endStroke: () => void
   clear: () => void
+  hasDrawing: () => boolean
+  getCanvas: () => HTMLCanvasElement | null
+  getDocument: () => AirDrawingDocument
 }
 
 interface DrawingCanvasProps {
@@ -425,6 +428,23 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
             context.globalAlpha = 1
             context.setLineDash([])
             context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight)
+          }
+        },
+        hasDrawing() {
+          return strokesRef.current.some((stroke) => stroke.points.length > 1)
+        },
+        getCanvas() {
+          return canvasRef.current
+        },
+        getDocument() {
+          return {
+            version: 2,
+            strokes: strokesRef.current.map((stroke) => ({
+              points: stroke.points.map((point) => ({ ...point })),
+              color: stroke.color,
+              tool: stroke.tool,
+              lineWidth: stroke.lineWidth,
+            })),
           }
         },
       }),

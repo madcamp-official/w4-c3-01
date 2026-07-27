@@ -17,6 +17,7 @@ export interface CreatePostPayload {
   avatarColor: string;
   image: string;
   strokes: Post['strokes'];
+  drawing?: Post['drawing'];
   caption: string;
 }
 
@@ -32,6 +33,7 @@ export async function createPost(payload: CreatePostPayload): Promise<Post> {
       time: '방금 전',
       image: payload.image,
       strokes: payload.strokes,
+      drawing: payload.drawing,
       caption: payload.caption,
       liked: false,
       likes: 0,

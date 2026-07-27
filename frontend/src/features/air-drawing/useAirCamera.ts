@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { FacingMode } from '../types'
+import type { FacingMode } from './types'
 
 interface UseCameraResult {
   stream: MediaStream | null
@@ -30,7 +30,7 @@ function toReadableCameraError(error: unknown): string {
   }
 }
 
-export function useCamera(initialFacingMode: FacingMode = 'user'): UseCameraResult {
+export function useAirCamera(initialFacingMode: FacingMode = 'user'): UseCameraResult {
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [facingMode, setFacingMode] = useState<FacingMode>(initialFacingMode)
   const [isStarting, setIsStarting] = useState(false)

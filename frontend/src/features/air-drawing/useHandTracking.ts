@@ -5,8 +5,8 @@ import {
   type NormalizedLandmark,
 } from '@mediapipe/tasks-vision'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { FacingMode, Point } from '../types'
-import { landmarkToStagePoint, smoothPoint } from '../utils/coordinates'
+import type { FacingMode, Point } from './types'
+import { landmarkToStagePoint, smoothPoint } from './coordinates'
 
 const WASM_ROOT = '/wasm'
 const MODEL_URL = '/models/hand_landmarker.task'

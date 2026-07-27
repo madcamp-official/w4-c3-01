@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react'
-import type { Point } from '../types'
+import type { Point } from './types'
 
 const COLORS = [
   { name: '흰색', value: '#ffffff' },

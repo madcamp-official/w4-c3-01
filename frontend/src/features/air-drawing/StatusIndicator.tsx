@@ -1,4 +1,4 @@
-import type { AppStatus } from '../types'
+import type { AppStatus } from './types'
 
 interface StatusIndicatorProps {
   status: AppStatus

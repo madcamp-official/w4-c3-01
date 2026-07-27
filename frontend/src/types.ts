@@ -1,3 +1,5 @@
+import type { AirDrawingDocument } from '@/features/air-drawing/types';
+
 export interface StrokePoint {
   x: number;
   y: number;
@@ -16,6 +18,7 @@ export interface Post {
   time: string;
   image: string;
   strokes: StrokePoint[];
+  drawing?: AirDrawingDocument;
   caption: string;
   liked: boolean;
   likes: number;

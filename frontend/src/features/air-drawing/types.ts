@@ -29,3 +29,15 @@ export interface NormalizedPoint {
 }
 
 export type Stroke = NormalizedPoint[]
+
+export interface AirDrawingStroke {
+  points: Stroke
+  color: string
+  tool: PenTool
+  lineWidth: number
+}
+
+export interface AirDrawingDocument {
+  version: 2
+  strokes: AirDrawingStroke[]
+}
