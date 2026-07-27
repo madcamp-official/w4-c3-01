@@ -335,6 +335,7 @@ input[type='password'].sk::before {
   display: none;
   flex-direction: column;
   padding: 0 14px 20px 0;
+  overflow-y: auto;
 }
 .onb-step.active {
   display: flex;
