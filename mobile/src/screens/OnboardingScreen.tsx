@@ -1,0 +1,185 @@
+// Adapted from frontend/src/pages/OnboardingPage.tsx — keep in sync.
+// Step 3 (heart air-drawing) is stubbed to the default heart until Phase 4
+// wires up the air-drawing WebView bridge (plan Phase 1 scope note).
+import { useState } from 'react';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Feather from '@expo/vector-icons/Feather';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import AvatarPicker from '@/components/AvatarPicker';
+import { useUsernameCheck, usernameStatusMessage } from '@/hooks/useUsernameCheck';
+import { AVATAR_TONES, defaultHeartUrl } from '@/mock/store';
+import type { AuthStackParamList } from '@/navigation/types';
+import { useAppState } from '@/state/AppStateContext';
+import { useToast } from '@/state/ToastContext';
+import { colors } from '@/theme/colors';
+import { common } from '@/theme/common';
+
+type Props = NativeStackScreenProps<AuthStackParamList, 'Onboarding'>;
+
+const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,12}$/;
+
+function passwordHint(password: string): { text: string; color: string } | null {
+  if (!password) return null;
+  if (PASSWORD_RULE.test(password)) return { text: '사용할 수 있는 비밀번호예요', color: colors.inkSoft };
+  return { text: '8~12자, 영문·숫자·특수문자를 모두 포함해주세요', color: colors.danger };
+}
+
+export default function OnboardingScreen({ navigation }: Props) {
+  const { signupUser, loginWithGoogle } = useAppState();
+  const { showToast } = useToast();
+
+  const [step, setStep] = useState<1 | 2>(1);
+  const [form, setForm] = useState({ username: '', email: '', nickname: '', password: '', password2: '' });
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const usernameStatus = useUsernameCheck(form.username);
+  const usernameHint = usernameStatusMessage(usernameStatus);
+  const pwHint = passwordHint(form.password);
+  const passwordValid = PASSWORD_RULE.test(form.password);
+
+  const step1Filled = Object.values(form).every((v) => v.trim().length > 0);
+  const canGoNext = step1Filled && usernameStatus === 'available' && passwordValid;
+
+  function updateField(key: keyof typeof form, value: string) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function handleNext() {
+    if (form.password !== form.password2) {
+      showToast('비밀번호가 일치하지 않아요');
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+      showToast('이메일 형식을 확인해주세요');
+      return;
+    }
+    setStep(2);
+  }
+
+  async function handleDone() {
+    setSubmitting(true);
+    try {
+      await signupUser({
+        username: form.username.trim(),
+        email: form.email.trim(),
+        nickname: form.nickname.trim(),
+        password: form.password,
+        heartUrl: defaultHeartUrl(),
+        avatarUrl: avatarDataUrl
+      });
+      showToast(`손끝에 오신 걸 환영해요, ${form.nickname.trim()}님 🎉`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '회원가입에 실패했어요');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleGoogle() {
+    try {
+      await loginWithGoogle();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Google 로그인을 시작하지 못했어요');
+    }
+  }
+
+  function handleBack() {
+    if (step === 1) navigation.goBack();
+    else setStep(1);
+  }
+
+  return (
+    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
+      <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={handleBack}>
+        <Feather name="chevron-left" size={24} color={colors.ink} />
+      </Pressable>
+
+      {step === 1 ? (
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}>
+          <Text style={common.title}>반가워요 👋</Text>
+          <Text style={common.subtitle}>손끝에서 활동할 계정을 만들어주세요</Text>
+
+          <View style={common.field}>
+            <Text style={common.label}>아이디</Text>
+            <TextInput
+              style={common.input}
+              placeholder="영문, 숫자 조합"
+              value={form.username}
+              onChangeText={(v) => updateField('username', v)}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {usernameHint ? <Text style={[common.hint, { color: usernameHint.color }]}>{usernameHint.text}</Text> : null}
+          </View>
+          <View style={common.field}>
+            <Text style={common.label}>이메일</Text>
+            <TextInput
+              style={common.input}
+              placeholder="example@email.com"
+              value={form.email}
+              onChangeText={(v) => updateField('email', v)}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+            />
+          </View>
+          <View style={common.field}>
+            <Text style={common.label}>이름</Text>
+            <TextInput style={common.input} maxLength={16} value={form.nickname} onChangeText={(v) => updateField('nickname', v)} />
+          </View>
+          <View style={common.field}>
+            <Text style={common.label}>비밀번호</Text>
+            <TextInput
+              style={common.input}
+              placeholder="8~12자, 영문·숫자·특수문자 포함"
+              value={form.password}
+              onChangeText={(v) => updateField('password', v)}
+              secureTextEntry
+            />
+            {pwHint ? <Text style={[common.hint, { color: pwHint.color }]}>{pwHint.text}</Text> : null}
+          </View>
+          <View style={common.field}>
+            <Text style={common.label}>비밀번호 확인</Text>
+            <TextInput style={common.input} value={form.password2} onChangeText={(v) => updateField('password2', v)} secureTextEntry />
+          </View>
+
+          <Pressable style={[common.btn, common.btnPrimary, !canGoNext && common.btnDisabled]} disabled={!canGoNext} onPress={handleNext}>
+            <Text style={common.btnPrimaryText}>다음</Text>
+          </Pressable>
+
+          <View style={common.dividerRow}>
+            <View style={common.dividerLine} />
+            <Text style={common.dividerText}>또는</Text>
+            <View style={common.dividerLine} />
+          </View>
+
+          <Pressable style={[common.btn, common.btnGhost]} onPress={handleGoogle}>
+            <Text style={common.btnGhostText}>Google로 계속하기</Text>
+          </Pressable>
+
+          <Pressable style={common.linkBtn} onPress={() => navigation.navigate('Login')}>
+            <Text style={common.linkBtnText}>이미 계정이 있으신가요? 로그인</Text>
+          </Pressable>
+        </ScrollView>
+      ) : (
+        <View style={{ flex: 1, alignItems: 'center', paddingTop: 12 }}>
+          <Text style={common.title}>프로필 사진을 넣어볼까요?</Text>
+          <Text style={[common.subtitle, { textAlign: 'center' }]}>나중에 마이페이지에서 언제든 바꿀 수 있어요{'\n'}건너뛰어도 괜찮아요</Text>
+          <View style={{ marginVertical: 20 }}>
+            <AvatarPicker dataUrl={avatarDataUrl} nickname={form.nickname || '?'} color={AVATAR_TONES[0]} size={120} onChange={setAvatarDataUrl} />
+          </View>
+          <View style={{ flex: 1 }} />
+          <Pressable
+            style={[common.btn, common.btnPrimary, submitting && common.btnDisabled, { width: '100%' }]}
+            disabled={submitting}
+            onPress={handleDone}
+          >
+            <Text style={common.btnPrimaryText}>{submitting ? '가입하는 중...' : '가입 완료'}</Text>
+          </Pressable>
+        </View>
+      )}
+    </SafeAreaView>
+  );
+}
