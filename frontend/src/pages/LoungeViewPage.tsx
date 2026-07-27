@@ -125,7 +125,9 @@ export default function LoungeViewPage() {
           </div>
         ) : (
           <div className="cam-botbar">
-            <div />
+            <button className="btn sk" onClick={() => navigate(`/ar-lounge/${loungeId}`)}>
+              3D AR 라운지
+            </button>
             <button className="btn primary sk" onClick={() => navigate('/camera', { state: { intent: { kind: 'lounge', loungeId } } })}>
               ✍️ 여기에 손글씨 남기기
             </button>

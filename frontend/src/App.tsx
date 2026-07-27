@@ -24,6 +24,7 @@ import EditHeartPage from '@/pages/EditHeartPage';
 import EditProfilePage from '@/pages/EditProfilePage';
 import LoungeListPage from '@/pages/LoungeListPage';
 import LoungeViewPage from '@/pages/LoungeViewPage';
+import ArLoungePage from '@/pages/ArLoungePage';
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
           <PlacementProvider>
             <HashRouter>
               <Routes>
+                <Route path="/ar-lounge/:loungeId" element={<ArLoungePage />} />
                 <Route element={<AppShell />}>
                   <Route element={<PublicOnlyLayout />}>
                     <Route path="/" element={<LandingPage />} />

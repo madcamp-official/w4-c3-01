@@ -1,0 +1,276 @@
+.ar-lounge {
+  min-height: 100dvh;
+  background: #0b0d0e;
+  color: #f7f8f8;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.ar-lounge.is-active {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: transparent;
+}
+
+.ar-lounge__landing {
+  min-height: 100dvh;
+  max-width: 520px;
+  margin: auto;
+  padding: 28px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ar-lounge__back {
+  position: absolute;
+  top: 22px;
+  border: 0;
+  background: transparent;
+  color: #aab1b4;
+}
+
+.ar-lounge__eyebrow {
+  margin: 0;
+  color: #8ef0d0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+
+.ar-lounge__landing h1 {
+  margin: 12px 0;
+  font-size: 44px;
+}
+
+.ar-lounge__landing > p {
+  color: #aab1b4;
+  line-height: 1.6;
+}
+
+.ar-lounge__server {
+  margin-top: 22px;
+  display: grid;
+  gap: 8px;
+  color: #bec5c7;
+  font-size: 12px;
+}
+
+.ar-lounge__server input {
+  min-height: 50px;
+  border: 1px solid #343a3d;
+  border-radius: 14px;
+  padding: 0 14px;
+  background: #171b1d;
+  color: white;
+}
+
+.ar-lounge__launch {
+  min-height: 58px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 16px;
+  background: #8ef0d0;
+  color: #07110e;
+  font-weight: 850;
+}
+
+.ar-lounge__launch:disabled {
+  background: #343a3c;
+  color: #777f82;
+}
+
+.ar-lounge__message {
+  font-size: 12px;
+}
+
+.ar-lounge__stage,
+.ar-lounge__stage canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ar-lounge__overlay {
+  display: none;
+}
+
+.ar-lounge__overlay.is-visible {
+  position: fixed;
+  inset: 0;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.ar-lounge__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.ar-lounge__header > div {
+  border-radius: 16px;
+  padding: 11px 14px;
+  display: grid;
+  gap: 3px;
+  background: rgba(8, 10, 11, .82);
+}
+
+.ar-lounge__header span {
+  color: #8ef0d0;
+  font-size: 11px;
+}
+
+.ar-lounge__header button {
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 15px;
+  background: rgba(8, 10, 11, .82);
+  color: white;
+  font-size: 28px;
+  pointer-events: auto;
+}
+
+.ar-qr-guide {
+  --ar-qr-size: min(40vw, 220px);
+  position: fixed;
+  top: 42%;
+  left: 50%;
+  width: var(--ar-qr-size);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border: 1px dashed rgba(255,255,255,.72);
+}
+
+.ar-qr-guide i {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-color: #8ef0d0;
+  border-style: solid;
+}
+
+.ar-qr-guide .tl { top: -3px; left: -3px; border-width: 4px 0 0 4px; }
+.ar-qr-guide .tr { top: -3px; right: -3px; border-width: 4px 4px 0 0; }
+.ar-qr-guide .bl { bottom: -3px; left: -3px; border-width: 0 0 4px 4px; }
+.ar-qr-guide .br { right: -3px; bottom: -3px; border-width: 0 4px 4px 0; }
+
+.ar-qr-guide > span {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  translate: -50%;
+  width: max-content;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: rgba(8, 10, 11, .82);
+  font-size: 11px;
+}
+
+.ar-lounge__controls {
+  border-radius: 22px;
+  padding: 13px;
+  background: rgba(8, 10, 11, .88);
+  pointer-events: auto;
+}
+
+.ar-lounge__row,
+.ar-lounge__tools,
+.ar-lounge__width {
+  display: flex;
+  align-items: center;
+}
+
+.ar-lounge__row {
+  justify-content: space-between;
+}
+
+.ar-lounge__row button {
+  border: 0;
+  padding: 7px 0;
+  background: transparent;
+  color: white;
+  font-weight: 800;
+}
+
+.ar-lounge__row span,
+.ar-lounge__controls > p {
+  color: #9ea6a9;
+  font-size: 11px;
+}
+
+.ar-lounge__controls > p {
+  margin: 5px 0 10px;
+}
+
+.ar-lounge__width {
+  gap: 10px;
+  font-size: 11px;
+}
+
+.ar-lounge__width input {
+  flex: 1;
+  accent-color: #8ef0d0;
+}
+
+.ar-lounge__width output {
+  width: 42px;
+  color: #8ef0d0;
+}
+
+.ar-lounge__tools {
+  margin-top: 10px;
+  gap: 9px;
+}
+
+.ar-lounge__tools button:not(.text) {
+  width: 27px;
+  height: 27px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+}
+
+.ar-lounge__tools button.selected {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.ar-lounge__tools .text {
+  min-height: 34px;
+  border: 0;
+  border-radius: 9px;
+  padding: 0 9px;
+  background: #282e31;
+  color: #d3d7d9;
+  font-size: 10px;
+}
+
+.ar-lounge__tools .text:first-of-type {
+  margin-left: auto;
+}
+
+.ar-lounge__draw {
+  width: 100%;
+  min-height: 60px;
+  margin-top: 13px;
+  border: 0;
+  border-radius: 16px;
+  background: #8ef0d0;
+  color: #07110e;
+  font-weight: 850;
+  touch-action: none;
+}
+
+.ar-lounge__draw.drawing {
+  background: #f27b9f;
+}
+
+.ar-lounge__draw:disabled {
+  background: #363c3f;
+  color: #858c8e;
+}
