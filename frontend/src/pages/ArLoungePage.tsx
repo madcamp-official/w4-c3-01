@@ -286,14 +286,18 @@ export default function ArLoungePage() {
     if (!id) return;
     strokesRef.current.delete(id);
     removeRendered(id);
-    socketRef.current?.send(JSON.stringify({ type: 'stroke:delete', strokeId: id }));
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ type: 'stroke:delete', strokeId: id }));
+    }
   }, [removeRendered, stopDrawing]);
 
   const clearLounge = useCallback(() => {
     clearRendered();
     strokesRef.current.clear();
     localIdsRef.current = [];
-    socketRef.current?.send(JSON.stringify({ type: 'lounge:clear' }));
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ type: 'lounge:clear' }));
+    }
   }, [clearRendered]);
 
   const startAr = useCallback(async () => {
