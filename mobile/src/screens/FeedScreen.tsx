@@ -1,22 +1,50 @@
-// Placeholder for Phase 2 — real feed (FlatList + PostCard) comes next.
-// Exists now purely so Phase 1's auth loop is end-to-end testable.
-import { Pressable, Text, View } from 'react-native';
+// Ported from frontend/src/pages/FeedPage.tsx — keep in sync.
+import { useEffect } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Feather from '@expo/vector-icons/Feather';
+import type { NavigationProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import PostCard from '@/components/PostCard';
+import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
-import { common } from '@/theme/common';
+import { colors } from '@/theme/colors';
 
 export default function FeedScreen() {
-  const { session, logoutUser } = useAppState();
+  const { posts, loadFeed } = useAppState();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    void loadFeed();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-        <Text style={common.title}>손끝에 오신 걸 환영해요, {session?.nickname}님</Text>
-        <Text style={common.subtitle}>피드 화면은 Phase 2에서 구현됩니다.</Text>
-        <Pressable style={[common.btn, common.btnGhost]} onPress={logoutUser}>
-          <Text style={common.btnGhostText}>로그아웃</Text>
+    <SafeAreaView style={styles.screen} edges={['top']}>
+      <View style={styles.header}>
+        <View style={styles.logoRow}>
+          <View style={styles.dot} />
+          <Text style={styles.logo}>손끝</Text>
+        </View>
+        <Pressable style={styles.iconBtn} onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('ChatList')}>
+          <Feather name="send" size={20} color={colors.ink} />
         </Pressable>
       </View>
+      <FlatList
+        data={posts}
+        keyExtractor={(p) => p.id}
+        renderItem={({ item }) => <PostCard post={item} />}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      />
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.paper },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger },
+  logo: { fontSize: 19, fontWeight: '800', color: colors.ink },
+  iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }
+});

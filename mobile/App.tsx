@@ -5,6 +5,11 @@ import { StatusBar } from 'expo-status-bar';
 import { useFonts, Gaegu_400Regular, Gaegu_700Bold } from '@expo-google-fonts/gaegu';
 import { NotoSansKR_400Regular, NotoSansKR_700Bold } from '@expo-google-fonts/noto-sans-kr';
 import { ActivityIndicator, View } from 'react-native';
+import CommentSheet from '@/components/CommentSheet';
+import LogoutSheet from '@/components/LogoutSheet';
+import ShareSheet from '@/components/ShareSheet';
+import Toast from '@/components/Toast';
+import ViewerOverlay from '@/components/ViewerOverlay';
 import { linking } from '@/navigation/linking';
 import RootNavigator from '@/navigation/RootNavigator';
 import { AppStateProvider } from '@/state/AppStateContext';
@@ -39,6 +44,11 @@ export default function App() {
                 <NavigationContainer linking={linking}>
                   <RootNavigator />
                 </NavigationContainer>
+                <ViewerOverlay />
+                <CommentSheet />
+                <ShareSheet />
+                <LogoutSheet />
+                <Toast />
               </PlacementProvider>
             </OverlayProvider>
           </AppStateProvider>
