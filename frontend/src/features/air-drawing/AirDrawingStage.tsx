@@ -184,8 +184,10 @@ export function AirDrawingStage({
     }
 
     const rect = stage.getBoundingClientRect()
-    const width = Math.max(1, Math.round(rect.width))
-    const height = Math.max(1, Math.round(rect.height))
+    const MAX_DIM = 960
+    const scale = Math.min(1, MAX_DIM / Math.max(rect.width, rect.height))
+    const width = Math.max(1, Math.round(rect.width * scale))
+    const height = Math.max(1, Math.round(rect.height * scale))
     const output = document.createElement('canvas')
     output.width = width
     output.height = height
@@ -210,7 +212,7 @@ export function AirDrawingStage({
       )
       const drawing = drawingHandle.getDocument()
       onCapture({
-        image: output.toDataURL('image/png'),
+        image: output.toDataURL('image/jpeg', 0.85),
         strokes: flattenDrawing(drawing),
         drawing,
       })

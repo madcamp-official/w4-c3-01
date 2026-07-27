@@ -13,9 +13,10 @@ function dataUrlToBlob(dataUrl: string): Blob {
 async function uploadImageToBucket(bucket: string, userId: string, dataUrl: string): Promise<string> {
   if (!supabase) throw new Error('Supabase가 설정되지 않았어요');
   const blob = dataUrlToBlob(dataUrl);
-  const path = `${userId}/${Date.now()}.png`;
+  const ext = blob.type === 'image/jpeg' ? 'jpg' : 'png';
+  const path = `${userId}/${Date.now()}.${ext}`;
   const { error } = await supabase.storage.from(bucket).upload(path, blob, {
-    contentType: 'image/png',
+    contentType: blob.type,
     upsert: false
   });
   if (error) throw new Error(error.message);
