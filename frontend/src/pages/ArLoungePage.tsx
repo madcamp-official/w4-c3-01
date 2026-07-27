@@ -85,11 +85,22 @@ export default function ArLoungePage() {
       setMessage('ARCore를 지원하는 Android Chrome에서 열어주세요.');
       return;
     }
-    navigator.xr.isSessionSupported('immersive-ar').then((result) => {
-      if (!active) return;
-      setSupported(result);
-      setMessage(result ? '라운지 AR을 시작할 수 있어요.' : '이 기기는 WebXR AR을 지원하지 않아요.');
-    });
+    navigator.xr
+      .isSessionSupported('immersive-ar')
+      .then((result) => {
+        if (!active) return;
+        setSupported(result);
+        setMessage(
+          result
+            ? '라운지 AR을 시작할 수 있어요.'
+            : 'AR 지원 확인에 실패했어요. 버튼을 눌러 상세 원인을 확인하세요.'
+        );
+      })
+      .catch((error) => {
+        if (!active) return;
+        setSupported(false);
+        setMessage(error instanceof Error ? error.message : 'AR 지원 확인 중 오류가 발생했어요.');
+      });
     return () => {
       active = false;
     };
@@ -301,7 +312,22 @@ export default function ArLoungePage() {
   }, [clearRendered]);
 
   const startAr = useCallback(async () => {
-    if (!navigator.xr || !stageRef.current || !overlayRef.current) return;
+    if (!serverUrl.trim()) {
+      setMessage('동기화 서버 주소가 비어 있어요.');
+      return;
+    }
+    if (!window.isSecureContext) {
+      setMessage('AR은 HTTPS 주소에서만 실행할 수 있어요.');
+      return;
+    }
+    if (!navigator.xr) {
+      setMessage('이 브라우저에는 WebXR이 없어요. 링크를 Android Chrome에서 직접 열어주세요.');
+      return;
+    }
+    if (!stageRef.current || !overlayRef.current) {
+      setMessage('AR 화면을 준비하지 못했어요. 페이지를 새로고침해주세요.');
+      return;
+    }
     connectSocket();
     try {
       const scene = new THREE.Scene();
@@ -421,10 +447,14 @@ export default function ArLoungePage() {
               placeholder="https://xxxx.trycloudflare.com"
             />
           </label>
-          <button className="ar-lounge__launch" disabled={!supported || !serverUrl} onClick={() => void startAr()}>
+          <button className="ar-lounge__launch" onClick={() => void startAr()}>
             AR 라운지 시작
           </button>
           <p className="ar-lounge__message">{message}</p>
+          <p className="ar-lounge__diagnostic">
+            HTTPS {window.isSecureContext ? '정상' : '필요'} · WebXR{' '}
+            {navigator.xr ? (supported === null ? '확인 중' : supported ? '지원' : '미지원') : '없음'}
+          </p>
         </section>
       )}
 

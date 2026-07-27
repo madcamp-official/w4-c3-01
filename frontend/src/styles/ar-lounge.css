@@ -84,6 +84,13 @@
   font-size: 12px;
 }
 
+.ar-lounge__diagnostic {
+  margin-top: 2px;
+  color: #778084 !important;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 10px !important;
+}
+
 .ar-lounge__stage,
 .ar-lounge__stage canvas {
   position: fixed;
