@@ -101,12 +101,22 @@ export function replayStrokes(
   h: number,
   weight: number,
   duration: number,
+  sourceAspect: number = w / h,
   onDone?: () => void
 ) {
   if (!strokes || !strokes.length) {
     onDone?.();
     return;
   }
+  // Strokes are normalized 0..1 against the *original* capture canvas, which
+  // isn't always the same aspect ratio as the viewer's <img object-fit:contain>
+  // — without matching that letterboxing here, the replayed path reads as
+  // stretched/offset relative to the (smaller, centered) visible photo.
+  const renderedW = Math.min(w, sourceAspect * h);
+  const renderedH = Math.min(h, w / sourceAspect);
+  const offsetX = (w - renderedW) / 2;
+  const offsetY = (h - renderedH) / 2;
+
   const total = strokes.length;
   let start: number | null = null;
   function frame(ts: number) {
@@ -121,7 +131,7 @@ export function replayStrokes(
     let prev: { x: number; y: number } | null = null;
     for (let k = 0; k < count; k++) {
       const p = strokes[k];
-      const pt = { x: p.x * w, y: p.y * h };
+      const pt = { x: offsetX + p.x * renderedW, y: offsetY + p.y * renderedH };
       if (p.move || !prev) {
         prev = pt;
         continue;

@@ -1,3 +1,4 @@
+import Icon from '@/components/Icon';
 import { useOverlay } from '@/state/OverlayContext';
 import { useToast } from '@/state/ToastContext';
 
@@ -18,16 +19,11 @@ export default function ShareSheet() {
         <div className="sheet-handle" />
         <div className="sheet-title">공유하기</div>
         <button className="share-option" onClick={() => handleOption('link')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="icon-sk">
-            <path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1 1" />
-            <path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1-1" />
-          </svg>
+          <Icon name="link" />
           링크 복사
         </button>
         <button className="share-option" onClick={() => handleOption('chat')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="icon-sk">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
+          <Icon name="message-square" />
           채팅으로 보내기
         </button>
       </div>

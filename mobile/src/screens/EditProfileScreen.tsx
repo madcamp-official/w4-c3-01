@@ -1,10 +1,12 @@
 // Ported from frontend/src/pages/EditProfilePage.tsx — keep in sync.
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Feather from '@expo/vector-icons/Feather';
+import Icon from '@/components/Icon';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import AvatarPicker from '@/components/AvatarPicker';
+import SketchyButton from '@/components/SketchyButton';
+import SketchyInput from '@/components/SketchyInput';
 import { useUsernameCheck, usernameStatusMessage, type UsernameStatus } from '@/hooks/useUsernameCheck';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
@@ -56,7 +58,7 @@ export default function EditProfileScreen({ navigation }: Props) {
     <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6 }}>
         <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
-          <Feather name="chevron-left" size={24} color={colors.ink} />
+          <Icon name="chevron-left" size={24} color={colors.ink} />
         </Pressable>
         <Text style={{ fontSize: 16, fontWeight: '700', color: colors.ink }}>프로필 수정</Text>
         <View style={{ width: 36 }} />
@@ -67,16 +69,16 @@ export default function EditProfileScreen({ navigation }: Props) {
         </View>
         <View style={common.field}>
           <Text style={common.label}>아이디</Text>
-          <TextInput style={common.input} value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
+          <SketchyInput blobVariant="a" value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
           {usernameHint ? <Text style={[common.hint, { color: usernameHint.color }]}>{usernameHint.text}</Text> : null}
         </View>
         <View style={common.field}>
           <Text style={common.label}>이름</Text>
-          <TextInput style={common.input} maxLength={16} value={nickname} onChangeText={setNickname} />
+          <SketchyInput blobVariant="b" maxLength={16} value={nickname} onChangeText={setNickname} />
         </View>
-        <Pressable style={[common.btn, common.btnPrimary, saving && common.btnDisabled]} disabled={saving} onPress={handleSave}>
+        <SketchyButton variant="primary" disabled={saving} onPress={handleSave}>
           <Text style={common.btnPrimaryText}>저장</Text>
-        </Pressable>
+        </SketchyButton>
       </ScrollView>
     </SafeAreaView>
   );

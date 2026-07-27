@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Feather from '@expo/vector-icons/Feather';
+import Icon from '@/components/Icon';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Avatar from '@/components/Avatar';
 import type { AppStackParamList } from '@/navigation/types';
@@ -45,7 +45,7 @@ export default function ChatListScreen({ navigation }: Props) {
     <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
         <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
-          <Feather name="chevron-left" size={24} color={colors.ink} />
+          <Icon name="chevron-left" size={24} color={colors.ink} />
         </Pressable>
         <Text style={{ fontSize: 19, fontWeight: '800', color: colors.ink, marginLeft: 4 }}>채팅</Text>
       </View>

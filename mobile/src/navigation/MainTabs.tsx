@@ -6,7 +6,9 @@
 import { createBottomTabNavigator, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Feather from '@expo/vector-icons/Feather';
+import Icon, { type IconName } from '@/components/Icon';
+import Sketchy from '@/components/Sketchy';
+import SketchyLine from '@/components/SketchyLine';
 import FeedScreen from '@/screens/FeedScreen';
 import LoungeListScreen from '@/screens/LoungeListScreen';
 import SearchScreen from '@/screens/SearchScreen';
@@ -24,26 +26,29 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
   const { openLogout } = useOverlay();
   const parentNav = navigation.getParent<NavigationProp<AppStackParamList>>();
 
-  const icons: Record<keyof TabParamList, keyof typeof Feather.glyphMap> = {
+  const icons: Record<keyof TabParamList, IconName> = {
     Feed: 'home',
     Lounges: 'map-pin',
     Search: 'search',
-    My: 'user'
+    My: 'heart'
   };
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.bar}>
+      <SketchyLine seed="main-tabs-top" style={{ position: 'absolute', top: 0, left: 0, right: 0 }} />
       {state.routes.slice(0, 2).map((route, i) => {
         const focused = state.index === i;
         return (
           <Pressable key={route.key} style={styles.btn} onPress={() => navigation.navigate(route.name)}>
-            <Feather name={icons[route.name as keyof TabParamList]} size={22} color={focused ? colors.ink : colors.inkSoft} />
+            <Icon name={icons[route.name as keyof TabParamList]} size={22} color={focused ? colors.ink : colors.muted} />
           </Pressable>
         );
       })}
 
-      <Pressable style={styles.plusBtn} onPress={() => parentNav?.navigate('Camera', { intent: { kind: 'post' } })} accessibilityLabel="촬영">
-        <Feather name="edit-2" size={20} color={colors.paper} />
+      <Pressable onPress={() => parentNav?.navigate('Camera', { intent: { kind: 'post' } })} accessibilityLabel="촬영">
+        <Sketchy radius={24} color={colors.paper} seed="main-tabs-plus" style={styles.plusBtn}>
+          <Icon name="edit-2" size={20} color={colors.paper} />
+        </Sketchy>
       </Pressable>
 
       {state.routes.slice(2).map((route, idx) => {
@@ -59,7 +64,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
             {isMy && session?.heartUrl ? (
               <Image source={{ uri: session.heartUrl }} style={{ width: 22, height: 22 }} resizeMode="contain" />
             ) : (
-              <Feather name={icons[route.name as keyof TabParamList]} size={22} color={focused ? colors.ink : colors.inkSoft} />
+              <Icon name={icons[route.name as keyof TabParamList]} size={22} color={focused ? colors.ink : colors.muted} />
             )}
           </Pressable>
         );
@@ -85,9 +90,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
     backgroundColor: colors.paper,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
-    paddingTop: 6
+    paddingTop: 6,
+    position: 'relative'
   },
   btn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
   plusBtn: {

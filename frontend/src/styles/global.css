@@ -1,14 +1,22 @@
 :root {
-  --ink: #1e1b16;
-  --ink-soft: #6b6558;
-  --paper: #fbf8ef;
-  --paper-2: #f2ecda;
-  --paper-3: #eae2c9;
-  --line: #d9d0b4;
-  --danger: #8a2e22;
+  /* Palette matches 4주차/week4/ALine Prototype.dc.html (the approved new design). */
+  --ink: #221f1a;
+  --ink-soft: #8a8272;
+  --paper: #ffffff;
+  --paper-2: #f4efe2;
+  --paper-3: #f4efe2;
+  --line: #c9b48a;
+  --muted: #b7ac91;
+  --accent: #b3382e;
+  --danger: #b3382e;
   --radius-pill: 999px;
   --radius-md: 16px;
   --radius-lg: 22px;
+  /* "Blob" corner shape from the prototype — .btn/input.sk use blob-a by
+     default; add a `blob-b` class on the second of a neighboring pair for
+     the hand-drawn shape variety the prototype alternates between. */
+  --blob-a: 255px 18px 225px 18px / 18px 225px 18px 255px;
+  --blob-b: 225px 18px 255px 18px / 18px 255px 18px 225px;
 }
 
 * {
@@ -63,6 +71,10 @@ svg.defs {
 }
 .sk2::before {
   filter: url(#sketchyB);
+}
+.btn.ghost::before {
+  border-color: var(--line);
+  border-width: 2px;
 }
 .icon-sk {
   filter: url(#sketchyA);
@@ -155,19 +167,23 @@ h2.section-h {
   font-size: 13.5px;
   letter-spacing: 0.2px;
   border: none;
-  border-radius: var(--radius-pill);
+  border-radius: var(--blob-a);
   padding: 12px 18px;
   background: var(--paper);
   color: var(--ink);
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 1.5px 2px 0 rgba(34, 31, 26, 0.12);
   transition:
     transform 0.1s,
     box-shadow 0.1s;
 }
+.btn.blob-b {
+  border-radius: var(--blob-b);
+  box-shadow: -1.5px 2px 0 rgba(34, 31, 26, 0.12);
+}
 .btn:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ink);
+  transform: translateY(1.5px);
+  box-shadow: 0 0.5px 0 rgba(34, 31, 26, 0.08);
 }
 .btn.primary {
   background: var(--ink);
@@ -177,15 +193,11 @@ h2.section-h {
   border-color: var(--paper);
 }
 .btn.ghost {
-  box-shadow: none;
-}
-.btn.ghost:active {
-  transform: none;
+  border: 2px solid var(--line);
 }
 .btn:disabled {
   opacity: 0.45;
   cursor: default;
-  box-shadow: 1px 1px 0 var(--ink);
 }
 .btn.block {
   width: 100%;
@@ -271,7 +283,7 @@ h2.section-h {
   right: 0;
   bottom: 0;
   height: 0;
-  border-bottom: 1.5px solid var(--paper-3);
+  border-bottom: 1.6px solid var(--line);
   filter: url(#sketchyA);
   pointer-events: none;
 }
@@ -285,7 +297,7 @@ h2.section-h {
   right: 0;
   top: 0;
   height: 0;
-  border-top: 1.5px solid var(--paper-3);
+  border-top: 1.6px solid var(--line);
   filter: url(#sketchyA);
   pointer-events: none;
 }
@@ -304,8 +316,15 @@ input[type='password'] {
 }
 input[type='text'].sk,
 input[type='password'].sk {
-  border: 1.6px solid var(--ink) !important;
+  border: 2px solid var(--line) !important;
+  border-radius: var(--blob-a);
+  box-shadow: 1.5px 2px 0 rgba(34, 31, 26, 0.12);
   filter: url(#sketchyLight);
+}
+input[type='text'].sk.blob-b,
+input[type='password'].sk.blob-b {
+  border-radius: var(--blob-b);
+  box-shadow: -1.5px 2px 0 rgba(34, 31, 26, 0.12);
 }
 input[type='text'].sk::before,
 input[type='password'].sk::before {
@@ -415,6 +434,83 @@ input[type='password'].sk::before {
   overflow-y: auto;
   padding-right: 14px;
   padding-bottom: 78px;
+}
+
+/* ---------- dual-mode home feed (matches the design prototype) ---------- */
+.feed-strip {
+  flex: 1;
+  display: flex;
+  position: relative;
+  touch-action: none;
+  user-select: none;
+  /* .screen has a fixed padding-left; escape it so pages are truly edge-to-edge. */
+  margin-left: -14px;
+  width: calc(100% + 14px);
+}
+.feed-page {
+  flex: 0 0 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 100%;
+}
+.feed-swipe-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  cursor: pointer;
+  animation: bounceUp 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+.feed-swipe-hint button {
+  pointer-events: auto;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+}
+@keyframes bounceUp {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes sketchDraw {
+  from {
+    stroke-dashoffset: 340;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.avatar-pressable {
+  position: relative;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+.avatar-ring {
+  position: absolute;
+  pointer-events: none;
+}
+.post-vertical {
+  border-bottom: 1px solid var(--paper-2);
 }
 .post {
   padding: 0 0 14px;
@@ -562,17 +658,8 @@ input[type='password'].sk::before {
   min-width: 0;
 }
 .search-box input {
-  padding: 12px 13px 12px 38px;
+  padding: 12px 13px;
   border-radius: var(--radius-md);
-}
-.search-input-wrap svg {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 15px;
-  height: 15px;
-  color: var(--ink-soft);
 }
 #search-submit-btn {
   background: var(--ink);
@@ -871,15 +958,20 @@ input[type='password'].sk::before {
 .bubble {
   max-width: 68%;
   padding: 9px 13px;
-  border-radius: 16px;
+  border-radius: var(--blob-b);
   font-size: 13px;
   line-height: 1.45;
-  background: var(--paper-2);
+  background: #fff;
+  border: 2px solid var(--line);
+  box-shadow: -1.5px 2px 0 rgba(34, 31, 26, 0.12);
   position: relative;
 }
 .msg-row.me .bubble {
   background: var(--ink);
   color: var(--paper);
+  border: none;
+  border-radius: var(--blob-a);
+  box-shadow: 1.5px 2px 0 rgba(34, 31, 26, 0.12);
 }
 .msg-row.me .bubble::before {
   border-color: var(--paper);
@@ -887,7 +979,6 @@ input[type='password'].sk::before {
 .bubble.air {
   padding: 7px;
   cursor: pointer;
-  background: var(--paper);
 }
 .bubble.air img {
   width: 120px;
@@ -930,6 +1021,10 @@ input[type='password'].sk::before {
   flex-shrink: 0;
   background: var(--paper);
   position: relative;
+}
+.round-icon.sk::before {
+  border-color: var(--line);
+  border-width: 2px;
 }
 .round-icon.send {
   background: var(--ink);
@@ -1343,13 +1438,13 @@ input[type='password'].sk::before {
   z-index: 8;
 }
 .bottom-nav.sk-hr-t::before {
-  border-top-color: var(--ink);
-  border-top-width: 2px;
+  border-top-color: var(--line);
+  border-top-width: 1.6px;
 }
 .nav-btn {
   background: none;
   border: none;
-  color: var(--ink-soft);
+  color: var(--muted);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1365,9 +1460,9 @@ input[type='password'].sk::before {
   color: var(--ink);
 }
 .nav-plus {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   background: var(--ink);
   display: flex;
   align-items: center;

@@ -2,9 +2,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Feather from '@expo/vector-icons/Feather';
+import Icon from '@/components/Icon';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Avatar from '@/components/Avatar';
+import SketchyButton from '@/components/SketchyButton';
+import SketchyLine from '@/components/SketchyLine';
 import * as followApi from '@/api/followApi';
 import * as userApi from '@/api/userApi';
 import type { FollowCounts } from '@/api/followApi';
@@ -84,7 +86,7 @@ export default function UserProfileScreen({ navigation, route }: Props) {
     <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
       <View style={{ flexDirection: 'row', paddingVertical: 6 }}>
         <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
-          <Feather name="chevron-left" size={24} color={colors.ink} />
+          <Icon name="chevron-left" size={24} color={colors.ink} />
         </Pressable>
       </View>
 
@@ -101,7 +103,8 @@ export default function UserProfileScreen({ navigation, route }: Props) {
             <Text style={{ fontSize: 17, fontWeight: '700', color: colors.ink, marginTop: 8 }}>{profile.nickname}</Text>
             <Text style={{ fontSize: 12, color: colors.inkSoft }}>@{profile.username}</Text>
           </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.line, marginBottom: 16 }}>
+          <SketchyLine seed="user-profile-stats-top" />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12 }}>
             <View style={{ alignItems: 'center' }}>
               <Text style={{ fontWeight: '700', color: colors.ink }}>{postCount}</Text>
               <Text style={{ fontSize: 11, color: colors.inkSoft }}>게시물</Text>
@@ -115,17 +118,20 @@ export default function UserProfileScreen({ navigation, route }: Props) {
               <Text style={{ fontSize: 11, color: colors.inkSoft }}>팔로잉</Text>
             </View>
           </View>
+          <SketchyLine seed="user-profile-stats-bottom" style={{ marginBottom: 16 }} />
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Pressable
-              style={[common.btn, following ? common.btnGhost : common.btnPrimary, { flex: 1 }, busy && common.btnDisabled]}
+            <SketchyButton
+              variant={following ? 'ghost' : 'primary'}
+              blobVariant="a"
+              style={{ flex: 1 }}
               disabled={busy}
               onPress={handleToggleFollow}
             >
               <Text style={following ? common.btnGhostText : common.btnPrimaryText}>{following ? '팔로잉' : '팔로우'}</Text>
-            </Pressable>
-            <Pressable style={[common.btn, common.btnGhost, { flex: 1 }]} onPress={handleChat}>
+            </SketchyButton>
+            <SketchyButton variant="ghost" blobVariant="b" style={{ flex: 1 }} onPress={handleChat}>
               <Text style={common.btnGhostText}>채팅하기</Text>
-            </Pressable>
+            </SketchyButton>
           </View>
         </>
       )}

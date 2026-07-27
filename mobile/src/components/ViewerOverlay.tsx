@@ -1,8 +1,9 @@
 // Ported from frontend/src/components/ViewerOverlay.tsx — keep in sync
 // (canvas replay -> StrokeReplay, window.confirm -> Alert).
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Dimensions, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import Feather from '@expo/vector-icons/Feather';
+import Icon from '@/components/Icon';
+import SketchyButton from '@/components/SketchyButton';
 import StrokeReplay from '@/components/StrokeReplay';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
@@ -17,6 +18,19 @@ export default function ViewerOverlay() {
   const { posts, deletePost } = useAppState();
   const [replayKey, setReplayKey] = useState(0);
   const [replaying, setReplaying] = useState(false);
+  const [sourceAspect, setSourceAspect] = useState(1);
+
+  useEffect(() => {
+    if (!viewer) return;
+    // Strokes are normalized against the original (often non-square) capture
+    // canvas, but the photo displays cropped to a square via resizeMode="cover" —
+    // fetch the real image dimensions so the replay path can apply the same crop.
+    Image.getSize(
+      viewer.image,
+      (w, h) => setSourceAspect(w / h),
+      () => setSourceAspect(1)
+    );
+  }, [viewer]);
 
   if (!viewer) return null;
 
@@ -47,26 +61,33 @@ export default function ViewerOverlay() {
       <View style={styles.overlay}>
         <View style={styles.top}>
           <Pressable style={styles.iconBtn} onPress={closeViewer}>
-            <Feather name="x" size={22} color={colors.paper} />
+            <Icon name="x" size={22} color={colors.paper} />
           </Pressable>
         </View>
         <View style={[styles.media, { width: MEDIA_SIZE, height: MEDIA_SIZE }]}>
           <Image source={{ uri: viewer.image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           {replaying && viewer.strokes ? (
-            <StrokeReplay key={replayKey} strokes={viewer.strokes} width={MEDIA_SIZE} height={MEDIA_SIZE} onDone={() => setReplaying(false)} />
+            <StrokeReplay
+              key={replayKey}
+              strokes={viewer.strokes}
+              width={MEDIA_SIZE}
+              height={MEDIA_SIZE}
+              sourceAspect={sourceAspect}
+              onDone={() => setReplaying(false)}
+            />
           ) : null}
         </View>
         <View style={styles.bottom}>
           <Text style={styles.caption}>{viewer.caption}</Text>
           {viewer.strokes ? (
-            <Pressable style={[common.btn, common.btnPrimary]} onPress={handleReplay}>
+            <SketchyButton variant="primary" onPress={handleReplay}>
               <Text style={common.btnPrimaryText}>✏️ 다시 쓰는 순간 보기</Text>
-            </Pressable>
+            </SketchyButton>
           ) : null}
           {post?.mine ? (
-            <Pressable style={[common.btn, common.btnGhost, { marginTop: 8 }]} onPress={handleDelete}>
+            <SketchyButton variant="ghost" style={{ marginTop: 8 }} onPress={handleDelete}>
               <Text style={[common.btnGhostText, { color: colors.danger }]}>삭제하기</Text>
-            </Pressable>
+            </SketchyButton>
           ) : null}
         </View>
       </View>

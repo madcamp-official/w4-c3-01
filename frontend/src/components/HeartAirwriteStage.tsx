@@ -18,7 +18,7 @@ const OUTPUT_SIZE = 220;
 /** Heart "좋아요" icon input, drawn by air-writing in front of the camera instead of touch-drawing directly. */
 const HeartAirwriteStage = forwardRef<HeartAirwriteHandle, HeartAirwriteStageProps>(({ onDrawStateChange }, ref) => {
   const guideRef = useRef<HTMLCanvasElement>(null);
-  const { videoRef, cameraAvailable } = useCamera('user');
+  const { videoRef, cameraAvailable } = useCamera('environment');
   const trail = useTrailCanvas();
   const onDrawStateChangeRef = useRef(onDrawStateChange);
   onDrawStateChangeRef.current = onDrawStateChange;

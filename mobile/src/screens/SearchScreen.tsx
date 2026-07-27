@@ -1,11 +1,12 @@
 // Ported from frontend/src/pages/SearchPage.tsx — keep in sync.
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Image, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Feather from '@expo/vector-icons/Feather';
+import Icon from '@/components/Icon';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import Avatar from '@/components/Avatar';
+import Sketchy from '@/components/Sketchy';
 import * as userApi from '@/api/userApi';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
@@ -45,15 +46,30 @@ export default function SearchScreen() {
   return (
     <SafeAreaView style={common.screen} edges={['top']}>
       <Text style={[common.title, { marginBottom: 10 }]}>검색</Text>
-      <View style={styles.searchBox}>
-        <Feather name="search" size={16} color={colors.inkSoft} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="아이디 또는 닉네임으로 검색"
-          value={query}
-          onChangeText={setQuery}
-          autoCapitalize="none"
-        />
+      <View style={styles.searchRow}>
+        <Sketchy
+          shape="blob"
+          variant="a"
+          color={colors.line}
+          fill="#fff"
+          shadow={{ dx: 1.5, dy: 2 }}
+          strokeWidth={2}
+          seed="search-box"
+          style={styles.searchBox}
+        >
+          <TextInput
+            style={styles.searchInput}
+            placeholder="아이디 또는 닉네임으로 검색"
+            value={query}
+            onChangeText={setQuery}
+            autoCapitalize="none"
+          />
+        </Sketchy>
+        <Pressable onPress={() => Keyboard.dismiss()} accessibilityLabel="검색">
+          <Sketchy shape="round" radius={18} color={colors.line} strokeWidth={2} seed="search-submit" style={styles.searchSubmitBtn}>
+            <Icon name="search" size={16} color={colors.ink} />
+          </Sketchy>
+        </Pressable>
       </View>
       {q ? (
         <FlatList
@@ -96,8 +112,10 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  searchBox: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: colors.line, borderRadius: radius.pill, paddingHorizontal: 14, backgroundColor: '#fff', marginBottom: 14 },
-  searchInput: { flex: 1, paddingVertical: 10, fontSize: 14, color: colors.ink },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  searchBox: { flex: 1, height: 48, justifyContent: 'center', paddingHorizontal: 16 },
+  searchInput: { paddingVertical: 10, fontSize: 14, color: colors.ink },
+  searchSubmitBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   sectionH: { fontSize: 13, fontWeight: '700', color: colors.ink, marginBottom: 6 },
   userRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
   userName: { fontSize: 14, fontWeight: '700', color: colors.ink },

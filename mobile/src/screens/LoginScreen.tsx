@@ -1,8 +1,10 @@
 // Ported from frontend/src/pages/LoginPage.tsx — keep in sync.
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Feather from '@expo/vector-icons/Feather';
+import Icon from '@/components/Icon';
+import SketchyButton from '@/components/SketchyButton';
+import SketchyInput from '@/components/SketchyInput';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
@@ -47,7 +49,7 @@ export default function LoginScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
       <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
-        <Feather name="chevron-left" size={24} color={colors.ink} />
+        <Icon name="chevron-left" size={24} color={colors.ink} />
       </Pressable>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}>
         <Text style={common.title}>다시 만나서 반가워요</Text>
@@ -55,8 +57,8 @@ export default function LoginScreen({ navigation }: Props) {
 
         <View style={common.field}>
           <Text style={common.label}>아이디 또는 이메일</Text>
-          <TextInput
-            style={common.input}
+          <SketchyInput
+            blobVariant="a"
             value={identifier}
             onChangeText={setIdentifier}
             autoCapitalize="none"
@@ -65,8 +67,8 @@ export default function LoginScreen({ navigation }: Props) {
         </View>
         <View style={common.field}>
           <Text style={common.label}>비밀번호</Text>
-          <TextInput
-            style={common.input}
+          <SketchyInput
+            blobVariant="b"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -76,13 +78,9 @@ export default function LoginScreen({ navigation }: Props) {
 
         <View style={{ flex: 1 }} />
 
-        <Pressable
-          style={[common.btn, common.btnPrimary, submitting && common.btnDisabled]}
-          disabled={submitting}
-          onPress={handleSubmit}
-        >
+        <SketchyButton variant="primary" blobVariant="a" disabled={submitting} onPress={handleSubmit}>
           <Text style={common.btnPrimaryText}>로그인</Text>
-        </Pressable>
+        </SketchyButton>
 
         <View style={common.dividerRow}>
           <View style={common.dividerLine} />
@@ -90,9 +88,9 @@ export default function LoginScreen({ navigation }: Props) {
           <View style={common.dividerLine} />
         </View>
 
-        <Pressable style={[common.btn, common.btnGhost]} onPress={handleGoogle}>
+        <SketchyButton variant="ghost" blobVariant="b" onPress={handleGoogle}>
           <Text style={common.btnGhostText}>Google로 계속하기</Text>
-        </Pressable>
+        </SketchyButton>
 
         <Pressable style={common.linkBtn} onPress={() => navigation.navigate('Onboarding')}>
           <Text style={common.linkBtnText}>계정이 없으신가요? 회원가입</Text>

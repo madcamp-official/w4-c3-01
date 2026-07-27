@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
+import Icon from '@/components/Icon';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 import { useToast } from '@/state/ToastContext';
@@ -68,9 +69,7 @@ export default function ChatThreadPage() {
       <section className="screen active" id="screen-chatthread">
         <div className="thread-header sk-hr-b">
           <button className="icon-btn sk" onClick={() => navigate('/chats')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path d="m15 18-6-6 6-6" />
-            </svg>
+            <Icon name="chevron-left" size={24} strokeWidth={2.3} />
           </button>
         </div>
       </section>
@@ -81,9 +80,7 @@ export default function ChatThreadPage() {
     <section className="screen active" id="screen-chatthread">
       <div className="thread-header sk-hr-b">
         <button className="icon-btn sk" onClick={() => navigate('/chats')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="m15 18-6-6 6-6" />
-          </svg>
+          <Icon name="chevron-left" size={24} strokeWidth={2.3} />
         </button>
         <Avatar nickname={chat.name} color={chat.color} size={30} fontSize={12} avatarUrl={chat.avatarUrl} />
         <b>{chat.name}</b>
@@ -123,10 +120,7 @@ export default function ChatThreadPage() {
       </div>
       <div className="thread-input">
         <button className="round-icon sk" onClick={() => navigate(`/chats/${chatId}/airwrite`)} aria-label="에어라이팅 메시지">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-          </svg>
+          <Icon name="edit-2" size={18} />
         </button>
         <input
           type="text"
@@ -137,9 +131,7 @@ export default function ChatThreadPage() {
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
         />
         <button className="round-icon send sk" onClick={handleSend} aria-label="전송">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="m22 2-7 20-4-9-9-4Z" />
-          </svg>
+          <Icon name="send" size={18} />
         </button>
       </div>
     </section>

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import Icon from '@/components/Icon';
 import { replayStrokes, setupHiDPI } from '@/lib/canvas';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
@@ -8,6 +9,7 @@ export default function ViewerOverlay() {
   const { posts, deletePost } = useAppState();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     if (!viewer || !canvasRef.current) return;
@@ -25,7 +27,9 @@ export default function ViewerOverlay() {
     const canvas = canvasRef.current;
     if (!canvas || !ctxRef.current || !viewer?.strokes) return;
     const rect = canvas.getBoundingClientRect();
-    replayStrokes(viewer.strokes, ctxRef.current, rect.width, rect.height, 5, 1400);
+    const img = imgRef.current;
+    const sourceAspect = img?.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : rect.width / rect.height;
+    replayStrokes(viewer.strokes, ctxRef.current, rect.width, rect.height, 5, 1400, sourceAspect);
   }
 
   async function handleDelete() {
@@ -39,13 +43,11 @@ export default function ViewerOverlay() {
     <div className="overlay open">
       <div className="viewer-top">
         <button className="icon-btn sk" onClick={closeViewer} aria-label="닫기">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
+          <Icon name="x" size={22} />
         </button>
       </div>
       <div className="viewer-media sk2">
-        <img src={viewer.image} alt="" />
+        <img ref={imgRef} src={viewer.image} alt="" />
         <canvas ref={canvasRef} />
       </div>
       <div className="viewer-bottom">

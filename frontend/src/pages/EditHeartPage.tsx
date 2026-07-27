@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeartAirwriteStage, { type HeartAirwriteHandle } from '@/components/HeartAirwriteStage';
+import Icon from '@/components/Icon';
 import { defaultHeartUrl } from '@/mock/store';
 import { useAppState } from '@/state/AppStateContext';
 import { useToast } from '@/state/ToastContext';
@@ -31,9 +32,7 @@ export default function EditHeartPage() {
     <section className="screen active" id="screen-editheart">
       <div className="statusbar" style={{ padding: '0 14px 8px 0' }}>
         <button className="icon-btn sk" onClick={() => navigate('/mypage')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="m15 18-6-6 6-6" />
-          </svg>
+          <Icon name="chevron-left" size={24} strokeWidth={2.3} />
         </button>
         <div className="logo" style={{ fontSize: 17 }}>
           하트 다시 그리기
@@ -49,7 +48,7 @@ export default function EditHeartPage() {
         <div className="heart-tools">
           <HeartAirwriteStage ref={heartRef} onDrawStateChange={setHasDrawn} />
           <div className="btn-row">
-            <button className="btn ghost sk" onClick={() => heartRef.current?.clear()}>
+            <button className="btn ghost sk blob-b" onClick={() => heartRef.current?.clear()}>
               지우기
             </button>
             <button className="btn primary sk" disabled={!hasDrawn} onClick={handleSave}>

@@ -1,9 +1,10 @@
 // Ported from frontend/src/pages/EditHeartPage.tsx — keep in sync.
 import { useState } from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import AirDrawingWebView, { type AirDrawingCapture } from '@/components/AirDrawingWebView';
+import SketchyButton from '@/components/SketchyButton';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useToast } from '@/state/ToastContext';
@@ -40,12 +41,12 @@ export default function EditHeartScreen({ navigation }: Props) {
           </View>
         </View>
         <View style={{ padding: 20, gap: 10 }}>
-          <Pressable style={[common.btn, common.btnPrimary, saving && common.btnDisabled]} disabled={saving} onPress={handleSave}>
+          <SketchyButton variant="primary" blobVariant="a" disabled={saving} onPress={handleSave}>
             <Text style={common.btnPrimaryText}>{saving ? '저장하는 중...' : '이 하트로 저장'}</Text>
-          </Pressable>
-          <Pressable style={[common.btn, common.btnGhost]} disabled={saving} onPress={() => setPreview(null)}>
+          </SketchyButton>
+          <SketchyButton variant="ghost" blobVariant="b" disabled={saving} onPress={() => setPreview(null)}>
             <Text style={common.btnGhostText}>다시 그리기</Text>
-          </Pressable>
+          </SketchyButton>
         </View>
       </SafeAreaView>
     );

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import * as authApi from '@/api/authApi';
 import AvatarPicker from '@/components/AvatarPicker';
 import HeartAirwriteStage, { type HeartAirwriteHandle } from '@/components/HeartAirwriteStage';
+import Icon from '@/components/Icon';
 import { useUsernameCheck, usernameStatusMessage } from '@/hooks/useUsernameCheck';
 import { AVATAR_TONES, defaultHeartUrl } from '@/mock/store';
 import { useAppState } from '@/state/AppStateContext';
@@ -94,9 +95,7 @@ export default function OnboardingPage() {
     <section className="screen active" id="screen-onboarding">
       <div className="statusbar" style={{ padding: '0 14px 8px 0' }}>
         <button className="icon-btn sk" onClick={handleBack}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="m15 18-6-6 6-6" />
-          </svg>
+          <Icon name="chevron-left" size={24} strokeWidth={2.3} />
         </button>
         <div style={{ width: 36 }} />
       </div>
@@ -126,7 +125,7 @@ export default function OnboardingPage() {
           <label>이메일</label>
           <input
             type="text"
-            className="sk"
+            className="sk blob-b"
             placeholder="example@email.com"
             value={form.email}
             onChange={(e) => updateField('email', e.target.value)}
@@ -146,7 +145,7 @@ export default function OnboardingPage() {
           <label>비밀번호</label>
           <input
             type="password"
-            className="sk"
+            className="sk blob-b"
             placeholder="8~12자, 영문·숫자·특수문자 포함"
             value={form.password}
             onChange={(e) => updateField('password', e.target.value)}
@@ -170,7 +169,7 @@ export default function OnboardingPage() {
           <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>또는</span>
           <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
         </div>
-        <button className="btn ghost sk block" onClick={handleGoogle}>
+        <button className="btn ghost sk block blob-b" onClick={handleGoogle}>
           Google로 계속하기
         </button>
         <button className="link-btn" style={{ marginTop: 12, alignSelf: 'center' }} onClick={() => navigate('/login')}>
@@ -214,7 +213,7 @@ export default function OnboardingPage() {
         <div className="heart-tools">
           {step === 3 ? <HeartAirwriteStage ref={heartRef} onDrawStateChange={setHasDrawn} /> : null}
           <div className="btn-row">
-            <button className="btn ghost sk" onClick={() => heartRef.current?.clear()}>
+            <button className="btn ghost sk blob-b" onClick={() => heartRef.current?.clear()}>
               지우기
             </button>
             <button className="btn primary sk" disabled={!hasDrawn} onClick={handleDone}>

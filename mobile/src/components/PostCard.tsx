@@ -1,14 +1,16 @@
-// Ported from frontend/src/components/PostCard.tsx — keep in sync.
+// Ported from frontend/src/components/PostCard.tsx — keep in sync. Used by the
+// dual-mode feed (see FeedScreen.tsx): "horizontal" is one post per full page,
+// "vertical" is a classic scrolling list — both keep the post image 1:1 square.
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
-import Feather from '@expo/vector-icons/Feather';
+import Icon from '@/components/Icon';
 import Avatar from '@/components/Avatar';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
-import { colors, radius } from '@/theme/colors';
+import { colors } from '@/theme/colors';
 import type { Post } from '@/types';
 
-export default function PostCard({ post }: { post: Post }) {
+export default function PostCard({ post, variant = 'vertical' }: { post: Post; variant?: 'horizontal' | 'vertical' }) {
   const { session, likePost } = useAppState();
   const { openViewer, openComments, openShare } = useOverlay();
 
@@ -38,7 +40,7 @@ export default function PostCard({ post }: { post: Post }) {
   }
 
   return (
-    <View style={styles.card}>
+    <View style={variant === 'horizontal' ? styles.cardFill : styles.card}>
       <View style={styles.head}>
         <Avatar nickname={post.username} color={post.avatarColor} size={32} fontSize={13} avatarUrl={post.avatarUrl} />
         <View style={{ marginLeft: 8 }}>
@@ -47,9 +49,10 @@ export default function PostCard({ post }: { post: Post }) {
         </View>
       </View>
       <Pressable
+        style={styles.mediaWrap}
         onPress={() => openViewer({ image: post.image, caption: post.caption, strokes: post.strokes, postId: post.id })}
       >
-        <Image source={{ uri: post.image }} style={styles.media} />
+        <Image source={{ uri: post.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
       </Pressable>
       <View style={styles.actions}>
         <Pressable onPress={handleLike} style={styles.actionBtn}>
@@ -57,15 +60,15 @@ export default function PostCard({ post }: { post: Post }) {
             {session?.heartUrl ? (
               <Image source={{ uri: session.heartUrl }} style={{ width: 22, height: 22 }} resizeMode="contain" />
             ) : (
-              <Feather name="heart" size={22} color={colors.ink} />
+              <Icon name="heart" size={22} color={colors.ink} />
             )}
           </Animated.View>
         </Pressable>
         <Pressable onPress={() => openComments(post.id)} style={styles.actionBtn}>
-          <Feather name="message-circle" size={22} color={colors.ink} />
+          <Icon name="message-circle" size={22} color={colors.ink} />
         </Pressable>
         <Pressable onPress={() => openShare(post.id)} style={styles.actionBtn}>
-          <Feather name="send" size={22} color={colors.ink} />
+          <Icon name="send" size={22} color={colors.ink} />
         </Pressable>
       </View>
       <View style={styles.meta}>
@@ -79,21 +82,21 @@ export default function PostCard({ post }: { post: Post }) {
             <Text style={styles.time}>댓글 {post.comments.length}개 모두 보기</Text>
           </Pressable>
         ) : null}
-        <Text style={styles.time}>{post.time}</Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: 10, marginBottom: 4 },
-  head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8 },
-  username: { fontWeight: '700', color: colors.ink, fontSize: 13 },
+  card: { paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.paper2 },
+  cardFill: { flex: 1 },
+  head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
+  username: { fontWeight: '700', color: colors.ink, fontSize: 13.5 },
   time: { fontSize: 11, color: colors.inkSoft },
-  media: { width: '100%', aspectRatio: 1, backgroundColor: colors.paper2, borderRadius: radius.md },
-  actions: { flexDirection: 'row', gap: 14, paddingHorizontal: 12, paddingTop: 8 },
+  mediaWrap: { width: '100%', aspectRatio: 1, backgroundColor: colors.paper2 },
+  actions: { flexDirection: 'row', gap: 16, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 2 },
   actionBtn: { padding: 2 },
-  meta: { paddingHorizontal: 12, paddingTop: 4, gap: 2 },
-  likes: { fontWeight: '700', fontSize: 12, color: colors.ink },
+  meta: { paddingHorizontal: 16, paddingTop: 4, gap: 2, paddingBottom: 4 },
+  likes: { fontWeight: '700', fontSize: 13, color: colors.ink },
   caption: { fontSize: 13, color: colors.ink }
 });

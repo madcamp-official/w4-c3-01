@@ -16,7 +16,10 @@ export function useCamera(facingMode: 'user' | 'environment') {
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode, width: { ideal: 3840 }, height: { ideal: 2160 } },
+        audio: false
+      });
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
       setCameraAvailable(true);

@@ -1,8 +1,11 @@
 // Ported from frontend/src/components/CommentSheet.tsx — keep in sync.
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import Feather from '@expo/vector-icons/Feather';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import BottomSheetModal from '@/components/BottomSheetModal';
+import Icon from '@/components/Icon';
 import Avatar from '@/components/Avatar';
+import Sketchy from '@/components/Sketchy';
+import SketchyInput from '@/components/SketchyInput';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 import { colors, radius } from '@/theme/colors';
@@ -22,8 +25,7 @@ export default function CommentSheet() {
   }
 
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={closeComments}>
-      <Pressable style={styles.backdrop} onPress={closeComments} />
+    <BottomSheetModal open={open} onClose={closeComments}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.sheet}>
         <View style={styles.handle} />
         <Text style={styles.title}>댓글</Text>
@@ -43,24 +45,25 @@ export default function CommentSheet() {
           )}
         </ScrollView>
         <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
+          <SketchyInput
+            style={{ flex: 1, borderRadius: radius.pill }}
             placeholder="댓글 달기..."
             value={text}
             onChangeText={setText}
             onSubmitEditing={handleSend}
           />
-          <Pressable style={styles.sendBtn} onPress={handleSend}>
-            <Feather name="send" size={18} color={colors.paper} />
+          <Pressable onPress={handleSend}>
+            <Sketchy radius={19} color={colors.paper} seed="comment-send" style={[styles.sendBtn, { borderWidth: 0 }]}>
+              <Icon name="send" size={18} color={colors.paper} />
+            </Sketchy>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </BottomSheetModal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(20,17,12,0.5)' },
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 24 },
   handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, alignSelf: 'center', marginBottom: 10 },
   title: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: 10 },
@@ -68,6 +71,5 @@ const styles = StyleSheet.create({
   commentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 6 },
   commentText: { flex: 1, fontSize: 13, color: colors.ink },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
-  input: { flex: 1, borderWidth: 1, borderColor: colors.line, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: '#fff' },
   sendBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' }
 });

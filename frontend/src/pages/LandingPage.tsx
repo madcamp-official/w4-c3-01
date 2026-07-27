@@ -20,7 +20,7 @@ export default function LandingPage() {
         <button className="btn primary sk block" onClick={() => navigate('/login')}>
           로그인
         </button>
-        <button className="btn ghost sk block" onClick={() => navigate('/signup')}>
+        <button className="btn ghost sk block blob-b" onClick={() => navigate('/signup')}>
           회원가입
         </button>
       </div>

@@ -1,9 +1,11 @@
 // Adapted from frontend/src/pages/CompleteProfilePage.tsx — keep in sync.
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AirDrawingWebView, { type AirDrawingCapture } from '@/components/AirDrawingWebView';
 import AvatarPicker from '@/components/AvatarPicker';
+import SketchyButton from '@/components/SketchyButton';
+import SketchyInput from '@/components/SketchyInput';
 import { useUsernameCheck, usernameStatusMessage, type UsernameStatus } from '@/hooks/useUsernameCheck';
 import { defaultHeartUrl } from '@/mock/store';
 import { useAppState } from '@/state/AppStateContext';
@@ -77,12 +79,12 @@ export default function CompleteProfileScreen() {
           </View>
         </View>
         <View style={{ padding: 20, gap: 10 }}>
-          <Pressable style={[common.btn, common.btnPrimary, saving && common.btnDisabled]} disabled={saving} onPress={() => finish(heartPreview)}>
+          <SketchyButton variant="primary" blobVariant="a" disabled={saving} onPress={() => finish(heartPreview)}>
             <Text style={common.btnPrimaryText}>{saving ? '저장하는 중...' : '이 하트로 완료'}</Text>
-          </Pressable>
-          <Pressable style={[common.btn, common.btnGhost]} disabled={saving} onPress={() => setHeartPreview(null)}>
+          </SketchyButton>
+          <SketchyButton variant="ghost" blobVariant="b" disabled={saving} onPress={() => setHeartPreview(null)}>
             <Text style={common.btnGhostText}>다시 그리기</Text>
-          </Pressable>
+          </SketchyButton>
         </View>
       </SafeAreaView>
     );
@@ -112,17 +114,17 @@ export default function CompleteProfileScreen() {
 
         <View style={common.field}>
           <Text style={common.label}>아이디</Text>
-          <TextInput style={common.input} value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
+          <SketchyInput blobVariant="a" value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
           {usernameHint ? <Text style={[common.hint, { color: usernameHint.color }]}>{usernameHint.text}</Text> : null}
         </View>
         <View style={common.field}>
           <Text style={common.label}>이름</Text>
-          <TextInput style={common.input} maxLength={16} value={nickname} onChangeText={setNickname} />
+          <SketchyInput blobVariant="b" maxLength={16} value={nickname} onChangeText={setNickname} />
         </View>
 
-        <Pressable style={[common.btn, common.btnPrimary, saving && common.btnDisabled]} disabled={saving} onPress={handleNext}>
+        <SketchyButton variant="primary" blobVariant="a" disabled={saving} onPress={handleNext}>
           <Text style={common.btnPrimaryText}>{saving ? '저장하는 중...' : '다음'}</Text>
-        </Pressable>
+        </SketchyButton>
         {!session.heartUrl ? (
           <Pressable style={common.linkBtn} disabled={saving} onPress={handleSkipHeart}>
             <Text style={common.linkBtnText}>기본 하트로 시작할게요</Text>

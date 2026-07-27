@@ -90,7 +90,7 @@ export function AirDrawingStage({
   busy = false,
   mode = 'post',
   outputSize,
-  maxDim = 960,
+  maxDim = 1600,
   onClose,
   onCapture,
   onError,
@@ -121,7 +121,7 @@ export function AirDrawingStage({
     error: cameraError,
     startCamera,
     switchCamera,
-  } = useAirCamera('user')
+  } = useAirCamera('environment')
 
   useEffect(() => {
     if (cameraStartRequestedRef.current) return
@@ -212,9 +212,16 @@ export function AirDrawingStage({
       width = outputSize
       height = outputSize
     } else {
-      const scale = Math.min(1, maxDim / Math.max(rect.width, rect.height))
-      width = Math.max(1, Math.round(rect.width * scale))
-      height = Math.max(1, Math.round(rect.height * scale))
+      // getBoundingClientRect() is in CSS pixels, not device pixels — on a
+      // typical 2-3x DPR phone that alone was capping captures to a few
+      // hundred px on the long edge (well under maxDim) regardless of the
+      // camera's actual resolution, which read as "low quality" photos.
+      const dpr = Math.min(window.devicePixelRatio || 1, 3)
+      const rawWidth = rect.width * dpr
+      const rawHeight = rect.height * dpr
+      const scale = Math.min(1, maxDim / Math.max(rawWidth, rawHeight))
+      width = Math.max(1, Math.round(rawWidth * scale))
+      height = Math.max(1, Math.round(rawHeight * scale))
     }
     const output = document.createElement('canvas')
     output.width = width
@@ -229,8 +236,6 @@ export function AirDrawingStage({
         // 그린 선만 남아야 합니다 (캔버스 기본값이 투명이라 따로 지울 것도 없음).
       } else {
         drawVideoCover(context, video, width, height, facingMode === 'user')
-        context.fillStyle = 'rgba(242, 236, 218, 0.35)'
-        context.fillRect(0, 0, width, height)
       }
       const drawing = drawingHandle.getDocument()
       if (outputSize) {

@@ -19,7 +19,7 @@ import { useCameraPermissions } from 'expo-camera';
 import { Directory, File, Paths } from 'expo-file-system';
 import StaticServer from '@dr.pogodin/react-native-static-server';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
-import Feather from '@expo/vector-icons/Feather';
+import Icon from '@/components/Icon';
 import type { AirDrawingDocument } from '@/air-drawing-types';
 import type { StrokePoint } from '@/types';
 import { colors } from '@/theme/colors';
@@ -204,7 +204,7 @@ export default function AirDrawingWebView({ mode, outputSize, maxDim, busy, onCa
       <View style={styles.center}>
         <Text style={styles.centerText}>카메라 권한이 필요해요.</Text>
         <Pressable style={styles.closeBtn} onPress={onClose}>
-          <Feather name="x" size={22} color={colors.paper} />
+          <Icon name="x" size={22} color={colors.paper} />
         </Pressable>
       </View>
     );
@@ -225,7 +225,7 @@ export default function AirDrawingWebView({ mode, outputSize, maxDim, busy, onCa
           <Text style={{ color: colors.paper, fontSize: 13 }}>다시 시도</Text>
         </Pressable>
         <Pressable style={styles.closeBtn} onPress={onClose}>
-          <Feather name="x" size={22} color={colors.paper} />
+          <Icon name="x" size={22} color={colors.paper} />
         </Pressable>
       </View>
     );

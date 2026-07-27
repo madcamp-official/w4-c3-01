@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as authApi from '@/api/authApi';
+import Icon from '@/components/Icon';
 import { useAppState } from '@/state/AppStateContext';
 import { useToast } from '@/state/ToastContext';
 
@@ -41,9 +42,7 @@ export default function LoginPage() {
     <section className="screen active" id="screen-login">
       <div className="statusbar" style={{ padding: '0 14px 8px 0' }}>
         <button className="icon-btn sk" onClick={() => navigate('/')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="m15 18-6-6 6-6" />
-          </svg>
+          <Icon name="chevron-left" size={24} strokeWidth={2.3} />
         </button>
         <div style={{ width: 36 }} />
       </div>
@@ -58,7 +57,7 @@ export default function LoginPage() {
           <label>비밀번호</label>
           <input
             type="password"
-            className="sk"
+            className="sk blob-b"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
@@ -73,7 +72,7 @@ export default function LoginPage() {
           <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>또는</span>
           <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
         </div>
-        <button className="btn ghost sk block" onClick={handleGoogle}>
+        <button className="btn ghost sk block blob-b" onClick={handleGoogle}>
           Google로 계속하기
         </button>
         <button className="link-btn" style={{ marginTop: 14, alignSelf: 'center' }} onClick={() => navigate('/signup')}>

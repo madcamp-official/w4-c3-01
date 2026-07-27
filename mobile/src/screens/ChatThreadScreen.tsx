@@ -1,10 +1,13 @@
 // Ported from frontend/src/pages/ChatThreadPage.tsx — keep in sync.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Feather from '@expo/vector-icons/Feather';
+import Icon from '@/components/Icon';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Avatar from '@/components/Avatar';
+import Sketchy from '@/components/Sketchy';
+import SketchyInput from '@/components/SketchyInput';
+import SketchyLine from '@/components/SketchyLine';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
@@ -76,7 +79,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
     return (
       <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
         <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
-          <Feather name="chevron-left" size={24} color={colors.ink} />
+          <Icon name="chevron-left" size={24} color={colors.ink} />
         </Pressable>
       </SafeAreaView>
     );
@@ -90,13 +93,33 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
         {showDateDivider ? <Text style={{ textAlign: 'center', fontSize: 11, color: colors.inkSoft, marginVertical: 10 }}>{formatDateDivider(m.createdAt)}</Text> : null}
         <View style={{ alignItems: mine ? 'flex-end' : 'flex-start', paddingHorizontal: 12, marginBottom: 6 }}>
           {m.type === 'text' ? (
-            <View style={[bubbleStyle, mine ? bubbleMine : bubbleTheirs]}>
+            <Sketchy
+              shape="blob"
+              variant={mine ? 'a' : 'b'}
+              color={mine ? colors.paper : colors.line}
+              fill={mine ? colors.ink : '#fff'}
+              shadow={{ dx: mine ? 1.5 : -1.5, dy: 2 }}
+              strokeWidth={2}
+              seed={`bubble-${m.id}`}
+              style={bubbleStyle}
+            >
               <Text style={{ color: mine ? colors.paper : colors.ink, fontSize: 14 }}>{m.text}</Text>
-            </View>
+            </Sketchy>
           ) : (
-            <Pressable onPress={() => openViewerForMessage(m)} style={[bubbleStyle, mine ? bubbleMine : bubbleTheirs, { padding: 6 }]}>
-              <Image source={{ uri: m.image }} style={{ width: 140, height: 140, borderRadius: radius.md }} />
-              <Text style={{ fontSize: 10, color: mine ? colors.paper : colors.inkSoft, marginTop: 4 }}>✏️ 손글씨 · 눌러서 다시보기</Text>
+            <Pressable onPress={() => openViewerForMessage(m)}>
+              <Sketchy
+                shape="blob"
+                variant={mine ? 'a' : 'b'}
+                color={mine ? colors.paper : colors.line}
+                fill={mine ? colors.ink : '#fff'}
+                shadow={{ dx: mine ? 1.5 : -1.5, dy: 2 }}
+                strokeWidth={2}
+                seed={`bubble-air-${m.id}`}
+                style={[bubbleStyle, { padding: 6 }]}
+              >
+                <Image source={{ uri: m.image }} style={{ width: 140, height: 140, borderRadius: radius.md }} />
+                <Text style={{ fontSize: 10, color: mine ? colors.paper : colors.inkSoft, marginTop: 4 }}>✏️ 손글씨 · 눌러서 다시보기</Text>
+              </Sketchy>
             </Pressable>
           )}
           <View style={{ flexDirection: 'row', gap: 6, marginTop: 2 }}>
@@ -111,13 +134,14 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
   return (
     <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={8}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.line }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 }}>
           <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
-            <Feather name="chevron-left" size={24} color={colors.ink} />
+            <Icon name="chevron-left" size={24} color={colors.ink} />
           </Pressable>
           <Avatar nickname={chat.name} color={chat.color} size={30} fontSize={12} avatarUrl={chat.avatarUrl} />
           <Text style={{ fontWeight: '700', color: colors.ink, fontSize: 15 }}>{chat.name}</Text>
         </View>
+        <SketchyLine seed="chat-thread-header" />
 
         <FlatList
           ref={listRef}
@@ -129,18 +153,22 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
         />
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10 }}>
-          <Pressable style={roundIconStyle} onPress={() => navigation.navigate('Airwrite', { chatId })} accessibilityLabel="에어라이팅 메시지">
-            <Feather name="edit-2" size={18} color={colors.ink} />
+          <Pressable onPress={() => navigation.navigate('Airwrite', { chatId })} accessibilityLabel="에어라이팅 메시지">
+            <Sketchy radius={20} color={colors.line} strokeWidth={2} seed="chat-round-edit" style={roundIconStyle}>
+              <Icon name="edit-2" size={18} color={colors.ink} />
+            </Sketchy>
           </Pressable>
-          <TextInput
-            style={[common.input, { flex: 1 }]}
+          <SketchyInput
+            style={{ flex: 1 }}
             placeholder="메시지 보내기..."
             value={text}
             onChangeText={setText}
             onSubmitEditing={handleSend}
           />
-          <Pressable style={[roundIconStyle, { backgroundColor: colors.ink }]} onPress={handleSend} accessibilityLabel="전송">
-            <Feather name="send" size={18} color={colors.paper} />
+          <Pressable onPress={handleSend} accessibilityLabel="전송">
+            <Sketchy radius={20} color={colors.paper} seed="chat-round-send" style={[roundIconStyle, { backgroundColor: colors.ink, borderWidth: 0 }]}>
+              <Icon name="send" size={18} color={colors.paper} />
+            </Sketchy>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -148,15 +176,11 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
   );
 }
 
-const bubbleStyle = { maxWidth: '78%' as const, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 8 };
-const bubbleMine = { backgroundColor: colors.ink };
-const bubbleTheirs = { backgroundColor: '#fff', borderWidth: 1, borderColor: colors.line };
+const bubbleStyle = { maxWidth: '78%' as const, paddingHorizontal: 12, paddingVertical: 8 };
 const roundIconStyle = {
   width: 40,
   height: 40,
   borderRadius: 20,
-  borderWidth: 1,
-  borderColor: colors.line,
   backgroundColor: '#fff',
   alignItems: 'center' as const,
   justifyContent: 'center' as const

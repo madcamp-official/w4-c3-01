@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Avatar from '@/components/Avatar';
+import Icon from '@/components/Icon';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 
@@ -48,9 +49,7 @@ export default function CommentSheet() {
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           />
           <button className="round-icon send sk" onClick={handleSend} aria-label="댓글 등록">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path d="m22 2-7 20-4-9-9-4Z" />
-            </svg>
+            <Icon name="send" size={18} />
           </button>
         </div>
       </div>

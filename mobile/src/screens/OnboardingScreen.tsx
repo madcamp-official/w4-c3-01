@@ -1,11 +1,13 @@
 // Adapted from frontend/src/pages/OnboardingPage.tsx — keep in sync.
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Feather from '@expo/vector-icons/Feather';
+import Icon from '@/components/Icon';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import AirDrawingWebView, { type AirDrawingCapture } from '@/components/AirDrawingWebView';
 import AvatarPicker from '@/components/AvatarPicker';
+import SketchyButton from '@/components/SketchyButton';
+import SketchyInput from '@/components/SketchyInput';
 import { useUsernameCheck, usernameStatusMessage } from '@/hooks/useUsernameCheck';
 import { AVATAR_TONES, defaultHeartUrl } from '@/mock/store';
 import type { AuthStackParamList } from '@/navigation/types';
@@ -106,16 +108,12 @@ export default function OnboardingScreen({ navigation }: Props) {
           </View>
         </View>
         <View style={{ padding: 20, gap: 10 }}>
-          <Pressable
-            style={[common.btn, common.btnPrimary, submitting && common.btnDisabled]}
-            disabled={submitting}
-            onPress={() => finishOnboarding(heartPreview)}
-          >
+          <SketchyButton variant="primary" blobVariant="a" disabled={submitting} onPress={() => finishOnboarding(heartPreview)}>
             <Text style={common.btnPrimaryText}>{submitting ? '가입하는 중...' : '이 하트로 가입 완료'}</Text>
-          </Pressable>
-          <Pressable style={[common.btn, common.btnGhost]} disabled={submitting} onPress={() => setHeartPreview(null)}>
+          </SketchyButton>
+          <SketchyButton variant="ghost" blobVariant="b" disabled={submitting} onPress={() => setHeartPreview(null)}>
             <Text style={common.btnGhostText}>다시 그리기</Text>
-          </Pressable>
+          </SketchyButton>
         </View>
       </SafeAreaView>
     );
@@ -136,7 +134,7 @@ export default function OnboardingScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
       <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={handleBack}>
-        <Feather name="chevron-left" size={24} color={colors.ink} />
+        <Icon name="chevron-left" size={24} color={colors.ink} />
       </Pressable>
 
       {step === 1 ? (
@@ -146,8 +144,8 @@ export default function OnboardingScreen({ navigation }: Props) {
 
           <View style={common.field}>
             <Text style={common.label}>아이디</Text>
-            <TextInput
-              style={common.input}
+            <SketchyInput
+              blobVariant="a"
               placeholder="영문, 숫자 조합"
               value={form.username}
               onChangeText={(v) => updateField('username', v)}
@@ -158,8 +156,8 @@ export default function OnboardingScreen({ navigation }: Props) {
           </View>
           <View style={common.field}>
             <Text style={common.label}>이메일</Text>
-            <TextInput
-              style={common.input}
+            <SketchyInput
+              blobVariant="b"
               placeholder="example@email.com"
               value={form.email}
               onChangeText={(v) => updateField('email', v)}
@@ -170,12 +168,12 @@ export default function OnboardingScreen({ navigation }: Props) {
           </View>
           <View style={common.field}>
             <Text style={common.label}>이름</Text>
-            <TextInput style={common.input} maxLength={16} value={form.nickname} onChangeText={(v) => updateField('nickname', v)} />
+            <SketchyInput blobVariant="a" maxLength={16} value={form.nickname} onChangeText={(v) => updateField('nickname', v)} />
           </View>
           <View style={common.field}>
             <Text style={common.label}>비밀번호</Text>
-            <TextInput
-              style={common.input}
+            <SketchyInput
+              blobVariant="b"
               placeholder="8~12자, 영문·숫자·특수문자 포함"
               value={form.password}
               onChangeText={(v) => updateField('password', v)}
@@ -185,12 +183,12 @@ export default function OnboardingScreen({ navigation }: Props) {
           </View>
           <View style={common.field}>
             <Text style={common.label}>비밀번호 확인</Text>
-            <TextInput style={common.input} value={form.password2} onChangeText={(v) => updateField('password2', v)} secureTextEntry />
+            <SketchyInput blobVariant="a" value={form.password2} onChangeText={(v) => updateField('password2', v)} secureTextEntry />
           </View>
 
-          <Pressable style={[common.btn, common.btnPrimary, !canGoNext && common.btnDisabled]} disabled={!canGoNext} onPress={handleNext}>
+          <SketchyButton variant="primary" blobVariant="a" disabled={!canGoNext} onPress={handleNext}>
             <Text style={common.btnPrimaryText}>다음</Text>
-          </Pressable>
+          </SketchyButton>
 
           <View style={common.dividerRow}>
             <View style={common.dividerLine} />
@@ -198,9 +196,9 @@ export default function OnboardingScreen({ navigation }: Props) {
             <View style={common.dividerLine} />
           </View>
 
-          <Pressable style={[common.btn, common.btnGhost]} onPress={handleGoogle}>
+          <SketchyButton variant="ghost" blobVariant="b" onPress={handleGoogle}>
             <Text style={common.btnGhostText}>Google로 계속하기</Text>
-          </Pressable>
+          </SketchyButton>
 
           <Pressable style={common.linkBtn} onPress={() => navigation.navigate('Login')}>
             <Text style={common.linkBtnText}>이미 계정이 있으신가요? 로그인</Text>
@@ -214,9 +212,9 @@ export default function OnboardingScreen({ navigation }: Props) {
             <AvatarPicker dataUrl={avatarDataUrl} nickname={form.nickname || '?'} color={AVATAR_TONES[0]} size={120} onChange={setAvatarDataUrl} />
           </View>
           <View style={{ flex: 1 }} />
-          <Pressable style={[common.btn, common.btnPrimary, { width: '100%' }]} onPress={() => setStep(3)}>
+          <SketchyButton variant="primary" style={{ width: '100%' }} onPress={() => setStep(3)}>
             <Text style={common.btnPrimaryText}>다음</Text>
-          </Pressable>
+          </SketchyButton>
           <Pressable style={common.linkBtn} disabled={submitting} onPress={handleSkipHeart}>
             <Text style={common.linkBtnText}>{submitting ? '가입하는 중...' : '기본 하트로 시작할게요'}</Text>
           </Pressable>
