@@ -99,6 +99,10 @@
   height: 100%;
 }
 
+.ar-lounge__stage {
+  pointer-events: none;
+}
+
 .ar-lounge__overlay {
   display: none;
 }
