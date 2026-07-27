@@ -12,11 +12,13 @@ create table if not exists public.profiles (
   avatar_url text,
   followers integer not null default 0,
   following integer not null default 0,
+  onboarded boolean not null default true,
   created_at timestamptz not null default now()
 );
 
--- 기존에 이미 만든 프로젝트라면 avatar_url 컬럼만 추가로 붙여줍니다.
+-- 기존에 이미 만든 프로젝트라면 컬럼만 추가로 붙여줍니다.
 alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists onboarded boolean not null default true;
 
 alter table public.profiles enable row level security;
 
@@ -39,7 +41,10 @@ grant select on public.profiles to anon, authenticated;
 grant update on public.profiles to authenticated;
 
 -- 2) 회원가입 시 auth.users 에 행이 생기면 profiles 행을 자동으로 만들어주는 트리거.
---    signUp() 호출 시 options.data 로 넘긴 값(raw_user_meta_data)을 그대로 사용합니다.
+--    이메일/비밀번호 회원가입은 signUp() 의 options.data 로 넘긴 값(raw_user_meta_data)을
+--    그대로 씁니다. Google 같은 OAuth 로그인은 username이 없으므로(이메일 앞부분으로
+--    자동 생성하고 onboarded = false로 표시해서, 로그인 직후 "프로필 완성" 화면에서
+--    확인/수정하게 합니다 — 이 트리거는 email/OAuth 두 경우를 모두 처리합니다.
 --    이메일 인증(Confirm email)이 켜져 있어도, 트리거는 회원가입 시점에 바로 실행됩니다.
 create or replace function public.handle_new_user()
 returns trigger
@@ -47,15 +52,40 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  provided_username text := new.raw_user_meta_data ->> 'username';
+  base_username text;
+  candidate text;
+  suffix int := 0;
 begin
-  insert into public.profiles (id, username, nickname, avatar_color, heart_url, avatar_url)
+  if provided_username is not null and provided_username <> '' then
+    candidate := provided_username;
+  else
+    base_username := regexp_replace(lower(split_part(coalesce(new.email, 'user'), '@', 1)), '[^a-z0-9_.]', '', 'g');
+    if base_username = '' then
+      base_username := 'user';
+    end if;
+    candidate := base_username;
+    while exists (select 1 from public.profiles where username = candidate) loop
+      suffix := suffix + 1;
+      candidate := base_username || suffix::text;
+    end loop;
+  end if;
+
+  insert into public.profiles (id, username, nickname, avatar_color, heart_url, avatar_url, onboarded)
   values (
     new.id,
-    new.raw_user_meta_data ->> 'username',
-    new.raw_user_meta_data ->> 'nickname',
+    candidate,
+    coalesce(
+      new.raw_user_meta_data ->> 'nickname',
+      new.raw_user_meta_data ->> 'full_name',
+      new.raw_user_meta_data ->> 'name',
+      candidate
+    ),
     coalesce(new.raw_user_meta_data ->> 'avatar_color', '#EAE2C9'),
     new.raw_user_meta_data ->> 'heart_url',
-    new.raw_user_meta_data ->> 'avatar_url'
+    new.raw_user_meta_data ->> 'avatar_url',
+    (provided_username is not null and provided_username <> '')
   );
   return new;
 end;

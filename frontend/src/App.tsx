@@ -18,6 +18,7 @@ import ChatListPage from '@/pages/ChatListPage';
 import ChatThreadPage from '@/pages/ChatThreadPage';
 import AirwritePage from '@/pages/AirwritePage';
 import MyPage from '@/pages/MyPage';
+import CompleteProfilePage from '@/pages/CompleteProfilePage';
 import UserProfilePage from '@/pages/UserProfilePage';
 import EditHeartPage from '@/pages/EditHeartPage';
 import EditProfilePage from '@/pages/EditProfilePage';
@@ -40,6 +41,7 @@ export default function App() {
                   </Route>
 
                   <Route element={<ProtectedLayout />}>
+                    <Route path="/complete-profile" element={<CompleteProfilePage />} />
                     <Route path="/feed" element={<FeedPage />} />
                     <Route path="/search" element={<SearchPage />} />
                     <Route path="/camera" element={<CameraPage />} />

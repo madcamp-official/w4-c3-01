@@ -24,7 +24,10 @@ export async function isUsernameAvailable(username: string, excludeUserId?: stri
   return (data ?? []).length === 0;
 }
 
-export async function updateProfile(userId: string, updates: { username: string; nickname: string }): Promise<void> {
+export async function updateProfile(
+  userId: string,
+  updates: { username: string; nickname: string; onboarded?: boolean }
+): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
   if (error) {

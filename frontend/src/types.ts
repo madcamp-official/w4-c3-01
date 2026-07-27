@@ -81,6 +81,8 @@ export interface Session {
   avatarColor: string;
   heartUrl: string | null;
   avatarUrl: string | null;
+  /** false면 (주로 Google 등 OAuth 첫 로그인) 아이디가 자동 생성된 상태 — 프로필 완성 화면으로 보냅니다. */
+  onboarded: boolean;
 }
 
 export interface LoginPayload {

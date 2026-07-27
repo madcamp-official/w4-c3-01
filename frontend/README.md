@@ -45,6 +45,7 @@ src/
    - `messages` 테이블을 Realtime publication에 등록 — 채팅방을 열어두면 상대방 메시지가 새로고침 없이 바로 뜹니다.
    - `chat-images`라는 공개(public) Storage 버킷 — 허공 손글씨 메시지 이미지를 저장합니다. 업로드는 로그인한 사용자가 자기 uid 폴더 아래에만 가능하도록 제한했습니다.
    - `follows` 테이블과 RLS — 팔로우 관계. 팔로워/팔로잉 수는 저장해두지 않고 이 테이블에서 그때그때 세서 보여줍니다.
+   - `profiles.onboarded` 컬럼 — Google 로그인처럼 아이디 없이 생성된 계정을 표시합니다 (아래 "Google 로그인" 참고).
 4. **Authentication → Settings → Email Auth**에서 **"Confirm email"을 꺼주세요.** (지금 회원가입 흐름은 가입 즉시 로그인시키는데, 이메일 인증이 켜져 있으면 인증 전까지 로그인 세션이 생기지 않아 바로 로그인이 안 됩니다. 나중에 이메일 인증을 붙이려면 회원가입 화면에 "메일함을 확인하세요" 단계를 추가해야 합니다 — `authApi.signup`이 이미 그 경우를 에러로 던지도록 되어 있습니다.)
 5. (확인용) **Database → Publications**에서 `supabase_realtime` publication에 `messages` 테이블이 포함돼 있는지 한 번 봐주세요 (`supabase_realtime_messages_publication`이라는 비슷한 이름의 항목은 Supabase 내부용이라 무관합니다). `schema.sql`이 자동으로 등록하긴 하지만, 프로젝트에 따라 안 붙는 경우가 있습니다.
 
@@ -80,6 +81,24 @@ src/
 - 아이디는 회원가입 1단계와 프로필 수정 양쪽에서 입력하는 동안 400ms 디바운스로 `profiles` 테이블에 중복 여부를 조회합니다 (`useUsernameCheck` 훅, `userApi.isUsernameAvailable`). 프로필 수정에서는 본인 id를 조회에서 제외해서, 아이디를 안 바꾸면 항상 사용 가능으로 취급합니다.
 - `profiles.username`에 이미 `unique` 제약이 걸려 있어서, 실시간 확인을 통과한 뒤에도 동시에 같은 아이디를 가로채는 경우엔 최종적으로 DB가 막아줍니다 — `userApi.updateProfile`은 이 경우(`23505` unique 위반)를 "이미 사용 중인 아이디예요"로 바꿔서 보여주고, 회원가입은 최종 제출 직전에 한 번 더 확인합니다(`authApi.signup`).
 - 회원가입 비밀번호는 8~12자 + 영문·숫자·특수문자를 모두 포함해야 합니다 (클라이언트에서만 검사 — Supabase 프로젝트 자체의 최소 길이 설정보다 엄격하니 별도 설정은 필요 없습니다).
+
+### Google 로그인
+
+로그인/회원가입 화면 둘 다 "Google로 계속하기" 버튼이 있습니다. 아래 설정을 안 하면 버튼을 눌렀을 때 에러 토스트만 뜨고, 다른 기능에는 영향 없습니다.
+
+**Google Cloud Console** ([console.cloud.google.com](https://console.cloud.google.com)):
+1. 프로젝트 생성 (또는 기존 프로젝트 사용) → **APIs & Services → OAuth consent screen**에서 동의 화면 기본 설정 (User Type: External, 앱 이름/이메일 정도만 채우면 테스트 가능).
+2. **APIs & Services → Credentials → Create Credentials → OAuth client ID** → Application type: **Web application**.
+3. **Authorized redirect URIs**에 Supabase 콜백 주소를 추가: `https://<프로젝트 ref>.supabase.co/auth/v1/callback` (`<프로젝트 ref>`는 `.env`의 `VITE_SUPABASE_URL`에 있는 그 부분입니다).
+4. 생성되는 **Client ID**와 **Client secret**을 복사해둡니다.
+
+**Supabase 대시보드**:
+1. **Authentication → Sign In / Providers → Google** 활성화 → 위에서 받은 Client ID/Secret 입력 후 저장.
+2. **Authentication → URL Configuration**에서 **Redirect URLs**에 로컬 개발 주소를 추가: `http://localhost:5173/**` (Vite 기본 포트 기준 — `npm run dev`가 다른 포트를 쓰면 그 주소로). 나중에 실제 배포 도메인도 여기에 추가해야 합니다.
+
+**동작 방식**: 이 앱은 `HashRouter`(주소가 `#`로 시작)를 쓰는데, Supabase의 기본 OAuth 방식 중 하나(implicit)는 로그인 후 토큰을 URL **해시**에 붙여 돌려줘서 라우터랑 충돌할 수 있습니다. 그래서 `src/lib/supabaseClient.ts`에서 `flowType: 'pkce'`를 명시해, 토큰이 해시가 아니라 쿼리스트링(`?code=`)으로 오도록 고정해뒀습니다 — 별도 설정 없이 그대로 두면 됩니다.
+
+Google은 아이디(username) 개념이 없어서, 처음 Google로 로그인하면 이메일 앞부분으로 아이디를 자동 생성하고(`handle_new_user` 트리거, 중복되면 숫자를 붙여 유니크하게 만듦) `profiles.onboarded = false`로 표시합니다. 로그인 직후 `ProtectedLayout`이 이걸 감지해서 `/complete-profile` 화면으로 보내고, 거기서 아이디·이름·사진을 확인/수정하고 저장하면(`onboarded = true`) 그다음부터는 평소처럼 앱을 씁니다. 이메일/비밀번호로 직접 가입한 계정은 처음부터 `onboarded = true`라 이 화면을 거치지 않습니다.
 
 ## 실행
 

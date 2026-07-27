@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as authApi from '@/api/authApi';
 import AvatarPicker from '@/components/AvatarPicker';
 import HeartAirwriteStage, { type HeartAirwriteHandle } from '@/components/HeartAirwriteStage';
 import { useUsernameCheck, usernameStatusMessage } from '@/hooks/useUsernameCheck';
@@ -76,6 +77,14 @@ export default function OnboardingPage() {
     void finishOnboarding(defaultHeartUrl());
   }
 
+  async function handleGoogle() {
+    try {
+      await authApi.signInWithGoogle();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Google 로그인을 시작하지 못했어요');
+    }
+  }
+
   return (
     <section className="screen active" id="screen-onboarding">
       <div className="onb-progress">
@@ -142,6 +151,14 @@ export default function OnboardingPage() {
         </div>
         <button className="btn primary sk block" disabled={!canGoNext} onClick={handleNext}>
           다음
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0' }}>
+          <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+          <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>또는</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+        </div>
+        <button className="btn ghost sk block" onClick={handleGoogle}>
+          Google로 계속하기
         </button>
         <button className="link-btn" style={{ marginTop: 12, alignSelf: 'center' }} onClick={() => navigate('/login')}>
           이미 계정이 있으신가요? 로그인

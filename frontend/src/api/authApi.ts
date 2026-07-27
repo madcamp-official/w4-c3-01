@@ -12,6 +12,7 @@ interface ProfileRow {
   avatar_color: string;
   heart_url: string | null;
   avatar_url: string | null;
+  onboarded: boolean;
 }
 
 function toSession(userId: string, profile: ProfileRow): Session {
@@ -22,7 +23,8 @@ function toSession(userId: string, profile: ProfileRow): Session {
     nickname: profile.nickname,
     avatarColor: profile.avatar_color,
     heartUrl: profile.heart_url,
-    avatarUrl: profile.avatar_url
+    avatarUrl: profile.avatar_url,
+    onboarded: profile.onboarded
   };
 }
 
@@ -50,7 +52,8 @@ export async function login(payload: LoginPayload): Promise<Session> {
       nickname: payload.identifier,
       avatarColor: AVATAR_TONES[0],
       heartUrl: defaultHeartUrl(),
-      avatarUrl: null
+      avatarUrl: null,
+      onboarded: true
     };
   }
 
@@ -70,7 +73,8 @@ export async function signup(payload: SignupPayload): Promise<Session> {
       nickname: payload.nickname,
       avatarColor: AVATAR_TONES[0],
       heartUrl: payload.heartUrl,
-      avatarUrl: payload.avatarUrl
+      avatarUrl: payload.avatarUrl,
+      onboarded: true
     };
   }
 
@@ -107,8 +111,19 @@ export async function signup(payload: SignupPayload): Promise<Session> {
     nickname: payload.nickname,
     avatarColor: AVATAR_TONES[0],
     heartUrl: payload.heartUrl,
-    avatarUrl: payload.avatarUrl
+    avatarUrl: payload.avatarUrl,
+    onboarded: true
   };
+}
+
+/** Google 로그인/가입: 구글 화면으로 이동했다가 다시 이 앱으로 돌아옵니다. */
+export async function signInWithGoogle(): Promise<void> {
+  if (!supabase) throw new Error('Supabase가 설정되지 않았어요');
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+  if (error) throw new Error(error.message);
 }
 
 export async function logout(): Promise<void> {

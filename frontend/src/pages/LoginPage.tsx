@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as authApi from '@/api/authApi';
 import { useAppState } from '@/state/AppStateContext';
 import { useToast } from '@/state/ToastContext';
 
@@ -25,6 +26,14 @@ export default function LoginPage() {
       showToast(err instanceof Error ? err.message : '로그인에 실패했어요');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleGoogle() {
+    try {
+      await authApi.signInWithGoogle();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Google 로그인을 시작하지 못했어요');
     }
   }
 
@@ -58,6 +67,14 @@ export default function LoginPage() {
         <div className="onb-spacer" />
         <button className="btn primary sk block" disabled={submitting} onClick={handleSubmit}>
           로그인
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0' }}>
+          <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+          <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>또는</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+        </div>
+        <button className="btn ghost sk block" onClick={handleGoogle}>
+          Google로 계속하기
         </button>
         <button className="link-btn" style={{ marginTop: 14, alignSelf: 'center' }} onClick={() => navigate('/signup')}>
           계정이 없으신가요? 회원가입
