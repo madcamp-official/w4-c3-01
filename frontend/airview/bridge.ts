@@ -1,16 +1,13 @@
 // RN <-> WebView message protocol for the air-drawing bridge (plan Phase 4).
 // Mirrored on the RN side by mobile/src/components/AirDrawingWebView.tsx —
 // keep both in sync.
-import type { AirDrawingCapture, AirDrawingMode } from '@/features/air-drawing/AirDrawingStage'
-
-/** Set via injectedJavaScriptBeforeContentLoaded before the page's own scripts run. */
-export interface AirViewConfig {
-  mode: AirDrawingMode
-  outputSize?: number
-  maxDim?: number
-  /** Relative path prefix the WASM/model assets are served from, e.g. '' when they sit next to index.html. */
-  assetBase?: string
-}
+//
+// mode/outputSize/maxDim travel as URL query params (see main.tsx), not
+// through window.__AIR_CONFIG__/injectedJavaScriptBeforeContentLoaded —
+// against a fast local server the injected script can lose the race against
+// this page's own inline script and silently fall back to defaults. Query
+// params are part of the initial request, so there's no race to lose.
+import type { AirDrawingCapture } from '@/features/air-drawing/AirDrawingStage'
 
 export type AirViewToNativeMessage =
   | { type: 'ready' }
@@ -31,7 +28,6 @@ export function postToNative(message: AirViewToNativeMessage): void {
 
 declare global {
   interface Window {
-    __AIR_CONFIG__?: AirViewConfig
     ReactNativeWebView?: { postMessage: (message: string) => void }
   }
 }

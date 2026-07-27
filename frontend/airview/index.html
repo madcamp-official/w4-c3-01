@@ -11,11 +11,9 @@
   <body>
     <div id="root"></div>
     <script>
-      // RN이 injectedJavaScriptBeforeContentLoaded로 이미 값을 넣어뒀다면 그대로 두고,
-      // 없다면(데스크톱/모바일 브라우저에서 이 파일을 직접 열어 테스트하는 경우) index.html
-      // 기준 상대경로로 기본값을 잡습니다.
-      window.__AIR_ASSET_BASE__ = window.__AIR_ASSET_BASE__ ?? '.';
-      window.__AIR_CONFIG__ = window.__AIR_CONFIG__ ?? { mode: 'post' };
+      // index.html 기준 상대경로로 wasm/모델 에셋을 찾습니다 (main.tsx가 window.location.search로
+      // mode 등을 직접 읽으므로 여기서 __AIR_CONFIG__를 다룰 필요는 없습니다).
+      window.__AIR_ASSET_BASE__ = '.';
     </script>
     <script type="module" src="./main.tsx"></script>
   </body>

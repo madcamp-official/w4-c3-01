@@ -55,6 +55,15 @@ async function main() {
     console.log(`✓ ${rel} (${(body.length / 1024).toFixed(0)} KB)`);
   }
 
+  // 앱이 로컬 캐시를 언제 다시 받을지 판단하는 버전 마커 — 매 업로드마다 갱신.
+  // (AirDrawingWebView.tsx의 ensureBundleCached가 이 값을 비교합니다.)
+  const version = String(Date.now());
+  const { error: versionError } = await supabase.storage
+    .from('air-drawing-webview')
+    .upload('version.txt', version, { contentType: 'text/plain', upsert: true });
+  if (versionError) throw new Error(`version.txt 업로드 실패: ${versionError.message}`);
+  console.log(`✓ version.txt (${version})`);
+
   console.log('\n✓ air-drawing-webview 버킷 업로드 완료.');
 }
 

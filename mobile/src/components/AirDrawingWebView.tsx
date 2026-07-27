@@ -17,7 +17,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useCameraPermissions } from 'expo-camera';
 import { Directory, File, Paths } from 'expo-file-system';
-import StaticServer, { getActiveServerId, STATES } from '@dr.pogodin/react-native-static-server';
+import StaticServer from '@dr.pogodin/react-native-static-server';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import Feather from '@expo/vector-icons/Feather';
 import type { AirDrawingDocument } from '@/air-drawing-types';
@@ -46,31 +46,59 @@ const BUNDLE_FILES = [
   'models/hand_landmarker.task'
 ];
 
+/** Best-effort remote version check — returns null if unreachable (offline), so a cached bundle can still be used. */
+async function fetchRemoteVersion(): Promise<string | null> {
+  try {
+    const res = await fetch(`${REMOTE_BASE}/version.txt?t=${Date.now()}`);
+    if (!res.ok) return null;
+    return (await res.text()).trim();
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Downloads the bundle into the app's document directory on first use and
- * reuses it after that (existence check only — no version/staleness check
- * yet, so re-run `upload:airview` and clear app storage to pick up changes
- * during development). Returns the local directory's plain filesystem path
- * (no file:// prefix — that's what StaticServer's fileDir expects).
+ * Downloads the bundle into the app's document directory on first use, and
+ * re-downloads it whenever the uploaded version.txt marker changes (each
+ * `npm run upload:airview` bumps it) — otherwise reuses the local cache.
+ * Returns the local directory's plain filesystem path (no file:// prefix —
+ * that's what StaticServer's fileDir expects).
  */
 async function ensureBundleCached(onProgress: (done: number, total: number) => void): Promise<string> {
   if (!SUPABASE_URL) throw new Error('Supabase가 설정되지 않았어요');
 
   const rootDir = new Directory(Paths.document, 'air-drawing-webview');
   const indexFile = new File(rootDir, 'index.html');
-  if (!indexFile.exists) {
-    if (!rootDir.exists) rootDir.create({ intermediates: true });
+  const versionFile = new File(rootDir, '.version');
+
+  const remoteVersion = await fetchRemoteVersion();
+  const localVersion = versionFile.exists ? versionFile.textSync() : null;
+  const upToDate = indexFile.exists && remoteVersion !== null && remoteVersion === localVersion;
+  console.log('[airview] cached:', indexFile.exists, 'localVersion:', localVersion, 'remoteVersion:', remoteVersion, 'upToDate:', upToDate);
+
+  if (upToDate) {
+    onProgress(BUNDLE_FILES.length, BUNDLE_FILES.length);
+  } else if (indexFile.exists && remoteVersion === null) {
+    // Offline but we have *something* cached — use it rather than failing outright.
+    onProgress(BUNDLE_FILES.length, BUNDLE_FILES.length);
+  } else {
+    if (rootDir.exists) rootDir.delete();
+    rootDir.create({ intermediates: true });
     for (const sub of ['wasm', 'models']) {
-      const dir = new Directory(rootDir, sub);
-      if (!dir.exists) dir.create({ intermediates: true });
+      new Directory(rootDir, sub).create({ intermediates: true });
     }
 
     let done = 0;
     for (const rel of BUNDLE_FILES) {
-      await File.downloadFileAsync(`${REMOTE_BASE}/${rel}`, new File(rootDir, rel), { idempotent: true });
+      console.log('[airview] downloading', `${REMOTE_BASE}/${rel}`);
+      const dest = new File(rootDir, rel);
+      await File.downloadFileAsync(`${REMOTE_BASE}/${rel}`, dest, { idempotent: true });
+      console.log('[airview] done', rel, dest.size, 'bytes');
       done += 1;
       onProgress(done, BUNDLE_FILES.length);
     }
+    if (remoteVersion !== null) versionFile.create({ overwrite: true });
+    if (remoteVersion !== null) versionFile.write(remoteVersion);
   }
   return rootDir.uri.replace(/^file:\/\//, '');
 }
@@ -84,10 +112,13 @@ async function getServerOrigin(onProgress: (done: number, total: number) => void
   if (!serverOriginPromise) {
     serverOriginPromise = (async () => {
       const fileDir = await ensureBundleCached(onProgress);
-      const activeId = await getActiveServerId();
-      const server = new StaticServer(activeId != null ? { fileDir, id: activeId, state: STATES.ACTIVE } : { fileDir });
-      return server.start();
+      console.log('[airview] bundle cached at', fileDir, '- starting server');
+      const server = new StaticServer({ fileDir });
+      const result = await server.start();
+      console.log('[airview] server started at', result);
+      return result;
     })().catch((err) => {
+      console.log('[airview] getServerOrigin failed:', err instanceof Error ? err.message : String(err));
       serverOriginPromise = null; // allow retrying on failure
       throw err;
     });
@@ -113,10 +144,12 @@ interface AirDrawingWebViewProps {
   onError?: (message: string) => void;
 }
 
-const INJECTED_BEFORE_LOAD = (mode: AirDrawingMode, outputSize?: number, maxDim?: number) => `
-  window.__AIR_CONFIG__ = ${JSON.stringify({ mode, outputSize, maxDim })};
-  true;
-`;
+function buildAirViewUrl(origin: string, mode: AirDrawingMode, outputSize?: number, maxDim?: number): string {
+  const params = new URLSearchParams({ mode });
+  if (outputSize) params.set('outputSize', String(outputSize));
+  if (maxDim) params.set('maxDim', String(maxDim));
+  return `${origin}/index.html?${params.toString()}`;
+}
 
 export default function AirDrawingWebView({ mode, outputSize, maxDim, busy, onCapture, onClose, onError }: AirDrawingWebViewProps) {
   const [permission, requestPermission] = useCameraPermissions();
@@ -234,9 +267,8 @@ export default function AirDrawingWebView({ mode, outputSize, maxDim, busy, onCa
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <WebView
-        source={{ uri: `${origin}/index.html` }}
+        source={{ uri: buildAirViewUrl(origin, mode, outputSize, maxDim) }}
         style={{ flex: 1 }}
-        injectedJavaScriptBeforeContentLoaded={INJECTED_BEFORE_LOAD(mode, outputSize, maxDim)}
         onMessage={handleMessage}
         allowsInlineMediaPlayback
         mediaPlaybackRequiresUserAction={false}
