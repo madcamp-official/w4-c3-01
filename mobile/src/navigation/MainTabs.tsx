@@ -57,7 +57,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
             onPress={() => (isMy && focused ? openLogout() : navigation.navigate(route.name))}
           >
             {isMy && session?.heartUrl ? (
-              <Image source={{ uri: session.heartUrl }} style={{ width: 21, height: 21 }} resizeMode="contain" />
+              <Image source={{ uri: session.heartUrl }} style={{ width: 22, height: 22 }} resizeMode="contain" />
             ) : (
               <Feather name={icons[route.name as keyof TabParamList]} size={22} color={focused ? colors.ink : colors.inkSoft} />
             )}

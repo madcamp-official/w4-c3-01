@@ -1,5 +1,6 @@
 // Ported from frontend/src/components/PostCard.tsx — keep in sync.
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import Feather from '@expo/vector-icons/Feather';
 import Avatar from '@/components/Avatar';
 import { useAppState } from '@/state/AppStateContext';
@@ -11,8 +12,29 @@ export default function PostCard({ post }: { post: Post }) {
   const { session, likePost } = useAppState();
   const { openViewer, openComments, openShare } = useOverlay();
 
+  // Mirrors global.css's .heart-icon/.liked/.pop + @keyframes heartpop:
+  // pale+small by default, and on liking it overshoots to 1.4x before
+  // settling at 1.15x while fading in to full opacity.
+  const heartScale = useSharedValue(post.liked ? 1.15 : 1);
+  const heartOpacity = useSharedValue(post.liked ? 1 : 0.5);
+  const heartStyle = useAnimatedStyle(() => ({
+    opacity: heartOpacity.value,
+    transform: [{ scale: heartScale.value }]
+  }));
+
   async function handleLike() {
+    const willLike = !post.liked;
     await likePost(post.id);
+    if (willLike) {
+      heartScale.value = withSequence(
+        withTiming(1.4, { duration: 180, easing: Easing.out(Easing.ease) }),
+        withTiming(1.15, { duration: 220, easing: Easing.out(Easing.ease) })
+      );
+      heartOpacity.value = withTiming(1, { duration: 200 });
+    } else {
+      heartScale.value = withTiming(1, { duration: 250, easing: Easing.out(Easing.ease) });
+      heartOpacity.value = withTiming(0.5, { duration: 200 });
+    }
   }
 
   return (
@@ -31,11 +53,13 @@ export default function PostCard({ post }: { post: Post }) {
       </Pressable>
       <View style={styles.actions}>
         <Pressable onPress={handleLike} style={styles.actionBtn}>
-          {session?.heartUrl ? (
-            <Image source={{ uri: session.heartUrl }} style={{ width: 24, height: 24 }} resizeMode="contain" />
-          ) : (
-            <Feather name="heart" size={22} color={post.liked ? colors.danger : colors.ink} />
-          )}
+          <Animated.View style={heartStyle}>
+            {session?.heartUrl ? (
+              <Image source={{ uri: session.heartUrl }} style={{ width: 22, height: 22 }} resizeMode="contain" />
+            ) : (
+              <Feather name="heart" size={22} color={colors.ink} />
+            )}
+          </Animated.View>
         </Pressable>
         <Pressable onPress={() => openComments(post.id)} style={styles.actionBtn}>
           <Feather name="message-circle" size={22} color={colors.ink} />

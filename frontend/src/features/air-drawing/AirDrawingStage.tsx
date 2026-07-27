@@ -235,10 +235,10 @@ export function AirDrawingStage({
       const drawing = drawingHandle.getDocument()
       if (outputSize) {
         // 정사각형 출력(하트/메시지)은 늘리지 않고 정사각형으로 잘라냅니다 — 그대로
-        // 늘리면 세로로 긴 화면이 눌린 것처럼 찌그러져 보입니다. 캔버스 정중앙이 아니라
-        // 실제로 그린 부분(스트로크의 바운딩 박스) 중심을 기준으로 잘라서, 화면 한쪽에
-        // 치우쳐 그려도 결과물 정중앙에 오도록 합니다.
-        const cropSize = Math.min(drawingCanvas.width, drawingCanvas.height)
+        // 늘리면 세로로 긴 화면이 눌린 것처럼 찌그러져 보입니다. 잘라내는 영역은
+        // 캔버스 전체가 아니라 실제로 그린 부분(스트로크의 바운딩 박스)에 여백만 살짝
+        // 더한 크기로 맞춰서, 사람마다 허공에 그리는 크기가 달라도 결과물 안에서
+        // 그림이 차지하는 비율이 비슷하게 나오도록 합니다(작게 그리면 확대되는 효과).
         let minX = 1
         let minY = 1
         let maxX = 0
@@ -250,6 +250,14 @@ export function AirDrawingStage({
             minY = Math.min(minY, p.y)
             maxY = Math.max(maxY, p.y)
           }),
+        )
+        const minCanvasSide = Math.min(drawingCanvas.width, drawingCanvas.height)
+        const bboxWidthPx = (maxX - minX) * drawingCanvas.width
+        const bboxHeightPx = (maxY - minY) * drawingCanvas.height
+        const BBOX_PADDING = 1.4
+        const cropSize = Math.min(
+          Math.max(Math.max(bboxWidthPx, bboxHeightPx) * BBOX_PADDING, minCanvasSide * 0.15),
+          minCanvasSide,
         )
         const centerX = ((minX + maxX) / 2) * drawingCanvas.width
         const centerY = ((minY + maxY) / 2) * drawingCanvas.height
