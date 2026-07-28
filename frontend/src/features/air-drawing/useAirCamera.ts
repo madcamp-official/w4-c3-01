@@ -59,8 +59,13 @@ export function useAirCamera(initialFacingMode: FacingMode = 'user'): UseCameraR
           audio: false,
           video: {
             facingMode: { ideal: nextFacingMode },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            // Rear sensors on most phones support well past 1080p — asking for
+            // an "ideal" (not "min", so it degrades gracefully) 4K target
+            // pushes the browser toward each camera's own best mode instead
+            // of settling on a lower one, since front-facing sensors usually
+            // cap out lower anyway.
+            width: { ideal: 3840 },
+            height: { ideal: 2160 },
           },
         })
 

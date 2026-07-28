@@ -21,6 +21,13 @@ export async function fetchFollowCounts(userId: string): Promise<FollowCounts> {
   return { followers: followersRes.count ?? 0, following: followingRes.count ?? 0 };
 }
 
+export async function fetchFollowingIds(userId: string): Promise<string[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from('follows').select('following_id').eq('follower_id', userId);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => row.following_id as string);
+}
+
 export async function isFollowing(followerId: string, followingId: string): Promise<boolean> {
   if (!supabase) return false;
   const { data, error } = await supabase

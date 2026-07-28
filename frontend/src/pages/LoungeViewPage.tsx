@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import Icon from '@/components/Icon';
 import { useCamera } from '@/hooks/useCamera';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
@@ -82,9 +83,7 @@ export default function LoungeViewPage() {
         </div>
         <div className="cam-topbar">
           <button className="icon-btn sk" onClick={() => navigate('/lounges')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
+            <Icon name="x" size={24} />
           </button>
           <b style={{ background: 'var(--paper)', padding: '6px 12px', borderRadius: 999, fontSize: 12 }}>{lounge.name}</b>
         </div>

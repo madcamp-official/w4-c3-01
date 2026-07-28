@@ -46,7 +46,7 @@ export default function CompleteProfilePage() {
       if (dataUrl && dataUrl !== session!.avatarUrl) await setAvatar(dataUrl);
       await setHeart(heartUrl);
       await updateProfile({ username: username.trim(), nickname: nickname.trim(), onboarded: true });
-      showToast(`손끝에 오신 걸 환영해요, ${nickname.trim()}님 🎉`);
+      showToast(`ALine에 오신 걸 환영해요, ${nickname.trim()}님 🎉`);
       navigate('/feed', { replace: true });
     } catch (err) {
       showToast(err instanceof Error ? err.message : '저장하지 못했어요');
@@ -88,7 +88,7 @@ export default function CompleteProfilePage() {
         </div>
         <div className="field">
           <label>이름</label>
-          <input type="text" className="sk" maxLength={16} value={nickname} onChange={(e) => setNickname(e.target.value)} />
+          <input type="text" className="sk blob-b" maxLength={16} value={nickname} onChange={(e) => setNickname(e.target.value)} />
         </div>
         <button className="btn primary sk block" style={{ marginTop: 10 }} onClick={handleNext}>
           다음
@@ -105,7 +105,7 @@ export default function CompleteProfilePage() {
         <div className="heart-tools">
           {step === 2 ? <HeartAirwriteStage ref={heartRef} onDrawStateChange={setHasDrawn} /> : null}
           <div className="btn-row">
-            <button className="btn ghost sk" onClick={() => heartRef.current?.clear()}>
+            <button className="btn ghost sk blob-b" onClick={() => heartRef.current?.clear()}>
               지우기
             </button>
             <button className="btn primary sk" disabled={!hasDrawn || saving} onClick={handleDone}>

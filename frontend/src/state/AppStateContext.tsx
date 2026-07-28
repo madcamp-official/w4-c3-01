@@ -142,6 +142,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         authorId: session.id,
         username: session.nickname,
         avatarColor: session.avatarColor,
+        avatarUrl: session.avatarUrl,
         image: input.image,
         strokes: input.strokes,
         drawing: input.drawing,

@@ -386,3 +386,29 @@ begin
     alter publication supabase_realtime add table public.conversation_reads;
   end if;
 end $$;
+
+-- 9) 에어드로잉 WebView 번들 배포용 버킷 ----------------------------------
+--    모바일 앱이 카메라(손 추적) 화면을 열 때 이 안의 파일들(index.html, wasm,
+--    손 인식 모델)을 내려받아 폰 로컬에 캐시해두고 file://로 엽니다 — 노트북/
+--    케이블 없이도 인터넷만 있으면 동작하게 하기 위함입니다.
+--    사용자 데이터가 아니라 우리가 빌드해서 올리는 정적 앱 리소스라서, 다른
+--    버킷과 달리 uid 폴더 제한 없이 누구나(anon 포함) 업로드/조회할 수 있게 열어둡니다
+--    (frontend/scripts/upload-airview-bundle.mjs가 재빌드할 때마다 다시 올림).
+insert into storage.buckets (id, name, public)
+values ('air-drawing-webview', 'air-drawing-webview', true)
+on conflict (id) do nothing;
+
+drop policy if exists "Anyone can view the air-drawing-webview bundle" on storage.objects;
+create policy "Anyone can view the air-drawing-webview bundle"
+  on storage.objects for select
+  using (bucket_id = 'air-drawing-webview');
+
+drop policy if exists "Anyone can upload/replace the air-drawing-webview bundle" on storage.objects;
+create policy "Anyone can upload/replace the air-drawing-webview bundle"
+  on storage.objects for insert
+  with check (bucket_id = 'air-drawing-webview');
+
+drop policy if exists "Anyone can update the air-drawing-webview bundle" on storage.objects;
+create policy "Anyone can update the air-drawing-webview bundle"
+  on storage.objects for update
+  using (bucket_id = 'air-drawing-webview');

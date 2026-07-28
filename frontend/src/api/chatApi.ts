@@ -19,6 +19,7 @@ interface ProfileLite {
   id: string;
   nickname: string;
   avatar_color: string;
+  avatar_url: string | null;
 }
 
 function formatMessageTime(iso: string): string {
@@ -40,7 +41,7 @@ function mapMessage(row: MessageRow, currentUserId: string): ChatMessage {
 
 async function fetchProfilesByIds(userIds: string[]): Promise<Map<string, ProfileLite>> {
   if (userIds.length === 0) return new Map();
-  const { data, error } = await supabase!.from('profiles').select('id, nickname, avatar_color').in('id', userIds);
+  const { data, error } = await supabase!.from('profiles').select('id, nickname, avatar_color, avatar_url').in('id', userIds);
   if (error) throw new Error(error.message);
   return new Map((data ?? []).map((p) => [p.id, p as ProfileLite]));
 }
@@ -84,6 +85,7 @@ export async function fetchConversations(currentUserId: string): Promise<Chat[]>
       id: c.id,
       name: profile?.nickname ?? '알 수 없음',
       color: profile?.avatar_color ?? '#EAE2C9',
+      avatarUrl: profile?.avatar_url ?? null,
       messages: [mapMessage(latest, currentUserId)],
       otherReadAt: null // 목록에서는 안 씀 — 스레드를 열면 fetchThread가 채워줍니다.
     };
@@ -125,6 +127,7 @@ export async function fetchThread(chatId: string, currentUserId: string): Promis
     id: conv.id,
     name: profile?.nickname ?? '알 수 없음',
     color: profile?.avatar_color ?? '#EAE2C9',
+    avatarUrl: profile?.avatar_url ?? null,
     messages: (msgRows ?? []).map((row) => mapMessage(row as MessageRow, currentUserId)),
     otherReadAt: readRow?.last_read_at ?? null
   };

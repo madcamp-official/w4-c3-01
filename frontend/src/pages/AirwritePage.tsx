@@ -13,6 +13,7 @@ export default function AirwritePage() {
   const { showToast } = useToast();
   const trail = useTrailCanvas();
   const [sending, setSending] = useState(false);
+  const [preview, setPreview] = useState<{ image: string; strokes: ReturnType<typeof trail.getStrokes> } | null>(null);
 
   useEffect(() => {
     trail.resize();
@@ -20,7 +21,7 @@ export default function AirwritePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleSend() {
+  function handleCapture() {
     const strokes = trail.getStrokes();
     if (!strokes.length) {
       showToast('먼저 허공에 무언가를 그려주세요');
@@ -33,16 +34,44 @@ export default function AirwritePage() {
     octx.fillStyle = '#F2ECDA';
     octx.fillRect(0, 0, 260, 260);
     drawStrokesStatic(octx, strokes, 260, 260, 6);
+    setPreview({ image: out.toDataURL('image/png'), strokes });
+  }
+
+  async function handleSend() {
+    if (!preview) return;
     setSending(true);
     try {
-      await sendAir(chatId, out.toDataURL('image/png'), strokes);
+      await sendAir(chatId, preview.image, preview.strokes);
       showToast('손글씨 메시지를 보냈어요');
       navigate(`/chats/${chatId}`, { replace: true });
     } catch (err) {
       showToast(err instanceof Error ? err.message : '메시지를 보내지 못했어요');
-    } finally {
       setSending(false);
     }
+  }
+
+  if (preview) {
+    return (
+      <section
+        className="screen active"
+        id="screen-airwrite-preview"
+        style={{ background: 'var(--ink)', padding: 0, paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 220, height: 220, borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: 'var(--paper-2)' }}>
+            <img src={preview.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </div>
+        </div>
+        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button className="btn primary sk block" disabled={sending} onClick={handleSend}>
+            {sending ? '보내는 중...' : '이 메시지 보내기'}
+          </button>
+          <button className="btn ghost sk block blob-b" disabled={sending} onClick={() => setPreview(null)}>
+            다시 그리기
+          </button>
+        </div>
+      </section>
+    );
   }
 
   return (
@@ -64,8 +93,8 @@ export default function AirwritePage() {
               <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
             </svg>
           </button>
-          <button className="btn primary sk" style={{ padding: '14px 30px' }} disabled={sending} onClick={handleSend}>
-            {sending ? '보내는 중...' : '보내기'}
+          <button className="btn primary sk" style={{ padding: '14px 30px' }} onClick={handleCapture}>
+            다음
           </button>
           <div style={{ width: 40 }} />
         </div>

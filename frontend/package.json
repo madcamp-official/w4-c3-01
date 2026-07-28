@@ -9,33 +9,31 @@
     "dev": "vite",
     "prebuild": "npm run prepare:assets",
     "build": "tsc -b && vite build",
+    "build:airview": "npm run prepare:assets && vite build --config vite.airview.config.ts && node scripts/prepare-airview-assets.mjs",
+    "upload:airview": "node scripts/upload-airview-bundle.mjs",
     "preview": "vite preview",
-    "lint": "eslint .",
-    "sync-server": "node server/lounge-sync.mjs"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.35",
     "@supabase/supabase-js": "^2.110.8",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.2",
-    "three": "^0.185.1",
-    "ws": "^8.21.1"
+    "react-router-dom": "^6.26.2"
   },
   "devDependencies": {
     "@types/node": "^22.7.4",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
-    "@types/three": "^0.185.1",
-    "@types/webxr": "^0.5.24",
-    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "@typescript-eslint/parser": "^8.8.0",
     "@vitejs/plugin-react": "^4.3.2",
+    "dotenv": "^17.4.2",
     "eslint": "^8.57.1",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.12",
     "typescript": "^5.6.2",
-    "vite": "^5.4.8"
+    "vite": "^5.4.8",
+    "vite-plugin-singlefile": "^2.3.3"
   }
 }

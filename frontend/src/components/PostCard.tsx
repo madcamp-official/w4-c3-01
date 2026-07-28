@@ -1,12 +1,14 @@
 import { useState, type CSSProperties } from 'react';
 import Avatar from '@/components/Avatar';
+import Icon from '@/components/Icon';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 import type { Post } from '@/types';
 
 const BURST_MARKS = ['✎', '✳', '✦'];
 
-export default function PostCard({ post }: { post: Post }) {
+/** `variant="horizontal"` is a full-bleed page for the paged feed mode; `"vertical"` is the compact scrolling-list card. See FeedPage.tsx. */
+export default function PostCard({ post, variant = 'vertical' }: { post: Post; variant?: 'horizontal' | 'vertical' }) {
   const { session, likePost } = useAppState();
   const { openViewer, openComments, openShare } = useOverlay();
   const [popping, setPopping] = useState(false);
@@ -25,9 +27,9 @@ export default function PostCard({ post }: { post: Post }) {
   }
 
   return (
-    <article className="post sk-hr-b">
+    <article className={variant === 'horizontal' ? 'feed-page' : 'post post-vertical sk-hr-b'}>
       <div className="post-head">
-        <Avatar nickname={post.username} color={post.avatarColor} size={32} fontSize={13} />
+        <Avatar nickname={post.username} color={post.avatarColor} size={32} fontSize={13} avatarUrl={post.avatarUrl} />
         <div className="who">
           <b>{post.username}</b>
           <small>{post.time}</small>
@@ -57,14 +59,10 @@ export default function PostCard({ post }: { post: Post }) {
           ))}
         </button>
         <button className="action-btn" onClick={() => openComments(post.id)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="icon-sk">
-            <path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 8.7 8.7 0 0 1-4-1L3 20l1.2-4.3A8.4 8.4 0 1 1 21 11.5Z" />
-          </svg>
+          <Icon name="message-circle" />
         </button>
         <button className="action-btn" onClick={() => openShare(post.id)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="icon-sk">
-            <path d="m22 2-7 20-4-9-9-4Z" />
-          </svg>
+          <Icon name="send" />
         </button>
       </div>
       <div className="post-meta">

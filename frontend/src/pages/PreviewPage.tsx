@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Icon from '@/components/Icon';
 import { useAppState } from '@/state/AppStateContext';
 import { usePlacement } from '@/state/PlacementContext';
 import { useToast } from '@/state/ToastContext';
@@ -46,9 +47,7 @@ export default function PreviewPage() {
       <div className="prev-media sk2">
         <img src={image} alt="촬영한 손글씨" />
         <button className="icon-btn prev-top sk" onClick={() => navigate('/camera', { state: { intent } })}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="m15 18-6-6 6-6" />
-          </svg>
+          <Icon name="chevron-left" size={24} strokeWidth={2.3} className="" />
         </button>
       </div>
       <div className="prev-bottom">
