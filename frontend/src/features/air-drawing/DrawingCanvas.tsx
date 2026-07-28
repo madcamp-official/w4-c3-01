@@ -389,11 +389,20 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
             return
           }
 
-          prepareContext(context, stroke.color, stroke.tool, stroke.lineWidth)
-          context.beginPath()
-          context.moveTo(previous.x * canvas.clientWidth, previous.y * canvas.clientHeight)
-          context.lineTo(normalized.x * canvas.clientWidth, normalized.y * canvas.clientHeight)
-          context.stroke()
+          // A single incremental stroke() (drawing just the new segment) is
+          // cheaper, but on Android WebView it was rendering non-default pen
+          // styles (shadowBlur/dash/opacity) as a plain line — the shadow's
+          // paint region is wider than the segment's own bounds, and the
+          // WebView's hardware-accelerated canvas wasn't reliably
+          // invalidating/compositing that extra area on a partial redraw.
+          // eraseAt()'s full clearRect()+redraw was the only thing that
+          // forced a real repaint, which is why styles "fixed themselves"
+          // only after using the eraser. A full redraw() every point is
+          // more expensive but guarantees what's on screen actually matches
+          // the stored stroke data — for spray we keep the incremental path
+          // since spray has no shadow and redrawing every particle every
+          // point would be far more expensive.
+          redraw()
         },
         eraseAt(point: Point, radius: number) {
           const canvas = canvasRef.current

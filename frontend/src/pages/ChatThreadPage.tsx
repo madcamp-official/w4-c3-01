@@ -102,10 +102,7 @@ export default function ChatThreadPage() {
                 {m.type === 'text' ? (
                   <div className="bubble sk">{m.text}</div>
                 ) : (
-                  <div className="bubble air sk" onClick={() => openViewerForMessage(m)}>
-                    <img src={m.image} alt="손글씨 메시지" />
-                    <div className="air-tag">✏️ 손글씨 · 눌러서 다시보기</div>
-                  </div>
+                  <img className="air-message-image" src={m.image} alt="손글씨 메시지" onClick={() => openViewerForMessage(m)} />
                 )}
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   {m.from === 'me' && m.id === lastReadMineId ? (

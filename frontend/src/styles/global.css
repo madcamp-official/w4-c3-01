@@ -976,26 +976,14 @@ input[type='password'].sk::before {
 .msg-row.me .bubble::before {
   border-color: var(--paper);
 }
-.bubble.air {
-  padding: 7px;
-  cursor: pointer;
-}
-.bubble.air img {
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
+.air-message-image {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
   background: var(--paper-2);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
   display: block;
-}
-.bubble.air .air-tag {
-  font-size: 10px;
-  color: var(--ink-soft);
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 700;
 }
 .thread-input {
   display: flex;

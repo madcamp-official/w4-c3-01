@@ -107,19 +107,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
             </Sketchy>
           ) : (
             <Pressable onPress={() => openViewerForMessage(m)}>
-              <Sketchy
-                shape="blob"
-                variant={mine ? 'a' : 'b'}
-                color={mine ? colors.paper : colors.line}
-                fill={mine ? colors.ink : '#fff'}
-                shadow={{ dx: mine ? 1.5 : -1.5, dy: 2 }}
-                strokeWidth={2}
-                seed={`bubble-air-${m.id}`}
-                style={[bubbleStyle, { padding: 6 }]}
-              >
-                <Image source={{ uri: m.image }} style={{ width: 140, height: 140, borderRadius: radius.md }} />
-                <Text style={{ fontSize: 10, color: mine ? colors.paper : colors.inkSoft, marginTop: 4 }}>✏️ 손글씨 · 눌러서 다시보기</Text>
-              </Sketchy>
+              <Image source={{ uri: m.image }} style={airImageStyle} />
             </Pressable>
           )}
           <View style={{ flexDirection: 'row', gap: 6, marginTop: 2 }}>
@@ -177,6 +165,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
 }
 
 const bubbleStyle = { maxWidth: '78%' as const, paddingHorizontal: 12, paddingVertical: 8 };
+const airImageStyle = { width: 160, height: 160, borderRadius: radius.md };
 const roundIconStyle = {
   width: 40,
   height: 40,

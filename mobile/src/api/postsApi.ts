@@ -1,4 +1,5 @@
 // Ported from frontend/src/api/postsApi.ts — keep in sync.
+import { fetchFollowingIds } from '@/api/followApi';
 import { supabase } from '@/lib/supabaseClient';
 import { uploadPostImage } from '@/lib/uploadImage';
 import { mockStore } from '@/mock/store';
@@ -126,7 +127,15 @@ export async function fetchFeed(currentUserId: string): Promise<Post[]> {
     return mockStore.posts;
   }
 
-  const { data: postRows, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+  // 팔로우한 사람 + 내 게시물만 피드에 노출합니다.
+  const followingIds = await fetchFollowingIds(currentUserId);
+  const visibleAuthorIds = [...new Set([...followingIds, currentUserId])];
+
+  const { data: postRows, error } = await supabase
+    .from('posts')
+    .select('*')
+    .in('author_id', visibleAuthorIds)
+    .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
   if (!postRows || postRows.length === 0) return [];
 

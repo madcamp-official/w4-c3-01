@@ -41,28 +41,28 @@ interface AirDrawingStageProps {
   onError?: (message: string) => void
 }
 
-function flattenDrawing(document: AirDrawingDocument): StrokePoint[] {
+// Square (outputSize) captures crop the drawing canvas to a region centered
+// on the stroke bounding box (see handleCapture) rather than the full canvas
+// — so points must be remapped into that same crop's 0..1 space, or the
+// replayed path reads squashed/offset relative to the (already-cropped) photo.
+function flattenDrawing(
+  document: AirDrawingDocument,
+  crop?: { x: number; y: number; size: number; canvasWidth: number; canvasHeight: number },
+): StrokePoint[] {
   return document.strokes.flatMap((stroke) =>
-    stroke.points.map((point, index) => ({
-      x: point.x,
-      y: point.y,
-      move: index === 0,
-    })),
+    stroke.points.map((point, index) => {
+      let x = point.x
+      let y = point.y
+      if (crop) {
+        x = (point.x * crop.canvasWidth - crop.x) / crop.size
+        y = (point.y * crop.canvasHeight - crop.y) / crop.size
+      }
+      return { x, y, move: index === 0 }
+    }),
   )
 }
 
-function drawVideoCover(
-  context: CanvasRenderingContext2D,
-  video: HTMLVideoElement,
-  width: number,
-  height: number,
-  mirrored: boolean,
-  zoom: number = 1,
-) {
-  const sourceWidth = video.videoWidth
-  const sourceHeight = video.videoHeight
-  if (!sourceWidth || !sourceHeight) return
-
+function computeCoverSourceRect(sourceWidth: number, sourceHeight: number, width: number, height: number, zoom: number) {
   const sourceRatio = sourceWidth / sourceHeight
   const targetRatio = width / height
   let sw = sourceWidth
@@ -80,14 +80,51 @@ function drawVideoCover(
   sh /= zoom
   const sx = (sourceWidth - sw) / 2
   const sy = (sourceHeight - sh) / 2
+  return { sx, sy, sw, sh }
+}
+
+function drawCover(
+  context: CanvasRenderingContext2D,
+  source: CanvasImageSource,
+  sourceWidth: number,
+  sourceHeight: number,
+  width: number,
+  height: number,
+  mirrored: boolean,
+  zoom: number = 1,
+) {
+  if (!sourceWidth || !sourceHeight) return
+  const { sx, sy, sw, sh } = computeCoverSourceRect(sourceWidth, sourceHeight, width, height, zoom)
 
   context.save()
   if (mirrored) {
     context.translate(width, 0)
     context.scale(-1, 1)
   }
-  context.drawImage(video, sx, sy, sw, sh, 0, 0, width, height)
+  context.drawImage(source, sx, sy, sw, sh, 0, 0, width, height)
   context.restore()
+}
+
+type ImageCaptureLike = { takePhoto: () => Promise<Blob> }
+
+// The live <video> stream is often capped well below the camera's actual
+// still-photo resolution (Chromium negotiates a lower preview mode for
+// performance) — ImageCapture.takePhoto() asks the hardware for a real still
+// photo instead, which is usually a meaningfully higher-resolution frame.
+// Support is inconsistent across Android WebViews, so this is best-effort
+// and falls back silently to sampling the <video> element when unavailable.
+async function grabHighResPhoto(stream: MediaStream): Promise<ImageBitmap | null> {
+  const track = stream.getVideoTracks()[0]
+  const ImageCaptureCtor = (window as unknown as { ImageCapture?: new (t: MediaStreamTrack) => ImageCaptureLike })
+    .ImageCapture
+  if (!track || !ImageCaptureCtor) return null
+  try {
+    const capture = new ImageCaptureCtor(track)
+    const blob = await capture.takePhoto()
+    return await createImageBitmap(blob)
+  } catch {
+    return null
+  }
 }
 
 export function AirDrawingStage({
@@ -103,7 +140,7 @@ export function AirDrawingStage({
   // 게시물/라운지는 카메라 프레임을 그대로 합성합니다.
   const isPaperMode = mode === 'heart'
   const showToolbars = mode !== 'heart'
-  const zoomEnabled = mode === 'post' || mode === 'lounge'
+  const zoomEnabled = mode !== 'heart'
 
   const stageRef = useRef<HTMLDivElement | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -265,7 +302,7 @@ export function AirDrawingStage({
     return '손 인식됨'
   }, [cameraError, erasing, handDetected, modelError, modelReady, pinching, stream])
 
-  const handleCapture = useCallback(() => {
+  const handleCapture = useCallback(async () => {
     const stage = stageRef.current
     const video = videoRef.current
     const drawingHandle = drawingCanvasRef.current
@@ -308,9 +345,20 @@ export function AirDrawingStage({
         // 배경을 아예 채우지 않고 투명하게 둡니다 — 좋아요 버튼 아이콘으로 쓸 것이라
         // 그린 선만 남아야 합니다 (캔버스 기본값이 투명이라 따로 지울 것도 없음).
       } else {
-        drawVideoCover(context, video, width, height, facingMode === 'user', zoomValue)
+        let hqPhoto = await grabHighResPhoto(stream)
+        if (hqPhoto && hqPhoto.width * hqPhoto.height < video.videoWidth * video.videoHeight) {
+          hqPhoto.close()
+          hqPhoto = null
+        }
+        if (hqPhoto) {
+          drawCover(context, hqPhoto, hqPhoto.width, hqPhoto.height, width, height, facingMode === 'user', zoomValue)
+          hqPhoto.close()
+        } else {
+          drawCover(context, video, video.videoWidth, video.videoHeight, width, height, facingMode === 'user', zoomValue)
+        }
       }
       const drawing = drawingHandle.getDocument()
+      let cropForStrokes: { x: number; y: number; size: number; canvasWidth: number; canvasHeight: number } | undefined
       if (outputSize) {
         // 정사각형 출력(하트/메시지)은 늘리지 않고 정사각형으로 잘라냅니다 — 그대로
         // 늘리면 세로로 긴 화면이 눌린 것처럼 찌그러져 보입니다. 잘라내는 영역은
@@ -342,12 +390,13 @@ export function AirDrawingStage({
         const cropX = Math.min(Math.max(centerX - cropSize / 2, 0), drawingCanvas.width - cropSize)
         const cropY = Math.min(Math.max(centerY - cropSize / 2, 0), drawingCanvas.height - cropSize)
         context.drawImage(drawingCanvas, cropX, cropY, cropSize, cropSize, 0, 0, width, height)
+        cropForStrokes = { x: cropX, y: cropY, size: cropSize, canvasWidth: drawingCanvas.width, canvasHeight: drawingCanvas.height }
       } else {
         context.drawImage(drawingCanvas, 0, 0, drawingCanvas.width, drawingCanvas.height, 0, 0, width, height)
       }
       onCapture({
         image: isPaperMode ? output.toDataURL('image/png') : output.toDataURL('image/jpeg', 0.92),
-        strokes: flattenDrawing(drawing),
+        strokes: flattenDrawing(drawing, cropForStrokes),
         drawing,
       })
     } finally {
