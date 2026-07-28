@@ -1,0 +1,71 @@
+diff --git a/node_modules/@dr.pogodin/react-native-static-server/CMakeLists.txt b/node_modules/@dr.pogodin/react-native-static-server/CMakeLists.txt
+index 6a9711d..74628bd 100644
+--- a/node_modules/@dr.pogodin/react-native-static-server/CMakeLists.txt
++++ b/node_modules/@dr.pogodin/react-native-static-server/CMakeLists.txt
+@@ -51,7 +51,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Android")
+     -DANDROID_ABI=${ANDROID_ABI}
+     -DANDROID_PLATFORM=${ANDROID_PLATFORM}
+     -DANDROID_STL=${ANDROID_STL}
+-    -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384
++    -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384,-z,common-page-size=16384
+     -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+     -GNinja
+   )
+@@ -156,6 +156,29 @@ if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+   set(ENV{PKG_CONFIG_PATH} "${CMAKE_BINARY_DIR}/sysroot/lib/pkgconfig")
+ else()
+   set(CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}/sysroot")
++  set(
++    PCRE2_DIR
++    "${CMAKE_BINARY_DIR}/sysroot/lib/cmake/pcre2"
++    CACHE PATH "Bundled PCRE2 package" FORCE
++  )
++  set(
++    PCRE2_INCLUDE_DIR
++    "${CMAKE_BINARY_DIR}/sysroot/include"
++    CACHE PATH "Bundled PCRE2 include directory" FORCE
++  )
++  set(
++    PCRE2_8BIT_LIBRARY
++    "${CMAKE_BINARY_DIR}/sysroot/lib/libpcre2-8.so"
++    CACHE FILEPATH "Bundled PCRE2 library" FORCE
++  )
++endif()
++
++if(CMAKE_SYSTEM_NAME MATCHES "Android")
++  add_library(glob SHARED IMPORTED GLOBAL)
++  set_target_properties(
++    glob
++    PROPERTIES IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/sysroot/lib/libglob.so"
++  )
+ endif()
+ 
+ add_subdirectory(lighttpd1.4)
+diff --git a/node_modules/@dr.pogodin/react-native-static-server/android/build.gradle b/node_modules/@dr.pogodin/react-native-static-server/android/build.gradle
+index 85f8ed8..c29a17c 100644
+--- a/node_modules/@dr.pogodin/react-native-static-server/android/build.gradle
++++ b/node_modules/@dr.pogodin/react-native-static-server/android/build.gradle
+@@ -39,6 +39,10 @@ android {
+ 
+   defaultConfig {
+     minSdkVersion getExtOrDefault("minSdkVersion")
++    ndk {
++      abiFilters(*((findProperty("reactNativeArchitectures")
++        ?: "armeabi-v7a,arm64-v8a,x86,x86_64").split(",")))
++    }
+     externalNativeBuild {
+       cmake {
+         arguments "-DWITH_ANDROID_NDK_SYSLOG_INTERCEPT=ON", "-DWITH_JAVA_NATIVE_INTERFACE=ON", "-DBUILD_STATIC=ON",
+diff --git a/node_modules/@dr.pogodin/react-native-static-server/lighttpd1.4/src/CMakeLists.txt b/node_modules/@dr.pogodin/react-native-static-server/lighttpd1.4/src/CMakeLists.txt
+index ee3e0d8..7a1f7ca 100644
+--- a/node_modules/@dr.pogodin/react-native-static-server/lighttpd1.4/src/CMakeLists.txt
++++ b/node_modules/@dr.pogodin/react-native-static-server/lighttpd1.4/src/CMakeLists.txt
+@@ -559,7 +559,7 @@ else()
+ endif()
+ 
+ if(WITH_PCRE2)
+-	find_package(PCRE2 QUIET)
++	find_package(PCRE2 QUIET CONFIG COMPONENTS 8BIT)
+ 	if(PCRE2_FOUND)
+ 		set(PCRE_LDFLAGS PCRE2::8BIT)
+ 		set(PCRE_CFLAGS "${PCRE2_CFLAGS}")

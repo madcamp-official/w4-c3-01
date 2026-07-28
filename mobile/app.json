@@ -12,6 +12,13 @@
     },
     "android": {
       "package": "com.sonkkeut.app",
+      "permissions": [
+        "CAMERA",
+        "HIGH_SAMPLING_RATE_SENSORS",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "INTERNET"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -26,7 +33,26 @@
     "plugins": [
       "expo-asset",
       "expo-web-browser",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ALine AR 라운지에서 실제 공간에 낙서를 배치하기 위해 카메라를 사용합니다.",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
+        }
+      ],
+      [
+        "@reactvision/react-viro",
+        {
+          "provider": "arcore",
+          "android": {
+            "xRMode": [
+              "AR"
+            ]
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {

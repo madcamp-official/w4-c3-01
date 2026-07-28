@@ -3,7 +3,12 @@
 // Sketchy.tsx). Pass `blobVariant="b"` to alternate with a neighboring field,
 // matching the design prototype's pattern of alternating shapes down a form.
 import { forwardRef } from 'react';
-import { TextInput, type TextInputProps } from 'react-native';
+import {
+  TextInput,
+  type StyleProp,
+  type TextInputProps,
+  type ViewStyle,
+} from 'react-native';
 import Sketchy from '@/components/Sketchy';
 import { colors } from '@/theme/colors';
 import type { BlobVariant } from '@/lib/sketchyPath';
@@ -21,7 +26,10 @@ const SketchyInput = forwardRef<TextInput, Props>(function SketchyInput({ style,
       shadow={{ dx: shadowDx, dy: 2 }}
       strokeWidth={2}
       seed={`input-${blobVariant}`}
-      style={[props.multiline ? undefined : { justifyContent: 'center' }, style]}
+      style={[
+        props.multiline ? undefined : { justifyContent: 'center' },
+        style as StyleProp<ViewStyle>,
+      ]}
     >
       <TextInput
         ref={ref}

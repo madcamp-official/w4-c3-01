@@ -3,10 +3,8 @@
 import { isUsernameAvailable } from '@/api/userApi';
 import { supabase } from '@/lib/supabaseClient';
 import { signInWithGoogle as signInWithGoogleDeepLink } from '@/lib/oauth';
-import { AVATAR_TONES, defaultHeartUrl } from '@/mock/store';
+import { AVATAR_TONES } from '@/mock/store';
 import type { LoginPayload, Session, SignupPayload } from '@/types';
-
-const MOCK_SESSION_ID = 'mock-user';
 
 /** profiles row shape as selected from Supabase (snake_case columns). */
 interface ProfileRow {
@@ -47,17 +45,7 @@ async function resolveEmail(identifier: string): Promise<string> {
 
 export async function login(payload: LoginPayload): Promise<Session> {
   if (!supabase) {
-    // Supabase 미설정: 목업 세션으로 동작 (EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY 를 채우면 실제 인증으로 전환됩니다)
-    return {
-      id: MOCK_SESSION_ID,
-      isAuthenticated: true,
-      username: payload.identifier,
-      nickname: payload.identifier,
-      avatarColor: AVATAR_TONES[0],
-      heartUrl: defaultHeartUrl(),
-      avatarUrl: null,
-      onboarded: true
-    };
+    throw new Error('Supabase 인증 설정이 필요해요.');
   }
 
   const email = await resolveEmail(payload.identifier.trim());
@@ -68,17 +56,7 @@ export async function login(payload: LoginPayload): Promise<Session> {
 
 export async function signup(payload: SignupPayload): Promise<Session> {
   if (!supabase) {
-    // Supabase 미설정: 목업 세션으로 동작
-    return {
-      id: MOCK_SESSION_ID,
-      isAuthenticated: true,
-      username: payload.username,
-      nickname: payload.nickname,
-      avatarColor: AVATAR_TONES[0],
-      heartUrl: payload.heartUrl,
-      avatarUrl: payload.avatarUrl,
-      onboarded: true
-    };
+    throw new Error('Supabase 인증 설정이 필요해요.');
   }
 
   // 회원가입 1단계에서 이미 확인했겠지만, 그사이(하트 그리기 등) 시간이 지났을 수 있어 한 번 더 확인합니다.
