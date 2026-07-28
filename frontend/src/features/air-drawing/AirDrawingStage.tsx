@@ -57,6 +57,7 @@ function drawVideoCover(
   width: number,
   height: number,
   mirrored: boolean,
+  zoom: number = 1,
 ) {
   const sourceWidth = video.videoWidth
   const sourceHeight = video.videoHeight
@@ -64,18 +65,21 @@ function drawVideoCover(
 
   const sourceRatio = sourceWidth / sourceHeight
   const targetRatio = width / height
-  let sx = 0
-  let sy = 0
   let sw = sourceWidth
   let sh = sourceHeight
 
   if (sourceRatio > targetRatio) {
     sw = sourceHeight * targetRatio
-    sx = (sourceWidth - sw) / 2
   } else {
     sh = sourceWidth / targetRatio
-    sy = (sourceHeight - sh) / 2
   }
+
+  // Digital zoom: sample a smaller, centered region of the frame — matches
+  // the CSS scale() applied to the live <video> preview (see zoomValue).
+  sw /= zoom
+  sh /= zoom
+  const sx = (sourceWidth - sw) / 2
+  const sy = (sourceHeight - sh) / 2
 
   context.save()
   if (mirrored) {
@@ -90,7 +94,7 @@ export function AirDrawingStage({
   busy = false,
   mode = 'post',
   outputSize,
-  maxDim = 1600,
+  maxDim = 2400,
   onClose,
   onCapture,
   onError,
@@ -99,6 +103,7 @@ export function AirDrawingStage({
   // 게시물/라운지는 카메라 프레임을 그대로 합성합니다.
   const isPaperMode = mode === 'heart'
   const showToolbars = mode !== 'heart'
+  const zoomEnabled = mode === 'post' || mode === 'lounge'
 
   const stageRef = useRef<HTMLDivElement | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -113,6 +118,7 @@ export function AirDrawingStage({
   const [penTool, setPenTool] = useState<PenTool>(DEFAULT_PEN_TOOL)
   const [lineSize, setLineSize] = useState(DEFAULT_LINE_SIZE)
   const [capturing, setCapturing] = useState(false)
+  const [zoomValue, setZoomValue] = useState(1)
 
   const {
     stream,
@@ -141,6 +147,70 @@ export function AirDrawingStage({
       })
     }
   }, [stream])
+
+  // Reset to 1x whenever the camera (re)starts or is switched, so a stale
+  // zoom level from the previous session/camera doesn't carry over.
+  useEffect(() => {
+    setZoomValue(1)
+  }, [stream])
+
+  const ZOOM_MIN = 1
+  const ZOOM_MAX = 5
+
+  // Mirrors zoomValue into a ref so the touch-pinch listeners below (attached
+  // once, not re-attached on every zoom change) can read the *current* zoom
+  // when a new pinch gesture begins, without needing to be recreated.
+  const zoomValueRef = useRef(zoomValue)
+  useEffect(() => {
+    zoomValueRef.current = zoomValue
+  }, [zoomValue])
+
+  // Two-finger pinch to zoom, like a regular camera app — distinct from the
+  // hand-tracking "air pinch" (thumb+index in front of the camera) used for
+  // drawing, which never touches the screen at all, so the two don't compete.
+  // Attached via addEventListener (not JSX onTouchMove) because React makes
+  // touchmove passive by default, so preventDefault() there wouldn't actually
+  // stop the WebView's native page-zoom from also kicking in.
+  useEffect(() => {
+    const el = stageRef.current
+    if (!el || !zoomEnabled) return
+
+    const touchDistance = (touches: TouchList) => {
+      const [a, b] = [touches[0], touches[1]]
+      return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+    }
+
+    let pinchStartDistance: number | null = null
+    let pinchStartZoom = 1
+
+    function handleTouchStart(e: TouchEvent) {
+      if (e.touches.length === 2) {
+        pinchStartDistance = touchDistance(e.touches)
+        pinchStartZoom = zoomValueRef.current
+      }
+    }
+    function handleTouchMove(e: TouchEvent) {
+      if (e.touches.length === 2 && pinchStartDistance) {
+        e.preventDefault()
+        const ratio = touchDistance(e.touches) / pinchStartDistance
+        setZoomValue(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, pinchStartZoom * ratio)))
+      }
+    }
+    function handleTouchEnd(e: TouchEvent) {
+      if (e.touches.length < 2) pinchStartDistance = null
+    }
+
+    el.addEventListener('touchstart', handleTouchStart, { passive: true })
+    el.addEventListener('touchmove', handleTouchMove, { passive: false })
+    el.addEventListener('touchend', handleTouchEnd)
+    el.addEventListener('touchcancel', handleTouchEnd)
+    return () => {
+      el.removeEventListener('touchstart', handleTouchStart)
+      el.removeEventListener('touchmove', handleTouchMove)
+      el.removeEventListener('touchend', handleTouchEnd)
+      el.removeEventListener('touchcancel', handleTouchEnd)
+    }
+  }, [zoomEnabled])
 
   const handleTrackedPoint = useCallback(
     (point: Point | null, isPinching: boolean, isErasing: boolean) => {
@@ -175,6 +245,7 @@ export function AirDrawingStage({
     stageRef,
     stream,
     facingMode,
+    zoom: zoomValue,
     enabled: Boolean(stream),
     onPoint: handleTrackedPoint,
   })
@@ -228,6 +299,8 @@ export function AirDrawingStage({
     output.height = height
     const context = output.getContext('2d')
     if (!context) return
+    context.imageSmoothingEnabled = true
+    context.imageSmoothingQuality = 'high'
 
     setCapturing(true)
     try {
@@ -235,7 +308,7 @@ export function AirDrawingStage({
         // 배경을 아예 채우지 않고 투명하게 둡니다 — 좋아요 버튼 아이콘으로 쓸 것이라
         // 그린 선만 남아야 합니다 (캔버스 기본값이 투명이라 따로 지울 것도 없음).
       } else {
-        drawVideoCover(context, video, width, height, facingMode === 'user')
+        drawVideoCover(context, video, width, height, facingMode === 'user', zoomValue)
       }
       const drawing = drawingHandle.getDocument()
       if (outputSize) {
@@ -273,14 +346,14 @@ export function AirDrawingStage({
         context.drawImage(drawingCanvas, 0, 0, drawingCanvas.width, drawingCanvas.height, 0, 0, width, height)
       }
       onCapture({
-        image: isPaperMode ? output.toDataURL('image/png') : output.toDataURL('image/jpeg', 0.85),
+        image: isPaperMode ? output.toDataURL('image/png') : output.toDataURL('image/jpeg', 0.92),
         strokes: flattenDrawing(drawing),
         drawing,
       })
     } finally {
       setCapturing(false)
     }
-  }, [busy, capturing, facingMode, isPaperMode, maxDim, onCapture, onError, outputSize, stream])
+  }, [busy, capturing, facingMode, isPaperMode, maxDim, onCapture, onError, outputSize, stream, zoomValue])
 
   const handleSwitchCamera = useCallback(async () => {
     setPinching(false)
@@ -295,6 +368,7 @@ export function AirDrawingStage({
       <video
         ref={videoRef}
         className={`camera-video ${facingMode === 'user' ? 'mirrored' : ''}`}
+        style={{ transform: `${facingMode === 'user' ? 'scaleX(-1) ' : ''}scale(${zoomValue}) translateZ(0)` }}
         playsInline
         muted
         autoPlay
@@ -325,6 +399,8 @@ export function AirDrawingStage({
           </svg>
         </button>
       </div>
+
+      {zoomEnabled && zoomValue > 1.02 ? <div className="zoom-badge">{zoomValue.toFixed(1)}x</div> : null}
 
       <div className="air-capture-panel">
         <button

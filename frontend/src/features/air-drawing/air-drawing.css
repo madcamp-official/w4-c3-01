@@ -4,6 +4,10 @@
   height: 100%;
   overflow: hidden;
   isolation: isolate;
+  /* Otherwise a two-finger pinch (used for camera zoom, see the touch
+     listeners in AirDrawingStage.tsx) can trigger the WebView's own native
+     page-zoom instead of/along with it. */
+  touch-action: none;
   background:
     radial-gradient(circle at 50% 35%, rgba(87, 98, 124, 0.24), transparent 42%),
     #0b0c10;
@@ -83,6 +87,23 @@
   top: max(12px, env(safe-area-inset-top));
   left: 14px;
   z-index: 12;
+}
+
+.zoom-badge {
+  position: absolute;
+  bottom: calc(max(26px, calc(env(safe-area-inset-bottom) + 16px)) + 76px);
+  left: 50%;
+  z-index: 12;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(10, 11, 15, 0.55);
+  backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
 .air-capture-panel {

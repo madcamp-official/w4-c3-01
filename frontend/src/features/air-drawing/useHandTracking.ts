@@ -65,6 +65,8 @@ interface UseHandTrackingOptions {
   stageRef: React.RefObject<HTMLDivElement | null>
   stream: MediaStream | null
   facingMode: FacingMode
+  /** Current digital zoom (CSS transform: scale() on the video) — the cursor mapping needs this to stay aligned with the visually zoomed frame. */
+  zoom?: number
   enabled: boolean
   onPoint: (point: Point | null, pinching: boolean, erasing: boolean) => void
 }
@@ -80,6 +82,7 @@ export function useHandTracking({
   stageRef,
   stream,
   facingMode,
+  zoom = 1,
   enabled,
   onPoint,
 }: UseHandTrackingOptions): UseHandTrackingResult {
@@ -94,10 +97,15 @@ export function useHandTracking({
   const eraserGestureScoreRef = useRef(0)
   const lastVideoTimeRef = useRef(-1)
   const onPointRef = useRef(onPoint)
+  const zoomRef = useRef(zoom)
 
   useEffect(() => {
     onPointRef.current = onPoint
   }, [onPoint])
+
+  useEffect(() => {
+    zoomRef.current = zoom
+  }, [zoom])
 
   useEffect(() => {
     let cancelled = false
@@ -231,7 +239,7 @@ export function useHandTracking({
             z: (indexTip.z + middleTip.z) / 2,
           }
         : indexTip
-      const stagePoint = landmarkToStagePoint(trackingLandmark, video, stage, facingMode)
+      const stagePoint = landmarkToStagePoint(trackingLandmark, video, stage, facingMode, zoomRef.current)
       if (!stagePoint) return
 
       const smoothed = smoothPoint(
