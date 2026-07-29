@@ -27,6 +27,7 @@ export type AppStackParamList = {
   EditHeart: undefined;
   EditProfile: undefined;
   UserProfile: { userId: string };
+  FollowList: { userId: string; mode: 'followers' | 'following' };
   LoungeView: { loungeId: string };
 };
 

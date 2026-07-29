@@ -1,6 +1,6 @@
 // Ported from frontend/src/pages/ChatThreadPage.tsx — keep in sync.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@/components/Icon';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -8,6 +8,7 @@ import Avatar from '@/components/Avatar';
 import Sketchy from '@/components/Sketchy';
 import SketchyInput from '@/components/SketchyInput';
 import SketchyLine from '@/components/SketchyLine';
+import { useBottomInset } from '@/lib/useBottomInset';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
@@ -35,16 +36,48 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
   const { openViewerForMessage } = useOverlay();
   const { colors } = useTheme();
   const common = buildCommon(colors);
+  const bottomInset = useBottomInset();
   const { showToast } = useToast();
   const [text, setText] = useState('');
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const chat = getChat(chatId);
+  // The chat list only ever caches the single latest message per
+  // conversation (see chatApi.fetchConversations), so `chat` here starts out
+  // as that 1-message preview and then gets replaced with the full thread
+  // once loadThread resolves. Rather than showing that partial preview (and
+  // then popping to the full thread) or hiding everything with opacity:0
+  // (which just looked like the screen had frozen for however long the
+  // fetch took), we show a plain spinner until the full thread is ready and
+  // go straight from "loading" to "the real thing, already at the bottom" —
+  // no intermediate state to flash or jump from.
+  //
+  // (An `inverted` FlatList was tried as a scroll-free alternative but RN's
+  // inverted implementation flips the whole list via a scaleY transform,
+  // which also flips glyph rendering inside Text on this RN version — text
+  // came out upside down. Reverted; this explicit scroll approach is the
+  // one that actually works.)
+  const [threadReady, setThreadReady] = useState(false);
 
   useEffect(() => {
-    void loadThread(chatId);
+    setThreadReady(false);
+    void loadThread(chatId).then(() => setThreadReady(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId]);
+
+  // `onContentSizeChange` (on the FlatList below) was the only scroll
+  // trigger, but apparently doesn't reliably fire on this RN version/device
+  // for the FlatList's very first mount, leaving it sitting at its default
+  // position (top = oldest message) instead of jumping to the bottom. This
+  // effect is a second, independent trigger that fires as soon as the
+  // FlatList exists — the short delay gives Android one frame to finish
+  // laying out the (fully-rendered, see initialNumToRender below) content
+  // before we ask it to scroll.
+  useEffect(() => {
+    if (!threadReady) return;
+    const timer = setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 50);
+    return () => clearTimeout(timer);
+  }, [threadReady]);
 
   useEffect(() => {
     const unsubscribe = subscribeToThread(chatId);
@@ -80,7 +113,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
 
   if (!chat) {
     return (
-      <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
+      <SafeAreaView style={[common.screen, { paddingBottom: bottomInset }]} edges={['top']}>
         <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
           <Icon name="chevron-left" size={24} color={colors.ink} />
         </Pressable>
@@ -112,7 +145,12 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
             </Sketchy>
           ) : (
             <Pressable onPress={() => openViewerForMessage(m)}>
-              <Image source={{ uri: m.image }} style={airImageStyle} />
+              {/* Air-write captures are saved large (up to 960px, for the
+                  full-screen viewer) but only need to fill this 160px
+                  thumbnail — resizeMethod="resize" tells Android to decode a
+                  sampled-down bitmap instead of decoding full-res and then
+                  scaling it, which is what was making the thread janky. */}
+              <Image source={{ uri: m.image }} style={airImageStyle} resizeMode="cover" resizeMethod="resize" />
             </Pressable>
           )}
           <View style={{ flexDirection: 'row', gap: 6, marginTop: 2 }}>
@@ -125,7 +163,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
   }
 
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
+    <SafeAreaView style={common.screen} edges={['top']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={8}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 }}>
           <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
@@ -136,16 +174,30 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
         </View>
         <SketchyLine seed="chat-thread-header" />
 
-        <FlatList
-          ref={listRef}
-          data={chat.messages}
-          keyExtractor={(m) => String(m.id)}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingVertical: 10 }}
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
-        />
+        {threadReady ? (
+          <FlatList
+            ref={listRef}
+            data={chat.messages}
+            keyExtractor={(m) => String(m.id)}
+            renderItem={renderItem}
+            contentContainerStyle={{ paddingVertical: 10 }}
+            // FlatList only renders/measures the first `initialNumToRender`
+            // items (default 10) on mount — for a thread with more messages
+            // than that, onContentSizeChange's first fire reflected only
+            // that partial (oldest-first) content, so scrollToEnd landed
+            // around message #10 instead of the true latest one. Rendering
+            // everything up front guarantees the size measured is the real
+            // total height.
+            initialNumToRender={chat.messages.length}
+            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+          />
+        ) : (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <ActivityIndicator color={colors.muted} />
+          </View>
+        )}
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 10, paddingBottom: 10 + bottomInset }}>
           <Pressable onPress={() => navigation.navigate('Airwrite', { chatId })} accessibilityLabel="에어라이팅 메시지">
             <Sketchy radius={20} color={colors.line} strokeWidth={2} seed="chat-round-edit" style={[roundIconStyle, { backgroundColor: colors.paper }]}>
               <Icon name="edit-2" size={18} color={colors.ink} />

@@ -26,6 +26,13 @@ interface PaintedStroke {
   tool: PenTool
   lineWidth: number
   renderedLength: number
+  /** Arc length (px) from the ORIGINAL stroke's true start to this fragment's
+   * start — 0 for a whole, never-erased stroke. Erasing splits a stroke into
+   * fragments; without this, redraw() restarted the dash pattern (and spray's
+   * per-segment random seed) from each fragment's own local start every time,
+   * which visibly reshuffled dashes/spray dots near the eraser as it moved,
+   * looking like they were animating instead of just being removed. */
+  dashStartOffset: number
 }
 
 const TOOL_STYLES: Record<
@@ -106,7 +113,6 @@ function drawSpraySegment(
   color: string,
   first: Point,
   second: Point,
-  segmentIndex: number,
   sprayWidth: number,
 ) {
   const dx = second.x - first.x
@@ -119,6 +125,18 @@ function drawSpraySegment(
   context.shadowBlur = 0
   context.fillStyle = color
 
+  // Seeded from the segment's actual canvas position (not its index within
+  // whatever fragment array it currently lives in) — erasing re-slices a
+  // stroke's points into new fragments with fresh local indices, and an
+  // index-based seed would reshuffle every dot's "random" placement each
+  // time, making untouched spray look like it was jittering as you erased
+  // nearby. Position is stable across re-slicing, so the pattern isn't.
+  const segSeed =
+    Math.round(first.x * 3) * 92821 +
+    Math.round(first.y * 3) * 68917 +
+    Math.round(second.x * 3) * 45319 +
+    Math.round(second.y * 3) * 20047
+
   for (let step = 0; step < steps; step += 1) {
     const progress = step / steps
     const centerX = first.x + dx * progress
@@ -126,7 +144,7 @@ function drawSpraySegment(
 
     const particleCount = Math.max(4, Math.round(sprayWidth / 5))
     for (let particle = 0; particle < particleCount; particle += 1) {
-      const seed = segmentIndex * 1009 + step * 37 + particle * 7
+      const seed = segSeed + step * 37 + particle * 7
       const angle = seededRandom(seed + 1) * Math.PI * 2
       const radius = Math.sqrt(seededRandom(seed + 2)) * (sprayWidth / 2)
       const size = 0.7 + seededRandom(seed + 3) * 1.2
@@ -162,6 +180,12 @@ function splitStrokeOutsideCircle(
 
   const fragments: PaintedStroke[] = []
   let currentFragment: Stroke | null = null
+  // Running arc length along the ORIGINAL (pre-erase) stroke, and the value
+  // it had at the moment the current fragment started — carried into the
+  // fragment as dashStartOffset so its dash pattern keeps the phase it would
+  // have had in the uncut stroke, instead of restarting at 0.
+  let arcLength = 0
+  let fragmentStartLength = 0
 
   const appendPoint = (fragment: Stroke, x: number, y: number) => {
     const normalized = { x: x / width, y: y / height }
@@ -183,6 +207,7 @@ function splitStrokeOutsideCircle(
         tool: paintedStroke.tool,
         lineWidth: paintedStroke.lineWidth,
         renderedLength: 0,
+        dashStartOffset: fragmentStartLength,
       })
     }
     currentFragment = null
@@ -199,6 +224,7 @@ function splitStrokeOutsideCircle(
     }
     const dx = second.x - first.x
     const dy = second.y - first.y
+    const segmentLength = Math.hypot(dx, dy)
     const offsetX = first.x - center.x
     const offsetY = first.y - center.y
     const quadraticA = dx * dx + dy * dy
@@ -233,10 +259,14 @@ function splitStrokeOutsideCircle(
         continue
       }
 
+      if (!currentFragment) fragmentStartLength = arcLength + segmentLength * start
+
       if (!currentFragment) currentFragment = []
       appendPoint(currentFragment, first.x + dx * start, first.y + dy * start)
       appendPoint(currentFragment, first.x + dx * end, first.y + dy * end)
     }
+
+    arcLength += segmentLength
   }
 
   finishFragment()
@@ -298,7 +328,6 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
                 x: stroke.points[index].x * width,
                 y: stroke.points[index].y * height,
               },
-              index,
               stroke.lineWidth,
             )
           }
@@ -306,7 +335,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
         }
 
         prepareContext(context, stroke.color, stroke.tool, stroke.lineWidth)
-        context.lineDashOffset = 0
+        context.lineDashOffset = -stroke.dashStartOffset
         context.beginPath()
         context.moveTo(stroke.points[0].x * width, stroke.points[0].y * height)
         for (let index = 1; index < stroke.points.length; index += 1) {
@@ -367,6 +396,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
               tool,
               lineWidth: getToolLineWidth(tool, lineSize),
               renderedLength: 0,
+              dashStartOffset: 0,
             }
             currentStrokeRef.current = stroke
             strokesRef.current.push(stroke)
@@ -394,7 +424,6 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
               stroke.color,
               previousPoint,
               nextPoint,
-              stroke.points.length - 1,
               stroke.lineWidth,
             )
             stroke.renderedLength += segmentLength

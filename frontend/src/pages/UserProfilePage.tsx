@@ -93,8 +93,8 @@ export default function UserProfilePage() {
         <div className="empty-note">사용자를 찾을 수 없어요</div>
       ) : (
         <>
-          <div className="profile-card">
-            <Avatar nickname={profile.nickname} color={profile.avatarColor} size={54} fontSize={20} avatarUrl={profile.avatarUrl} />
+          <div className="profile-card" style={{ marginTop: 26 }}>
+            <Avatar nickname={profile.nickname} color={profile.avatarColor} size={61} fontSize={20} avatarUrl={profile.avatarUrl} outline />
             <div className="profile-names">
               <b>{profile.nickname}</b>
               <span>@{profile.username}</span>
@@ -104,14 +104,14 @@ export default function UserProfilePage() {
                 <b>{postCount}</b>
                 <span>게시물</span>
               </div>
-              <div>
+              <button onClick={() => navigate(`/users/${userId}/followers`)}>
                 <b>{counts.followers}</b>
                 <span>팔로워</span>
-              </div>
-              <div>
+              </button>
+              <button onClick={() => navigate(`/users/${userId}/following`)}>
                 <b>{counts.following}</b>
                 <span>팔로잉</span>
-              </div>
+              </button>
             </div>
           </div>
           <div className="profile-actions">

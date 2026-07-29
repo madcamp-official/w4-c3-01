@@ -4,13 +4,14 @@ function initial(name: string): string {
 
 export default function Avatar({
   nickname,
-  color,
   size,
   fontSize,
   avatarUrl,
   outline
 }: {
   nickname: string;
+  /** No longer drives the no-photo fallback background (now a flat theme
+   * gray, see below) — kept required so call sites don't need to change. */
   color: string;
   size: number;
   fontSize: number;
@@ -30,13 +31,12 @@ export default function Avatar({
   return (
     <div
       className={outline ? 'avatar sk avatar-outline' : 'avatar sk'}
-      style={{ width: size, height: size, fontSize, background: outline ? 'transparent' : color }}
+      style={{ width: size, height: size, fontSize, background: outline ? 'transparent' : 'var(--paper-2)' }}
     >
-      {/* Fixed dark text on the colored-fill variant — that background is the
-          user's own pastel avatarColor, not the app theme, so it shouldn't
-          flip to white in dark mode (would vanish). Outline variant has no
-          fill, so it uses the normal theme ink color instead. */}
-      <span style={{ color: outline ? 'var(--ink)' : '#221F1A' }}>{initial(nickname)}</span>
+      {/* Flat theme-gray fill (matches grid cells/story-peek elsewhere in the
+          UI) instead of the old per-user pastel avatarColor, so the text can
+          just use the normal theme ink color in both variants. */}
+      <span style={{ color: 'var(--ink)' }}>{initial(nickname)}</span>
     </div>
   );
 }

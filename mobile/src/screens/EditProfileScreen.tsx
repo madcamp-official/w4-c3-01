@@ -8,6 +8,7 @@ import AvatarPicker from '@/components/AvatarPicker';
 import SketchyButton from '@/components/SketchyButton';
 import SketchyInput from '@/components/SketchyInput';
 import { useUsernameCheck, usernameStatusMessage, type UsernameStatus } from '@/hooks/useUsernameCheck';
+import { useBottomInset } from '@/lib/useBottomInset';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useTheme } from '@/state/ThemeContext';
@@ -20,6 +21,7 @@ export default function EditProfileScreen({ navigation }: Props) {
   const { session, setAvatar, updateProfile } = useAppState();
   const { colors } = useTheme();
   const common = buildCommon(colors);
+  const bottomInset = useBottomInset();
   const { showToast } = useToast();
 
   const [dataUrl, setDataUrl] = useState<string | null>(session?.avatarUrl ?? null);
@@ -57,7 +59,7 @@ export default function EditProfileScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
+    <SafeAreaView style={common.screen} edges={['top']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6 }}>
         <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
           <Icon name="chevron-left" size={24} color={colors.ink} />
@@ -65,7 +67,7 @@ export default function EditProfileScreen({ navigation }: Props) {
         <Text style={{ fontSize: 17, fontWeight: '800', color: colors.ink }}>프로필 수정</Text>
         <View style={{ width: 36 }} />
       </View>
-      <ScrollView contentContainerStyle={{ paddingTop: 14, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingTop: 14, paddingBottom: 24 + bottomInset }} keyboardShouldPersistTaps="handled">
         <View style={{ alignItems: 'center', marginBottom: 24 }}>
           <AvatarPicker dataUrl={dataUrl} nickname={session.nickname} color={session.avatarColor} size={100} onChange={setDataUrl} />
         </View>

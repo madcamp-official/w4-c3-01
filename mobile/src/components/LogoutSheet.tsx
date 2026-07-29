@@ -2,6 +2,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import BottomSheetModal from '@/components/BottomSheetModal';
 import SketchyButton from '@/components/SketchyButton';
+import { useBottomInset } from '@/lib/useBottomInset';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 import { useTheme } from '@/state/ThemeContext';
@@ -15,7 +16,8 @@ export default function LogoutSheet() {
   const { showToast } = useToast();
   const { colors } = useTheme();
   const common = buildCommon(colors);
-  const styles = makeStyles(colors);
+  const bottomInset = useBottomInset();
+  const styles = makeStyles(colors, bottomInset);
 
   function handleLogout() {
     closeLogout();
@@ -37,9 +39,9 @@ export default function LogoutSheet() {
   );
 }
 
-function makeStyles(colors: import('@/theme/colors').ThemeColors) {
+function makeStyles(colors: import('@/theme/colors').ThemeColors, bottomInset: number) {
   return StyleSheet.create({
-    sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 28 },
+    sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 28 + bottomInset },
     handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, alignSelf: 'center', marginBottom: 10 },
     title: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: 10 }
   });

@@ -26,16 +26,25 @@ export default function ChatThreadPage() {
   const bodyRef = useRef<HTMLDivElement | null>(null);
 
   const chat = getChat(chatId);
+  // The chat list only ever caches the single latest message per
+  // conversation (see chatApi.fetchConversations), so `chat` here starts out
+  // as that 1-message preview and then gets replaced with the full thread
+  // once loadThread resolves. Rather than showing that partial preview (and
+  // popping to the full thread) or hiding everything with opacity:0 (which
+  // just looked like the screen had frozen for however long the fetch
+  // took), we show a plain loading state until the full thread is ready and
+  // go straight from "loading" to "the real thing, already at the bottom".
+  const [threadReady, setThreadReady] = useState(false);
 
-  // Instantly shows the latest message (no smooth-scroll animation) whenever
-  // the thread first loads or grows — matches the mobile app's behavior.
   useEffect(() => {
     const el = bodyRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [chat?.messages.length]);
+    if (!el || !threadReady) return;
+    el.scrollTop = el.scrollHeight;
+  }, [chat?.messages.length, threadReady]);
 
   useEffect(() => {
-    void loadThread(chatId);
+    setThreadReady(false);
+    void loadThread(chatId).then(() => setThreadReady(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId]);
 
@@ -93,36 +102,40 @@ export default function ChatThreadPage() {
         <Avatar nickname={chat.name} color={chat.color} size={30} fontSize={12} avatarUrl={chat.avatarUrl} />
         <b>{chat.name}</b>
       </div>
-      <div className="thread-body" ref={bodyRef}>
-        {chat.messages.map((m, i) => {
-          const showDateDivider = i === 0 || !isSameDay(chat.messages[i - 1].createdAt, m.createdAt);
-          return (
-            <div key={m.id}>
-              {showDateDivider ? (
-                <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-soft)', margin: '10px 0 4px' }}>
-                  {formatDateDivider(m.createdAt)}
-                </div>
-              ) : null}
-              <div
-                className={'msg-row' + (m.from === 'me' ? ' me' : '')}
-                style={{ flexDirection: 'column', alignItems: m.from === 'me' ? 'flex-end' : 'flex-start', gap: 3 }}
-              >
-                {m.type === 'text' ? (
-                  <div className="bubble sk">{m.text}</div>
-                ) : (
-                  <img className="air-message-image" src={m.image} alt="손글씨 메시지" onClick={() => openViewerForMessage(m)} />
-                )}
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  {m.from === 'me' && m.id === lastReadMineId ? (
-                    <span style={{ fontSize: 10, color: 'var(--ink-soft)' }}>읽음</span>
-                  ) : null}
-                  <span style={{ fontSize: 10, color: 'var(--ink-soft)' }}>{m.time}</span>
+      {threadReady ? (
+        <div className="thread-body" ref={bodyRef}>
+          {chat.messages.map((m, i) => {
+            const showDateDivider = i === 0 || !isSameDay(chat.messages[i - 1].createdAt, m.createdAt);
+            return (
+              <div key={m.id}>
+                {showDateDivider ? (
+                  <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-soft)', margin: '10px 0 4px' }}>
+                    {formatDateDivider(m.createdAt)}
+                  </div>
+                ) : null}
+                <div
+                  className={'msg-row' + (m.from === 'me' ? ' me' : '')}
+                  style={{ flexDirection: 'column', alignItems: m.from === 'me' ? 'flex-end' : 'flex-start', gap: 3 }}
+                >
+                  {m.type === 'text' ? (
+                    <div className="bubble sk">{m.text}</div>
+                  ) : (
+                    <img className="air-message-image" src={m.image} alt="손글씨 메시지" onClick={() => openViewerForMessage(m)} />
+                  )}
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    {m.from === 'me' && m.id === lastReadMineId ? (
+                      <span style={{ fontSize: 10, color: 'var(--ink-soft)' }}>읽음</span>
+                    ) : null}
+                    <span style={{ fontSize: 10, color: 'var(--ink-soft)' }}>{m.time}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="thread-body" style={{ alignItems: 'center', justifyContent: 'center' }} />
+      )}
       <div className="thread-input">
         <button className="icon-bare" onClick={() => navigate(`/chats/${chatId}/airwrite`)} aria-label="에어라이팅 메시지">
           <Icon name="edit-2" size={18} />

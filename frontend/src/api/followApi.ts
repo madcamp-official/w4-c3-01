@@ -1,8 +1,32 @@
 import { supabase } from '@/lib/supabaseClient';
+import type { UserSummary } from '@/types';
 
 export interface FollowCounts {
   followers: number;
   following: number;
+}
+
+async function fetchProfilesByIds(ids: string[]): Promise<UserSummary[]> {
+  if (!supabase || !ids.length) return [];
+  const { data, error } = await supabase.from('profiles').select('id, username, nickname, avatar_color, avatar_url').in('id', ids);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((p) => ({ id: p.id, username: p.username, nickname: p.nickname, avatarColor: p.avatar_color, avatarUrl: p.avatar_url }));
+}
+
+/** userId를 팔로우하는 사람들 목록. */
+export async function fetchFollowers(userId: string): Promise<UserSummary[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from('follows').select('follower_id').eq('following_id', userId);
+  if (error) throw new Error(error.message);
+  return fetchProfilesByIds((data ?? []).map((row) => row.follower_id as string));
+}
+
+/** userId가 팔로우하는 사람들 목록. */
+export async function fetchFollowing(userId: string): Promise<UserSummary[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from('follows').select('following_id').eq('follower_id', userId);
+  if (error) throw new Error(error.message);
+  return fetchProfilesByIds((data ?? []).map((row) => row.following_id as string));
 }
 
 export async function fetchFollowCounts(userId: string): Promise<FollowCounts> {

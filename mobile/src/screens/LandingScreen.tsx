@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import SketchyButton from '@/components/SketchyButton';
+import { useBottomInset } from '@/lib/useBottomInset';
 import type { AuthStackParamList } from '@/navigation/types';
 import { useTheme } from '@/state/ThemeContext';
 import { buildCommon } from '@/theme/common';
@@ -12,9 +13,10 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Landing'>;
 export default function LandingScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const common = buildCommon(colors);
+  const bottomInset = useBottomInset();
   const styles = makeStyles(colors);
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
+    <SafeAreaView style={common.screen} edges={['top']}>
       <View style={styles.spacer} />
       <View style={{ alignItems: 'center', paddingHorizontal: 6 }}>
         <View style={styles.logoRow}>
@@ -31,7 +33,7 @@ export default function LandingScreen({ navigation }: Props) {
           <Text style={common.btnGhostText}>회원가입</Text>
         </SketchyButton>
       </View>
-      <View style={styles.spacer} />
+      <View style={[styles.spacer, { marginBottom: bottomInset }]} />
     </SafeAreaView>
   );
 }

@@ -10,6 +10,14 @@ import type { StrokePoint } from '@/types'
 import './air-drawing.css'
 
 const ERASER_RADIUS = 42
+// Hand-tracking noise moves the erase point by a pixel or two even when the
+// hand is basically still, and every eraseAt() call fully re-slices and
+// redraws every stroke near the circle. For spray (per-segment random dots)
+// and dashed (phase-dependent pattern) tools that constant tiny re-slicing
+// visibly flickered/"moved" right at the eraser edge. Skipping erase updates
+// smaller than this removes that jitter without making the eraser feel less
+// responsive for real motion.
+const ERASE_MIN_STEP = 3
 const DEFAULT_PEN_COLOR = '#ffffff'
 const DEFAULT_PEN_TOOL: PenTool = 'pen'
 const DEFAULT_LINE_SIZE = 6
@@ -149,6 +157,7 @@ export function AirDrawingStage({
   const penStyleToolbarRef = useRef<PenStyleToolbarHandle | null>(null)
   const cursorRef = useRef<HTMLDivElement | null>(null)
   const cameraStartRequestedRef = useRef(false)
+  const lastErasePointRef = useRef<Point | null>(null)
   const [pinching, setPinching] = useState(false)
   const [erasing, setErasing] = useState(false)
   const [penColor, setPenColor] = useState(isPaperMode ? INK_COLOR : DEFAULT_PEN_COLOR)
@@ -267,13 +276,18 @@ export function AirDrawingStage({
 
       if (!point || overColorToolbar || overPenStyleToolbar) {
         drawingCanvasRef.current?.endStroke()
+        if (!point) lastErasePointRef.current = null
       } else if (isErasing) {
         drawingCanvasRef.current?.endStroke()
-        drawingCanvasRef.current?.eraseAt(point, ERASER_RADIUS)
-      } else if (isPinching) {
-        drawingCanvasRef.current?.addPoint(point)
+        const last = lastErasePointRef.current
+        if (!last || Math.hypot(point.x - last.x, point.y - last.y) >= ERASE_MIN_STEP) {
+          drawingCanvasRef.current?.eraseAt(point, ERASER_RADIUS)
+          lastErasePointRef.current = point
+        }
       } else {
-        drawingCanvasRef.current?.endStroke()
+        lastErasePointRef.current = null
+        if (isPinching) drawingCanvasRef.current?.addPoint(point)
+        else drawingCanvasRef.current?.endStroke()
       }
     },
     [],

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AirDrawingWebView, { type AirDrawingCapture } from '@/components/AirDrawingWebView';
 import SketchyButton from '@/components/SketchyButton';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useBottomInset } from '@/lib/useBottomInset';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useTheme } from '@/state/ThemeContext';
@@ -19,6 +20,7 @@ export default function AirwriteScreen({ navigation, route }: Props) {
   const { sendAir } = useAppState();
   const { colors } = useTheme();
   const common = buildCommon(colors);
+  const bottomInset = useBottomInset();
   const { showToast } = useToast();
   const [preview, setPreview] = useState<AirDrawingCapture | null>(null);
   const [sending, setSending] = useState(false);
@@ -37,13 +39,13 @@ export default function AirwriteScreen({ navigation, route }: Props) {
 
   if (preview) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.ink }} edges={['top', 'bottom']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.ink }} edges={['top']}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <View style={{ width: 220, height: 220, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 }}>
             <Image source={{ uri: preview.image }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
           </View>
         </View>
-        <View style={{ padding: 20, gap: 10 }}>
+        <View style={{ padding: 20, paddingBottom: 20 + bottomInset, gap: 10 }}>
           <SketchyButton variant="primary" blobVariant="a" disabled={sending} onPress={handleSend}>
             <Text style={common.btnPrimaryText}>{sending ? '보내는 중...' : '이 메시지 보내기'}</Text>
           </SketchyButton>

@@ -3,6 +3,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import BottomSheetModal from '@/components/BottomSheetModal';
 import Icon from '@/components/Icon';
+import { useBottomInset } from '@/lib/useBottomInset';
 import { useOverlay } from '@/state/OverlayContext';
 import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
@@ -11,7 +12,8 @@ import { radius } from '@/theme/colors';
 export default function ShareSheet() {
   const { sharePostId, closeShare } = useOverlay();
   const { colors } = useTheme();
-  const styles = makeStyles(colors);
+  const bottomInset = useBottomInset();
+  const styles = makeStyles(colors, bottomInset);
   const { showToast } = useToast();
   const open = Boolean(sharePostId);
 
@@ -41,9 +43,9 @@ export default function ShareSheet() {
   );
 }
 
-function makeStyles(colors: import('@/theme/colors').ThemeColors) {
+function makeStyles(colors: import('@/theme/colors').ThemeColors, bottomInset: number) {
   return StyleSheet.create({
-    sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 28 },
+    sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 28 + bottomInset },
     handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, alignSelf: 'center', marginBottom: 10 },
     title: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: 10 },
     option: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },

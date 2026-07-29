@@ -6,10 +6,10 @@ import Icon from '@/components/Icon';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Avatar from '@/components/Avatar';
 import SketchyButton from '@/components/SketchyButton';
-import SketchyLine from '@/components/SketchyLine';
 import * as followApi from '@/api/followApi';
 import * as userApi from '@/api/userApi';
 import type { FollowCounts } from '@/api/followApi';
+import { useBottomInset } from '@/lib/useBottomInset';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useTheme } from '@/state/ThemeContext';
@@ -24,6 +24,7 @@ export default function UserProfileScreen({ navigation, route }: Props) {
   const { session, posts, startConversationWith } = useAppState();
   const { colors } = useTheme();
   const common = buildCommon(colors);
+  const bottomInset = useBottomInset();
   const { showToast } = useToast();
 
   const [profile, setProfile] = useState<UserSummary | null>(null);
@@ -85,7 +86,7 @@ export default function UserProfileScreen({ navigation, route }: Props) {
   }
 
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
+    <SafeAreaView style={[common.screen, { paddingBottom: bottomInset }]} edges={['top']}>
       <View style={{ flexDirection: 'row', paddingVertical: 6 }}>
         <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
           <Icon name="chevron-left" size={24} color={colors.ink} />
@@ -100,27 +101,30 @@ export default function UserProfileScreen({ navigation, route }: Props) {
         <Text style={common.subtitle}>사용자를 찾을 수 없어요</Text>
       ) : (
         <>
-          <View style={{ alignItems: 'center', marginTop: 10, marginBottom: 16 }}>
-            <Avatar nickname={profile.nickname} color={profile.avatarColor} size={64} fontSize={24} avatarUrl={profile.avatarUrl} />
-            <Text style={{ fontSize: 17, fontWeight: '700', color: colors.ink, marginTop: 8 }}>{profile.nickname}</Text>
-            <Text style={{ fontSize: 12, color: colors.inkSoft }}>@{profile.username}</Text>
+          {/* Same row layout as MyScreen's profile-card: outline avatar,
+              name+handle beside it, stats pushed to the right — kept in sync
+              so a user's own page and other people's pages read the same. */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 26, marginBottom: 20 }}>
+            <Avatar nickname={profile.nickname} color={profile.avatarColor} size={61} fontSize={20} avatarUrl={profile.avatarUrl} outline />
+            <View style={{ marginLeft: 12 }}>
+              <Text style={{ fontSize: 17, fontWeight: '800', color: colors.ink }}>{profile.nickname}</Text>
+              <Text style={{ fontSize: 12, color: colors.inkSoft, marginTop: 2 }}>@{profile.username}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 16, marginLeft: 'auto', alignItems: 'center' }}>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: colors.ink }}>{postCount}</Text>
+                <Text style={{ fontSize: 11, color: colors.inkSoft, marginTop: 2 }}>게시물</Text>
+              </View>
+              <Pressable style={{ alignItems: 'center' }} onPress={() => navigation.navigate('FollowList', { userId, mode: 'followers' })}>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: colors.ink }}>{counts.followers}</Text>
+                <Text style={{ fontSize: 11, color: colors.inkSoft, marginTop: 2 }}>팔로워</Text>
+              </Pressable>
+              <Pressable style={{ alignItems: 'center' }} onPress={() => navigation.navigate('FollowList', { userId, mode: 'following' })}>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: colors.ink }}>{counts.following}</Text>
+                <Text style={{ fontSize: 11, color: colors.inkSoft, marginTop: 2 }}>팔로잉</Text>
+              </Pressable>
+            </View>
           </View>
-          <SketchyLine seed="user-profile-stats-top" />
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12 }}>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontWeight: '700', color: colors.ink }}>{postCount}</Text>
-              <Text style={{ fontSize: 11, color: colors.inkSoft }}>게시물</Text>
-            </View>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontWeight: '700', color: colors.ink }}>{counts.followers}</Text>
-              <Text style={{ fontSize: 11, color: colors.inkSoft }}>팔로워</Text>
-            </View>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontWeight: '700', color: colors.ink }}>{counts.following}</Text>
-              <Text style={{ fontSize: 11, color: colors.inkSoft }}>팔로잉</Text>
-            </View>
-          </View>
-          <SketchyLine seed="user-profile-stats-bottom" style={{ marginBottom: 16 }} />
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <SketchyButton
               variant={following ? 'ghost' : 'primary'}

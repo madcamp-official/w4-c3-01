@@ -6,6 +6,7 @@ import ChatListScreen from '@/screens/ChatListScreen';
 import ChatThreadScreen from '@/screens/ChatThreadScreen';
 import EditHeartScreen from '@/screens/EditHeartScreen';
 import EditProfileScreen from '@/screens/EditProfileScreen';
+import FollowListScreen from '@/screens/FollowListScreen';
 import LoungeViewScreen from '@/screens/LoungeViewScreen';
 import PreviewScreen from '@/screens/PreviewScreen';
 import UserProfileScreen from '@/screens/UserProfileScreen';
@@ -25,6 +26,7 @@ export default function AppStack() {
       <Stack.Screen name="EditHeart" component={EditHeartScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+      <Stack.Screen name="FollowList" component={FollowListScreen} />
       <Stack.Screen name="LoungeView" component={LoungeViewScreen} />
     </Stack.Navigator>
   );

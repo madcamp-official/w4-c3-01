@@ -30,7 +30,7 @@ export default function CommentSheet() {
           ) : (
             post?.comments.map((c, i) => (
               <div className="comment-item" key={i}>
-                <Avatar nickname={c.user} color="#E3D9BB" size={26} fontSize={10} />
+                <Avatar nickname={c.user} color={c.avatarColor ?? '#E3D9BB'} avatarUrl={c.avatarUrl} size={26} fontSize={10} />
                 <div>
                   <b>{c.user}</b>
                   {c.text}

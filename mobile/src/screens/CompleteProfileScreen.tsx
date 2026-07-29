@@ -7,6 +7,7 @@ import AvatarPicker from '@/components/AvatarPicker';
 import SketchyButton from '@/components/SketchyButton';
 import SketchyInput from '@/components/SketchyInput';
 import { useUsernameCheck, usernameStatusMessage, type UsernameStatus } from '@/hooks/useUsernameCheck';
+import { useBottomInset } from '@/lib/useBottomInset';
 import { defaultHeartUrl } from '@/mock/store';
 import { useAppState } from '@/state/AppStateContext';
 import { useTheme } from '@/state/ThemeContext';
@@ -19,6 +20,7 @@ export default function CompleteProfileScreen() {
   const { session, setAvatar, setHeart, updateProfile } = useAppState();
   const { colors } = useTheme();
   const common = buildCommon(colors);
+  const bottomInset = useBottomInset();
   const { showToast } = useToast();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -75,13 +77,13 @@ export default function CompleteProfileScreen() {
 
   if (step === 2 && heartPreview) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.ink }} edges={['top', 'bottom']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.ink }} edges={['top']}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <View style={{ width: 220, height: 220, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 }}>
             <Image source={{ uri: heartPreview }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
           </View>
         </View>
-        <View style={{ padding: 20, gap: 10 }}>
+        <View style={{ padding: 20, paddingBottom: 20 + bottomInset, gap: 10 }}>
           <SketchyButton variant="primary" blobVariant="a" disabled={saving} onPress={() => finish(heartPreview)}>
             <Text style={common.btnPrimaryText}>{saving ? '저장하는 중...' : '이 하트로 완료'}</Text>
           </SketchyButton>
@@ -106,8 +108,8 @@ export default function CompleteProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: 12, paddingBottom: 24 }}>
+    <SafeAreaView style={common.screen} edges={['top']}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: 12, paddingBottom: 24 + bottomInset }}>
         <Text style={common.title}>거의 다 됐어요 👋</Text>
         <Text style={common.subtitle}>Google 계정으로 로그인하셨네요. 아이디를 자동으로 만들어뒀어요{'\n'}마음에 안 들면 지금 바꿔주세요</Text>
 

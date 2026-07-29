@@ -23,36 +23,31 @@ function seededRandom(seed: string) {
   };
 }
 
-/** A rounded-rect outline — `wobble` defaults to 0 (plain, no hand-drawn jitter) since the v2 design dropped the sketchy look; kept as a param so callers/signatures don't need to change. */
+/** A rounded-rect outline — `wobble` defaults to 0 (plain, no hand-drawn jitter) since the v2 design dropped the sketchy look; kept as a param so callers/signatures don't need to change.
+ * Corners are drawn with real SVG elliptical arcs (not a quadratic-Bezier
+ * approximation), so a full-circle icon button (radius === width/2 === height/2,
+ * e.g. the post/search/chat round buttons) traces an actual circle instead of
+ * a visibly squarish/blobby approximation. */
 export function sketchyRoundedRect(width: number, height: number, radius: number, seed: string, wobble = 0): string {
   if (width <= 0 || height <= 0) return ''
   const rand = seededRandom(seed)
   const jitter = () => (rand() - 0.5) * 2 * wobble
   const r = Math.max(0, Math.min(radius, width / 2, height / 2))
 
-  const p0: [number, number] = [r + jitter(), jitter()]
-  const p1: [number, number] = [width - r + jitter(), jitter()]
-  const c1: [number, number] = [width + jitter(), jitter()]
-  const p2: [number, number] = [width + jitter(), r + jitter()]
-  const p3: [number, number] = [width + jitter(), height - r + jitter()]
-  const c2: [number, number] = [width + jitter(), height + jitter()]
-  const p4: [number, number] = [width - r + jitter(), height + jitter()]
-  const p5: [number, number] = [r + jitter(), height + jitter()]
-  const c3: [number, number] = [jitter(), height + jitter()]
-  const p6: [number, number] = [jitter(), height - r + jitter()]
-  const p7: [number, number] = [jitter(), r + jitter()]
-  const c4: [number, number] = [jitter(), jitter()]
+  if (r <= 0) {
+    return `M ${jitter()} ${jitter()} L ${width + jitter()} ${jitter()} L ${width + jitter()} ${height + jitter()} L ${jitter()} ${height + jitter()} Z`
+  }
 
   return [
-    `M ${p0[0]} ${p0[1]}`,
-    `L ${p1[0]} ${p1[1]}`,
-    `Q ${c1[0]} ${c1[1]} ${p2[0]} ${p2[1]}`,
-    `L ${p3[0]} ${p3[1]}`,
-    `Q ${c2[0]} ${c2[1]} ${p4[0]} ${p4[1]}`,
-    `L ${p5[0]} ${p5[1]}`,
-    `Q ${c3[0]} ${c3[1]} ${p6[0]} ${p6[1]}`,
-    `L ${p7[0]} ${p7[1]}`,
-    `Q ${c4[0]} ${c4[1]} ${p0[0]} ${p0[1]}`,
+    `M ${r + jitter()} ${jitter()}`,
+    `L ${width - r + jitter()} ${jitter()}`,
+    `A ${r} ${r} 0 0 1 ${width + jitter()} ${r + jitter()}`,
+    `L ${width + jitter()} ${height - r + jitter()}`,
+    `A ${r} ${r} 0 0 1 ${width - r + jitter()} ${height + jitter()}`,
+    `L ${r + jitter()} ${height + jitter()}`,
+    `A ${r} ${r} 0 0 1 ${jitter()} ${height - r + jitter()}`,
+    `L ${jitter()} ${r + jitter()}`,
+    `A ${r} ${r} 0 0 1 ${r + jitter()} ${jitter()}`,
     'Z'
   ].join(' ')
 }

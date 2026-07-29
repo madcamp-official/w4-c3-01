@@ -6,6 +6,7 @@ import Icon from '@/components/Icon';
 import Avatar from '@/components/Avatar';
 import Sketchy from '@/components/Sketchy';
 import SketchyInput from '@/components/SketchyInput';
+import { useBottomInset } from '@/lib/useBottomInset';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 import { useTheme } from '@/state/ThemeContext';
@@ -15,7 +16,8 @@ export default function CommentSheet() {
   const { commentPostId, closeComments } = useOverlay();
   const { posts, commentOnPost } = useAppState();
   const { colors } = useTheme();
-  const styles = makeStyles(colors);
+  const bottomInset = useBottomInset();
+  const styles = makeStyles(colors, bottomInset);
   const [text, setText] = useState('');
 
   const post = commentPostId ? posts.find((p) => p.id === commentPostId) : undefined;
@@ -38,7 +40,7 @@ export default function CommentSheet() {
           ) : (
             post?.comments.map((c, i) => (
               <View key={i} style={styles.commentRow}>
-                <Avatar nickname={c.user} color="#E3D9BB" size={26} fontSize={10} />
+                <Avatar nickname={c.user} color={c.avatarColor ?? '#E3D9BB'} avatarUrl={c.avatarUrl} size={26} fontSize={10} />
                 <Text style={styles.commentText}>
                   <Text style={{ fontWeight: '700' }}>{c.user} </Text>
                   {c.text}
@@ -66,9 +68,9 @@ export default function CommentSheet() {
   );
 }
 
-function makeStyles(colors: import('@/theme/colors').ThemeColors) {
+function makeStyles(colors: import('@/theme/colors').ThemeColors, bottomInset: number) {
   return StyleSheet.create({
-    sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 24 },
+    sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 24 + bottomInset },
     handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, alignSelf: 'center', marginBottom: 10 },
     title: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: 10 },
     empty: { fontSize: 13, color: colors.inkSoft, paddingVertical: 20, textAlign: 'center' },

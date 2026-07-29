@@ -8,6 +8,8 @@ function initial(name: string): string {
 
 interface AvatarProps {
   nickname: string;
+  /** No longer drives the no-photo fallback background (now a flat theme
+   * gray, see below) — kept required so call sites don't need to change. */
   color: string;
   size: number;
   fontSize: number;
@@ -16,7 +18,7 @@ interface AvatarProps {
   outline?: boolean;
 }
 
-export default function Avatar({ nickname, color, size, fontSize, avatarUrl, outline }: AvatarProps) {
+export default function Avatar({ nickname, size, fontSize, avatarUrl, outline }: AvatarProps) {
   const { colors } = useTheme();
   const shape = { width: size, height: size, borderRadius: size / 2 };
   const base = {
@@ -33,12 +35,11 @@ export default function Avatar({ nickname, color, size, fontSize, avatarUrl, out
     );
   }
   return (
-    <View style={[base, shape, { backgroundColor: outline ? 'transparent' : color }]}>
-      {/* Fixed dark text on the colored-fill variant — that background is the
-          user's own pastel avatarColor, not the app theme, so it shouldn't
-          flip to white in dark mode (would vanish). Outline variant has no
-          fill, so it uses the normal theme ink color instead. */}
-      <Text style={{ fontSize, color: outline ? colors.ink : '#221F1A', fontWeight: '700' }}>{initial(nickname)}</Text>
+    <View style={[base, shape, { backgroundColor: outline ? 'transparent' : colors.paper2 }]}>
+      {/* Flat theme-gray fill (matches grid cells elsewhere in the UI)
+          instead of the old per-user pastel avatarColor, so the text can
+          just use the normal theme ink color in both variants. */}
+      <Text style={{ fontSize, color: colors.ink, fontWeight: '700' }}>{initial(nickname)}</Text>
     </View>
   );
 }

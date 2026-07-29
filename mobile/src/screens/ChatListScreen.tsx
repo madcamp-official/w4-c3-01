@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import Icon from '@/components/Icon';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Avatar from '@/components/Avatar';
+import { useBottomInset } from '@/lib/useBottomInset';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useTheme } from '@/state/ThemeContext';
@@ -18,6 +19,7 @@ export default function ChatListScreen({ navigation }: Props) {
   const { chats, loadChats } = useAppState();
   const { colors } = useTheme();
   const common = buildCommon(colors);
+  const bottomInset = useBottomInset();
 
   // A plain mount-only effect only re-fetched once — native-stack keeps this
   // screen mounted underneath ChatThread, so coming back after sending a
@@ -52,7 +54,7 @@ export default function ChatListScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
+    <SafeAreaView style={common.screen} edges={['top']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 6 }}>
         <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
           <Icon name="chevron-left" size={24} color={colors.ink} />
@@ -64,6 +66,7 @@ export default function ChatListScreen({ navigation }: Props) {
         keyExtractor={(c) => c.id}
         renderItem={renderRow}
         ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: colors.line }} />}
+        contentContainerStyle={{ paddingBottom: bottomInset }}
       />
     </SafeAreaView>
   );

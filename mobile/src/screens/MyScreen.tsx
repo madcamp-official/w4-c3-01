@@ -60,8 +60,7 @@ export default function MyScreen() {
 
   return (
     <SafeAreaView style={common.screen} edges={['top']}>
-      <Text style={[common.title, { marginBottom: 12 }]}>마이페이지</Text>
-      <View style={styles.profileCard}>
+      <View style={[styles.profileCard, { marginTop: 28 }]}>
         <Avatar nickname={session.nickname} color={session.avatarColor} size={AVATAR_SIZE} fontSize={20} avatarUrl={session.avatarUrl} outline />
         <View style={{ marginLeft: 12 }}>
           <Text style={styles.name}>{session.nickname}</Text>
@@ -72,14 +71,20 @@ export default function MyScreen() {
             <Text style={styles.statNum}>{myPosts.length}</Text>
             <Text style={styles.statLabel}>게시물</Text>
           </View>
-          <View style={styles.statItem}>
+          <Pressable
+            style={styles.statItem}
+            onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('FollowList', { userId: session.id, mode: 'followers' })}
+          >
             <Text style={styles.statNum}>{counts?.followers ?? ''}</Text>
             <Text style={styles.statLabel}>팔로워</Text>
-          </View>
-          <View style={styles.statItem}>
+          </Pressable>
+          <Pressable
+            style={styles.statItem}
+            onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('FollowList', { userId: session.id, mode: 'following' })}
+          >
             <Text style={styles.statNum}>{counts?.following ?? ''}</Text>
             <Text style={styles.statLabel}>팔로잉</Text>
-          </View>
+          </Pressable>
         </View>
       </View>
       <View style={styles.actionsRow}>

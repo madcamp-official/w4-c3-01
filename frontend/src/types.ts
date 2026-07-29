@@ -9,6 +9,8 @@ export interface StrokePoint {
 export interface Comment {
   user: string;
   text: string;
+  avatarColor?: string;
+  avatarUrl?: string | null;
 }
 
 export interface Post {

@@ -32,10 +32,7 @@ export default function MyPage() {
 
   return (
     <section className="screen active" id="screen-mypage">
-      <div className="logo" style={{ fontSize: 19, padding: '0 14px 10px 0' }}>
-        마이페이지
-      </div>
-      <div className="profile-card">
+      <div className="profile-card" style={{ marginTop: 26 }}>
         <Avatar nickname={session.nickname} color={session.avatarColor} size={61} fontSize={20} avatarUrl={session.avatarUrl} outline />
         <div className="profile-names">
           <b>{session.nickname}</b>
@@ -46,14 +43,14 @@ export default function MyPage() {
             <b>{myPosts.length}</b>
             <span>게시물</span>
           </div>
-          <div>
+          <button onClick={() => navigate(`/users/${session.id}/followers`)}>
             <b>{counts?.followers ?? ''}</b>
             <span>팔로워</span>
-          </div>
-          <div>
+          </button>
+          <button onClick={() => navigate(`/users/${session.id}/following`)}>
             <b>{counts?.following ?? ''}</b>
             <span>팔로잉</span>
-          </div>
+          </button>
         </div>
       </div>
       <div className="profile-actions">

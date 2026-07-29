@@ -101,7 +101,12 @@ function assemblePosts(
       caption: row.caption,
       liked: likes.some((l) => l.user_id === currentUserId),
       likes: likes.length,
-      comments: comments.map((c) => ({ user: profiles.get(c.author_id)?.nickname ?? '알 수 없음', text: c.text })),
+      comments: comments.map((c) => ({
+        user: profiles.get(c.author_id)?.nickname ?? '알 수 없음',
+        text: c.text,
+        avatarColor: profiles.get(c.author_id)?.avatar_color ?? '#EAE2C9',
+        avatarUrl: profiles.get(c.author_id)?.avatar_url ?? null
+      })),
       mine: row.author_id === currentUserId
     };
   });

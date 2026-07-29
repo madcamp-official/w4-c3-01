@@ -5,7 +5,6 @@
 // version's exact behavior.
 import { createBottomTabNavigator, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon, { type IconName } from '@/components/Icon';
 import Sketchy from '@/components/Sketchy';
 import SketchyLine from '@/components/SketchyLine';
@@ -13,6 +12,7 @@ import FeedScreen from '@/screens/FeedScreen';
 import LoungeListScreen from '@/screens/LoungeListScreen';
 import SearchScreen from '@/screens/SearchScreen';
 import MyScreen from '@/screens/MyScreen';
+import { useBottomInset } from '@/lib/useBottomInset';
 import type { AppStackParamList, TabParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
@@ -25,6 +25,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
   const { session } = useAppState();
   const { openLogout } = useOverlay();
   const { colors, isDark } = useTheme();
+  const bottomInset = useBottomInset();
   const styles = makeStyles(colors);
   const parentNav = navigation.getParent<NavigationProp<AppStackParamList>>();
 
@@ -36,7 +37,11 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
   };
 
   return (
-    <SafeAreaView edges={['bottom']} style={styles.bar}>
+    // useBottomInset() (not a SafeAreaView edge) so the bar's reserved height
+    // is computed synchronously and floors to a real clearance value even on
+    // Android builds where the reported inset comes back as 0/too-small
+    // despite an actual nav bar being present.
+    <View style={[styles.bar, { paddingBottom: bottomInset }]}>
       <SketchyLine seed="main-tabs-top" style={{ position: 'absolute', top: 0, left: 0, right: 0 }} />
       {state.routes.slice(0, 2).map((route, i) => {
         const focused = state.index === i;
@@ -76,7 +81,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
           </Pressable>
         );
       })}
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -190,53 +190,61 @@ export default function FeedScreen() {
 
       {mode === 'card' ? (
         <>
-          {posts.length ? (
-            <View style={styles.dotsRow}>
-              {posts.map((post, i) => (
-                <View key={post.id} style={i <= activeIndex ? styles.dotActive : styles.dotInactive} />
-              ))}
-            </View>
-          ) : null}
-          <View style={styles.storyStage}>
-            <View style={[styles.storyFrame, { width: CARD_SIZE, height: CARD_SIZE }]}>
-              {peekPost ? (
-                <View style={styles.storyPeek}>
-                  <Image source={{ uri: peekPost.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          {/* The pan gesture covers this whole area (dots + stage + hint),
+              not just the card image, so an upward swipe started anywhere
+              here — not only on top of the photo — reveals the list. It
+              still only visually drags the card itself (cardAnimatedStyle
+              below), and doesn't wrap the DM input row so typing there isn't
+              affected. */}
+          <GestureDetector gesture={pan}>
+            <View style={{ flex: 1 }}>
+              {posts.length ? (
+                <View style={styles.dotsRow}>
+                  {posts.map((post, i) => (
+                    <View key={post.id} style={i <= activeIndex ? styles.dotActive : styles.dotInactive} />
+                  ))}
                 </View>
               ) : null}
-              {currentPost ? (
-                <GestureDetector gesture={pan}>
-                  <Animated.View style={[styles.storyCard, cardAnimatedStyle]}>
-                    <Image source={{ uri: currentPost.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-                    <View style={styles.storyTopbar}>
-                      <Avatar nickname={currentPost.username} color={currentPost.avatarColor} size={30} fontSize={12} avatarUrl={currentPost.avatarUrl} />
-                      <Text style={styles.storyTopbarText}>
-                        {currentPost.username} · {currentPost.time}
-                      </Text>
+              <View style={styles.storyStage}>
+                <View style={[styles.storyFrame, { width: CARD_SIZE, height: CARD_SIZE }]}>
+                  {peekPost ? (
+                    <View style={styles.storyPeek}>
+                      <Image source={{ uri: peekPost.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
                     </View>
-                    <View style={styles.storyStats}>
-                      <View style={styles.storyStat}>
-                        <LikeButton post={currentPost} size={18} />
-                        <Text style={styles.storyStatText}>{currentPost.likes}</Text>
+                  ) : null}
+                  {currentPost ? (
+                    <Animated.View style={[styles.storyCard, cardAnimatedStyle]}>
+                      <Image source={{ uri: currentPost.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                      <View style={styles.storyTopbar}>
+                        <Avatar nickname={currentPost.username} color={currentPost.avatarColor} size={30} fontSize={12} avatarUrl={currentPost.avatarUrl} />
+                        <Text style={styles.storyTopbarText}>
+                          {currentPost.username} · {currentPost.time}
+                        </Text>
                       </View>
-                      <Pressable style={styles.storyStat} onPress={() => openComments(currentPost.id)}>
-                        <Icon name="message-circle" size={16} color="#fff" sketchy={false} />
-                        <Text style={styles.storyStatText}>{currentPost.comments.length}</Text>
-                      </Pressable>
-                    </View>
-                  </Animated.View>
-                </GestureDetector>
-              ) : null}
-            </View>
-          </View>
-          <Pressable style={styles.hint} onPress={toList}>
-            <Animated.View style={[styles.hintInner, bounceStyle]}>
-              <View style={{ transform: [{ rotate: '90deg' }] }}>
-                <Icon name="chevron-left" size={16} color={colors.inkSoft} sketchy={false} />
+                      <View style={styles.storyStats}>
+                        <View style={styles.storyStat}>
+                          <LikeButton post={currentPost} size={18} />
+                          <Text style={styles.storyStatText}>{currentPost.likes}</Text>
+                        </View>
+                        <Pressable style={styles.storyStat} onPress={() => openComments(currentPost.id)}>
+                          <Icon name="message-circle" size={16} color="#fff" sketchy={false} />
+                          <Text style={styles.storyStatText}>{currentPost.comments.length}</Text>
+                        </Pressable>
+                      </View>
+                    </Animated.View>
+                  ) : null}
+                </View>
               </View>
-              <Text style={styles.hintText}>위로 밀어 피드 보기 · 옆으로 밀어 다음 이야기</Text>
-            </Animated.View>
-          </Pressable>
+              <Pressable style={styles.hint} onPress={toList}>
+                <Animated.View style={[styles.hintInner, bounceStyle]}>
+                  <View style={{ transform: [{ rotate: '90deg' }] }}>
+                    <Icon name="chevron-left" size={16} color={colors.inkSoft} sketchy={false} />
+                  </View>
+                  <Text style={styles.hintText}>위로 밀어 피드 보기 · 옆으로 밀어 다음 이야기</Text>
+                </Animated.View>
+              </Pressable>
+            </View>
+          </GestureDetector>
           {currentPost ? (
             <View style={styles.dmRow}>
               <TextInput

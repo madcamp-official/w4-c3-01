@@ -21,6 +21,7 @@ import AirwritePage from '@/pages/AirwritePage';
 import MyPage from '@/pages/MyPage';
 import CompleteProfilePage from '@/pages/CompleteProfilePage';
 import UserProfilePage from '@/pages/UserProfilePage';
+import FollowListPage from '@/pages/FollowListPage';
 import EditHeartPage from '@/pages/EditHeartPage';
 import EditProfilePage from '@/pages/EditProfilePage';
 import LoungeListPage from '@/pages/LoungeListPage';
@@ -57,6 +58,8 @@ export default function App() {
                       <Route path="/mypage/heart" element={<EditHeartPage />} />
                       <Route path="/mypage/edit" element={<EditProfilePage />} />
                       <Route path="/users/:userId" element={<UserProfilePage />} />
+                      <Route path="/users/:userId/followers" element={<FollowListPage mode="followers" />} />
+                      <Route path="/users/:userId/following" element={<FollowListPage mode="following" />} />
                       <Route path="/lounges" element={<LoungeListPage />} />
                       <Route path="/lounges/:loungeId" element={<LoungeViewPage />} />
                     </Route>

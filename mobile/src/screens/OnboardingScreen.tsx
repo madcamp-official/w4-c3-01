@@ -9,6 +9,7 @@ import AvatarPicker from '@/components/AvatarPicker';
 import SketchyButton from '@/components/SketchyButton';
 import SketchyInput from '@/components/SketchyInput';
 import { useUsernameCheck, usernameStatusMessage } from '@/hooks/useUsernameCheck';
+import { useBottomInset } from '@/lib/useBottomInset';
 import { AVATAR_TONES, defaultHeartUrl } from '@/mock/store';
 import type { AuthStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
@@ -31,6 +32,7 @@ export default function OnboardingScreen({ navigation }: Props) {
   const { signupUser, loginWithGoogle } = useAppState();
   const { colors } = useTheme();
   const common = buildCommon(colors);
+  const bottomInset = useBottomInset();
   const { showToast } = useToast();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -104,13 +106,13 @@ export default function OnboardingScreen({ navigation }: Props) {
 
   if (step === 3 && heartPreview) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.ink }} edges={['top', 'bottom']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.ink }} edges={['top']}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <View style={{ width: 220, height: 220, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 }}>
             <Image source={{ uri: heartPreview }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
           </View>
         </View>
-        <View style={{ padding: 20, gap: 10 }}>
+        <View style={{ padding: 20, paddingBottom: 20 + bottomInset, gap: 10 }}>
           <SketchyButton variant="primary" blobVariant="a" disabled={submitting} onPress={() => finishOnboarding(heartPreview)}>
             <Text style={common.btnPrimaryText}>{submitting ? '가입하는 중...' : '이 하트로 가입 완료'}</Text>
           </SketchyButton>
@@ -135,13 +137,13 @@ export default function OnboardingScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
+    <SafeAreaView style={common.screen} edges={['top']}>
       <Pressable style={{ width: 36, height: 36, justifyContent: 'center', marginBottom: step === 1 ? 8 : 0 }} onPress={handleBack}>
         <Icon name="chevron-left" size={24} color={colors.ink} />
       </Pressable>
 
       {step === 1 ? (
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 + bottomInset }}>
           <Text style={common.title}>반가워요 👋</Text>
           <Text style={common.subtitle}>ALine에서 활동할 계정을 만들어주세요</Text>
 
@@ -208,7 +210,7 @@ export default function OnboardingScreen({ navigation }: Props) {
           </Pressable>
         </ScrollView>
       ) : (
-        <View style={{ flex: 1, alignItems: 'center', paddingTop: 12 }}>
+        <View style={{ flex: 1, alignItems: 'center', paddingTop: 12, paddingBottom: bottomInset }}>
           <Text style={common.title}>프로필 사진을 넣어볼까요?</Text>
           <Text style={[common.subtitle, { textAlign: 'center' }]}>나중에 마이페이지에서 언제든 바꿀 수 있어요{'\n'}건너뛰어도 괜찮아요</Text>
           <View style={{ marginVertical: 20 }}>

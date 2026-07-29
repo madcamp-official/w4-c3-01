@@ -59,12 +59,18 @@ export function useAirCamera(initialFacingMode: FacingMode = 'user'): UseCameraR
           audio: false,
           video: {
             facingMode: { ideal: nextFacingMode },
-            // HandLandmarker receives the live video frame itself. Feeding it
-            // a 4K preview adds conversion/inference latency without improving
-            // landmark accuracy enough to justify the cost. Still capture uses
-            // ImageCapture.takePhoto() separately when Android supports it.
-            width: { ideal: 1280, max: 1280 },
-            height: { ideal: 720, max: 720 },
+            // Rear sensors on most phones support well past 1080p — asking for
+            // an "ideal" (not "min", so it degrades gracefully) 4K target
+            // pushes the browser toward each camera's own best mode instead
+            // of settling on a lower one, since front-facing sensors usually
+            // cap out lower anyway. A lower cap here was tried to reduce
+            // HandLandmarker latency, but ImageCapture.takePhoto() (the still
+            // capture path) isn't reliably available on every Android WebView,
+            // so capture quality silently falls back to sampling this live
+            // preview — keeping it high-res is what actually guarantees
+            // capture quality across devices.
+            width: { ideal: 3840 },
+            height: { ideal: 2160 },
             frameRate: { ideal: 30, max: 30 },
           },
         })

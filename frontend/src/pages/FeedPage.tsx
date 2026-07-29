@@ -149,62 +149,68 @@ export default function FeedPage() {
       </div>
       {mode === 'card' ? (
         <>
-          {posts.length ? (
-            <div className="feed-dots">
-              {posts.map((post, i) => (
-                <span key={post.id} className={i <= idx ? 'feed-dot active' : 'feed-dot'} />
-              ))}
-            </div>
-          ) : null}
-          <div className="story-stage">
-            <div className="story-frame">
-              {peekPost ? (
-                <div className="story-peek">
-                  <img src={peekPost.image} alt="" />
-                </div>
-              ) : null}
-              {currentPost ? (
-                <div
-                  className="story-card"
-                  style={cardStyle}
-                  onPointerDown={handlePointerDown}
-                  onPointerMove={handlePointerMove}
-                  onPointerUp={handlePointerUp}
-                  onPointerCancel={handlePointerUp}
-                >
-                  <img className="story-card-img" src={currentPost.image} alt="" />
-                  <div className="story-card-topbar">
-                    <Avatar nickname={currentPost.username} color={currentPost.avatarColor} size={30} fontSize={12} avatarUrl={currentPost.avatarUrl} />
-                    <span>
-                      {currentPost.username} · {currentPost.time}
-                    </span>
+          {/* Pointer handlers live on this wrapper (dots + stage + hint), not
+              just the card image, so an upward swipe started anywhere here —
+              not only on top of the photo — reveals the list. It still only
+              visually drags the card itself (cardStyle above), and doesn't
+              wrap the DM input row below so typing there isn't affected. */}
+          <div
+            className="story-swipe-zone"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+          >
+            {posts.length ? (
+              <div className="feed-dots">
+                {posts.map((post, i) => (
+                  <span key={post.id} className={i <= idx ? 'feed-dot active' : 'feed-dot'} />
+                ))}
+              </div>
+            ) : null}
+            <div className="story-stage">
+              <div className="story-frame">
+                {peekPost ? (
+                  <div className="story-peek">
+                    <img src={peekPost.image} alt="" />
                   </div>
-                  <div className="story-card-stats">
-                    <span className="story-stat">
-                      <LikeButton post={currentPost} className="story-like" />
-                      {currentPost.likes}
-                    </span>
-                    <button
-                      className="story-stat story-comment"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openComments(currentPost.id);
-                      }}
-                    >
-                      <Icon name="message-circle" size={16} className="" />
-                      {currentPost.comments.length}
-                    </button>
+                ) : null}
+                {currentPost ? (
+                  <div className="story-card" style={cardStyle}>
+                    <img className="story-card-img" src={currentPost.image} alt="" />
+                    <div className="story-card-topbar">
+                      <Avatar nickname={currentPost.username} color={currentPost.avatarColor} size={30} fontSize={12} avatarUrl={currentPost.avatarUrl} />
+                      <span>
+                        {currentPost.username} · {currentPost.time}
+                      </span>
+                    </div>
+                    <div className="story-card-stats">
+                      <span className="story-stat">
+                        <LikeButton post={currentPost} className="story-like" />
+                        {currentPost.likes}
+                      </span>
+                      <button
+                        className="story-stat story-comment"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openComments(currentPost.id);
+                        }}
+                      >
+                        <Icon name="message-circle" size={16} className="" />
+                        {currentPost.comments.length}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null}
+              </div>
             </div>
-          </div>
-          <div className="feed-swipe-hint">
-            <button onClick={() => setMode('list')} aria-label="세로 피드로 보기">
-              <Icon name="chevron-left" size={18} className="" style={{ transform: 'rotate(90deg)' }} />
-              위로 밀어 피드 보기 · 옆으로 밀어 다음 이야기
-            </button>
+            <div className="feed-swipe-hint">
+              <button onPointerDown={(e) => e.stopPropagation()} onClick={() => setMode('list')} aria-label="세로 피드로 보기">
+                <Icon name="chevron-left" size={18} className="" style={{ transform: 'rotate(90deg)' }} />
+                위로 밀어 피드 보기 · 옆으로 밀어 다음 이야기
+              </button>
+            </div>
           </div>
           {currentPost ? (
             <div className="thread-input" style={{ padding: '8px 0 4px' }}>

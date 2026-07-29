@@ -6,6 +6,7 @@ import Icon from '@/components/Icon';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import SketchyButton from '@/components/SketchyButton';
 import SketchyInput from '@/components/SketchyInput';
+import { useBottomInset } from '@/lib/useBottomInset';
 import type { AppStackParamList } from '@/navigation/types';
 import { usePlacement } from '@/state/PlacementContext';
 import { useAppState } from '@/state/AppStateContext';
@@ -22,6 +23,7 @@ export default function PreviewScreen({ navigation, route }: Props) {
   const { startPlacing } = usePlacement();
   const { colors } = useTheme();
   const common = buildCommon(colors);
+  const bottomInset = useBottomInset();
   const { showToast } = useToast();
   const [caption, setCaption] = useState('');
   const [sharing, setSharing] = useState(false);
@@ -45,7 +47,7 @@ export default function PreviewScreen({ navigation, route }: Props) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.paper }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.paper }} edges={['top']}>
       <View style={{ flex: 1, borderRadius: radius.lg, overflow: 'hidden', margin: 16, backgroundColor: '#000' }}>
         <Image source={{ uri: image }} style={{ flex: 1 }} resizeMode="cover" />
         <Pressable
@@ -55,7 +57,7 @@ export default function PreviewScreen({ navigation, route }: Props) {
           <Icon name="chevron-left" size={22} color="#fff" />
         </Pressable>
       </View>
-      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+      <View style={{ paddingHorizontal: 16, paddingBottom: 8 + bottomInset }}>
         {intent.kind === 'post' ? (
           <SketchyInput
             style={{ marginBottom: 10 }}

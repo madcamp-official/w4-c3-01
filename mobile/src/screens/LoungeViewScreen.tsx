@@ -13,7 +13,7 @@ export default function LoungeViewScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const common = buildCommon(colors);
   return (
-    <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
+    <SafeAreaView style={common.screen} edges={['top']}>
       <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
         <Icon name="chevron-left" size={24} color={colors.ink} />
       </Pressable>
