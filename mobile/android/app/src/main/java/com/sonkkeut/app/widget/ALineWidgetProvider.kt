@@ -40,7 +40,7 @@ class ALineWidgetProvider : AppWidgetProvider() {
       val launchCamera = PendingIntent.getActivity(
         context,
         4101,
-        Intent(Intent.ACTION_VIEW, Uri.parse("aline://app/camera"), context, MainActivity::class.java)
+        Intent(Intent.ACTION_VIEW, Uri.parse("aline://app/camera?source=widget"), context, MainActivity::class.java)
           .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
       )

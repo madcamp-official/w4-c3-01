@@ -131,6 +131,7 @@ type AirViewToNativeMessage =
   | { type: 'status'; status: string }
   | { type: 'capture'; payload: AirDrawingCapture }
   | { type: 'close' }
+  | { type: 'home' }
   | { type: 'error'; message: string };
 
 interface AirDrawingWebViewProps {
@@ -141,17 +142,20 @@ interface AirDrawingWebViewProps {
   busy?: boolean;
   onCapture: (capture: AirDrawingCapture) => void;
   onClose: () => void;
+  onHome?: () => void;
+  widgetEntry?: boolean;
   onError?: (message: string) => void;
 }
 
-function buildAirViewUrl(origin: string, mode: AirDrawingMode, outputSize?: number, maxDim?: number): string {
+function buildAirViewUrl(origin: string, mode: AirDrawingMode, outputSize?: number, maxDim?: number, widgetEntry?: boolean): string {
   const params = new URLSearchParams({ mode });
   if (outputSize) params.set('outputSize', String(outputSize));
   if (maxDim) params.set('maxDim', String(maxDim));
+  if (widgetEntry) params.set('widgetEntry', '1');
   return `${origin}/index.html?${params.toString()}`;
 }
 
-export default function AirDrawingWebView({ mode, outputSize, maxDim, busy, onCapture, onClose, onError }: AirDrawingWebViewProps) {
+export default function AirDrawingWebView({ mode, outputSize, maxDim, busy, onCapture, onClose, onHome, widgetEntry, onError }: AirDrawingWebViewProps) {
   const [permission, requestPermission] = useCameraPermissions();
   const [permissionChecked, setPermissionChecked] = useState(false);
   const [origin, setOrigin] = useState<string | null>(null);
@@ -258,6 +262,9 @@ export default function AirDrawingWebView({ mode, outputSize, maxDim, busy, onCa
       case 'close':
         onClose();
         break;
+      case 'home':
+        onHome?.();
+        break;
       case 'error':
         onError?.(message.message);
         break;
@@ -267,7 +274,7 @@ export default function AirDrawingWebView({ mode, outputSize, maxDim, busy, onCa
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <WebView
-        source={{ uri: buildAirViewUrl(origin, mode, outputSize, maxDim) }}
+        source={{ uri: buildAirViewUrl(origin, mode, outputSize, maxDim, widgetEntry) }}
         style={{ flex: 1 }}
         onMessage={handleMessage}
         allowsInlineMediaPlayback

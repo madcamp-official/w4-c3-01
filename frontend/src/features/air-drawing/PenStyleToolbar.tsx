@@ -11,7 +11,7 @@ const PEN_STYLES = [
 ] satisfies Array<{ name: string; tool: PenTool; icon: string }>
 
 export interface PenStyleToolbarHandle {
-  handleAirInput: (point: Point | null, pinching: boolean) => boolean
+  handleAirInput: (point: Point | null, pinching: boolean, twoFinger: boolean) => boolean
 }
 
 interface PenStyleToolbarProps {
@@ -53,7 +53,7 @@ export const PenStyleToolbar = forwardRef<PenStyleToolbarHandle, PenStyleToolbar
     useImperativeHandle(
       ref,
       () => ({
-        handleAirInput(point, pinching) {
+        handleAirInput(point, pinching, twoFinger) {
           const toolbar = toolbarRef.current
           const toggle = toggleRef.current
           const stage = stageRef.current
@@ -83,12 +83,19 @@ export const PenStyleToolbar = forwardRef<PenStyleToolbarHandle, PenStyleToolbar
             return stillNearDrawer
           }
 
-          if (swipeStartXRef.current === null && insideToggle) {
+          if (swipeStartXRef.current === null && insideToggle && twoFinger) {
             swipeStartXRef.current = clientX
             swipeStartedOpenRef.current = open
           }
 
           if (swipeStartXRef.current !== null) {
+            if (!twoFinger) {
+              swipeStartXRef.current = null
+              airPinchingRef.current = pinching
+              setAirHovered(null)
+              return insideToggle
+            }
+
             const distance = clientX - swipeStartXRef.current
             const shouldOpen = !swipeStartedOpenRef.current && distance <= -42
             const shouldClose = swipeStartedOpenRef.current && distance >= 42

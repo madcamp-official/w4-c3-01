@@ -19,7 +19,7 @@ const COLORS = [
 const COLORS_PER_PAGE = 6
 
 export interface ColorToolbarHandle {
-  handleAirInput: (point: Point | null, pinching: boolean) => boolean
+  handleAirInput: (point: Point | null, pinching: boolean, twoFinger: boolean) => boolean
 }
 
 interface ColorToolbarProps {
@@ -66,7 +66,7 @@ export const ColorToolbar = forwardRef<ColorToolbarHandle, ColorToolbarProps>(
     useImperativeHandle(
       ref,
       () => ({
-        handleAirInput(point, pinching) {
+        handleAirInput(point, pinching, twoFinger) {
           const toolbar = toolbarRef.current
           const toggle = toggleRef.current
           const stage = stageRef.current
@@ -96,12 +96,19 @@ export const ColorToolbar = forwardRef<ColorToolbarHandle, ColorToolbarProps>(
             return stillNearDrawer
           }
 
-          if (swipeStartXRef.current === null && insideToggle) {
+          if (swipeStartXRef.current === null && insideToggle && twoFinger) {
             swipeStartXRef.current = clientX
             swipeStartedOpenRef.current = open
           }
 
           if (swipeStartXRef.current !== null) {
+            if (!twoFinger) {
+              swipeStartXRef.current = null
+              airPinchingRef.current = pinching
+              setAirHovered(null)
+              return insideToggle
+            }
+
             const distance = clientX - swipeStartXRef.current
             const shouldOpen = !swipeStartedOpenRef.current && distance >= 42
             const shouldClose = swipeStartedOpenRef.current && distance <= -42

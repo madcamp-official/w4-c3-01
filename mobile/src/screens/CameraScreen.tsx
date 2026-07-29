@@ -9,6 +9,7 @@ type Props = NativeStackScreenProps<AppStackParamList, 'Camera'>;
 export default function CameraScreen({ navigation, route }: Props) {
   const { showToast } = useToast();
   const intent = route.params?.intent ?? { kind: 'post' as const };
+  const fromWidget = route.params?.source === 'widget';
 
   // replace (not navigate/goBack->push) so this screen — and the WebView
   // holding the camera — actually unmounts instead of staying alive under
@@ -18,6 +19,8 @@ export default function CameraScreen({ navigation, route }: Props) {
   function handleClose() {
     if (intent.kind === 'lounge') {
       navigation.replace('LoungeView', { loungeId: intent.loungeId });
+    } else if (fromWidget) {
+      navigation.replace('MainTabs');
     } else {
       navigation.goBack();
     }
@@ -30,7 +33,9 @@ export default function CameraScreen({ navigation, route }: Props) {
   return (
     <AirDrawingWebView
       mode={intent.kind === 'lounge' ? 'lounge' : 'post'}
+      widgetEntry={fromWidget}
       onClose={handleClose}
+      onHome={() => navigation.replace('MainTabs')}
       onCapture={handleCapture}
       onError={(message) => showToast(message)}
     />

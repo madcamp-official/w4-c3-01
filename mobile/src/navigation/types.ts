@@ -19,7 +19,7 @@ export type TabParamList = {
 
 export type AppStackParamList = {
   MainTabs: undefined;
-  Camera: { intent?: CaptureIntent } | undefined;
+  Camera: { intent?: CaptureIntent; source?: 'widget' } | undefined;
   Preview: { image: string; strokes: StrokePoint[]; drawing?: AirDrawingDocument; intent: CaptureIntent };
   ChatList: undefined;
   ChatThread: { chatId: string };

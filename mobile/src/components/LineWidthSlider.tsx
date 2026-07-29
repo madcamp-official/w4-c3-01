@@ -15,6 +15,7 @@ type Props = {
   maximumValue?: number;
   step?: number;
   onValueChange: (value: number) => void;
+  variant?: 'light' | 'dark';
 };
 
 export default function LineWidthSlider({
@@ -23,7 +24,9 @@ export default function LineWidthSlider({
   maximumValue = 20,
   step = 2,
   onValueChange,
+  variant = 'light',
 }: Props) {
+  const dark = variant === 'dark';
   const [trackWidth, setTrackWidth] = useState(0);
   const range = maximumValue - minimumValue;
   const progress = range > 0 ? (value - minimumValue) / range : 0;
@@ -53,7 +56,7 @@ export default function LineWidthSlider({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>라인</Text>
+      <Text style={[styles.label, dark && styles.darkLabel]}>라인</Text>
       <View
         accessibilityActions={[
           { name: 'increment', label: '라인 굵게' },
@@ -71,10 +74,10 @@ export default function LineWidthSlider({
         }
         style={styles.trackTouchArea}
         {...panResponder.panHandlers}>
-        <View style={styles.track}>
+        <View style={[styles.track, dark && styles.darkTrack]}>
           <View style={[styles.fill, { width: `${progress * 100}%` }]} />
         </View>
-        <View style={[styles.thumb, { left: `${progress * 100}%` }]}>
+        <View style={[styles.thumb, dark && styles.darkThumb, { left: `${progress * 100}%` }]}>
           <View
             style={[
               styles.preview,
@@ -87,7 +90,7 @@ export default function LineWidthSlider({
           />
         </View>
       </View>
-      <Text style={styles.value}>{value}</Text>
+      <Text style={[styles.value, dark && styles.darkValue]}>{value}</Text>
     </View>
   );
 }
@@ -143,4 +146,8 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textAlign: 'center',
   },
+  darkLabel: { color: 'rgba(255,255,255,0.62)' },
+  darkTrack: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  darkThumb: { backgroundColor: '#101114', borderColor: '#FF8B9B' },
+  darkValue: { color: '#FFFFFF' },
 });

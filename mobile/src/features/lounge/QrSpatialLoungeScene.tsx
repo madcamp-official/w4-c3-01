@@ -41,11 +41,30 @@ const PEN_DISTANCE = 0.28;
 const MIN_POINT_DISTANCE = 0.008;
 const LEGACY_ARTWORK_WIDTH = 0.42;
 
+export const LOUNGE_PALETTE = [
+  '#101114',
+  '#FFFFFF',
+  '#FF5D73',
+  '#4F91E8',
+  '#54C78A',
+  '#FACB58',
+  '#F39243',
+  '#D94C93',
+  '#9B6BFF',
+  '#48C4D8',
+] as const;
+
 ViroMaterials.createMaterials({
-  alineInk: { diffuseColor: '#221F1A', lightingModel: 'Constant' },
-  alineRed: { diffuseColor: '#B3382E', lightingModel: 'Constant' },
-  alineOchre: { diffuseColor: '#C9B48A', lightingModel: 'Constant' },
+  alineInk: { diffuseColor: '#101114', lightingModel: 'Constant' },
   alineWhite: { diffuseColor: '#FFFFFF', lightingModel: 'Constant' },
+  alineCoral: { diffuseColor: '#FF5D73', lightingModel: 'Constant' },
+  alineBlue: { diffuseColor: '#4F91E8', lightingModel: 'Constant' },
+  alineGreen: { diffuseColor: '#54C78A', lightingModel: 'Constant' },
+  alineYellow: { diffuseColor: '#FACB58', lightingModel: 'Constant' },
+  alineOrange: { diffuseColor: '#F39243', lightingModel: 'Constant' },
+  alinePink: { diffuseColor: '#D94C93', lightingModel: 'Constant' },
+  alinePurple: { diffuseColor: '#9B6BFF', lightingModel: 'Constant' },
+  alineCyan: { diffuseColor: '#48C4D8', lightingModel: 'Constant' },
 });
 
 function add(a: Point3, b: Point3): Point3 {
@@ -119,9 +138,15 @@ function localToWorld(point: SpatialStrokePoint, basis: OriginBasis): Point3 {
 
 function materialFor(color: string) {
   const normalized = color.toUpperCase();
-  if (normalized === '#B3382E') return 'alineRed';
-  if (normalized === '#C9B48A') return 'alineOchre';
   if (normalized === '#FFFFFF') return 'alineWhite';
+  if (normalized === '#FF5D73') return 'alineCoral';
+  if (normalized === '#4F91E8') return 'alineBlue';
+  if (normalized === '#54C78A') return 'alineGreen';
+  if (normalized === '#FACB58') return 'alineYellow';
+  if (normalized === '#F39243') return 'alineOrange';
+  if (normalized === '#D94C93') return 'alinePink';
+  if (normalized === '#9B6BFF') return 'alinePurple';
+  if (normalized === '#48C4D8') return 'alineCyan';
   return 'alineInk';
 }
 
@@ -238,6 +263,7 @@ export function QrSpatialLoungeScene({ sceneNavigator }: SceneProps = {}) {
       ))}
       {basis && activePoints.length > 1 && (
         <ViroPolyline
+          key={`active-${props?.color ?? '#101114'}`}
           materials={[materialFor(props?.color ?? '#221F1A')]}
           points={activePoints.map((point) => localToWorld(point, basis))}
           thickness={Math.max(0.004, Math.min(0.02, (props?.width ?? 8) * 0.001))}

@@ -18,6 +18,7 @@ import {
 } from '@/api/spatialLoungeApi';
 import {
   QrSpatialLoungeScene,
+  LOUNGE_PALETTE,
   type QrSpatialSceneAppProps,
 } from '@/features/lounge/QrSpatialLoungeScene';
 import LineWidthSlider from '@/components/LineWidthSlider';
@@ -31,8 +32,6 @@ import { useAppState } from '@/state/AppStateContext';
 import { colors } from '@/theme/colors';
 
 const LOUNGE_ID = 'lounge-cafe-01';
-const DRAWING_COLORS = [colors.ink, colors.accent, colors.line, '#FFFFFF'] as const;
-
 export default function LoungeListScreen() {
   const { session } = useAppState();
   const [contents, setContents] = useState<SpatialLoungeContent[]>([]);
@@ -43,7 +42,7 @@ export default function LoungeListScreen() {
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [color, setColor] = useState<(typeof DRAWING_COLORS)[number]>(DRAWING_COLORS[0]);
+  const [color, setColor] = useState<string>(LOUNGE_PALETTE[0]);
   const [width, setWidth] = useState(8);
   const [onlineCount, setOnlineCount] = useState(1);
 
@@ -309,7 +308,7 @@ export default function LoungeListScreen() {
 
               <View style={styles.toolRow}>
                 <View style={styles.colorRow}>
-                  {DRAWING_COLORS.map((item) => (
+                  {LOUNGE_PALETTE.map((item) => (
                     <Pressable
                       key={item}
                       accessibilityLabel={`낙서 색상 ${item}`}
@@ -322,7 +321,7 @@ export default function LoungeListScreen() {
                     />
                   ))}
                 </View>
-                <LineWidthSlider value={width} onValueChange={setWidth} />
+                <LineWidthSlider value={width} onValueChange={setWidth} variant="dark" />
               </View>
 
               <Pressable
@@ -333,7 +332,11 @@ export default function LoungeListScreen() {
                   { backgroundColor: color === '#FFFFFF' ? colors.paper2 : color },
                   (pressed || drawing) && styles.pressedButton,
                 ]}>
-                <Text style={[styles.drawButtonText, color === colors.ink && styles.lightText]}>
+                <Text
+                  style={[
+                    styles.drawButtonText,
+                    !['#FFFFFF', '#FACB58'].includes(color) && styles.lightText,
+                  ]}>
                   누르고 움직여서 그리기
                 </Text>
               </Pressable>
@@ -366,33 +369,39 @@ const styles = StyleSheet.create({
   header: {
     marginHorizontal: 14,
     marginTop: 8,
-    padding: 14,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: 'rgba(255,255,255,0.93)',
+    borderColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(8,10,14,0.78)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
+    shadowColor: '#000000',
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 9 },
+    elevation: 8,
   },
   headerCopy: { flex: 1 },
   loungeId: {
-    color: colors.inkSoft,
+    color: 'rgba(255,255,255,0.72)',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.6,
   },
-  online: { color: colors.inkSoft, fontSize: 11, fontWeight: '700', marginTop: 3 },
+  online: { color: '#78E5AC', fontSize: 11, fontWeight: '800', marginTop: 3 },
   deleteButton: {
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.accent,
+    borderColor: 'rgba(255,93,115,0.5)',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: colors.paper,
+    backgroundColor: 'rgba(255,93,115,0.12)',
   },
-  deleteButtonText: { color: colors.accent, fontSize: 11, fontWeight: '800' },
+  deleteButtonText: { color: '#FF8B9B', fontSize: 11, fontWeight: '800' },
   disabledButton: { opacity: 0.4 },
   pressedButton: { transform: [{ scale: 0.97 }], opacity: 0.82 },
   errorBanner: {
@@ -418,6 +427,10 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textShadowColor: 'rgba(34,31,26,0.95)',
     textShadowRadius: 7,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: 'rgba(8,10,14,0.58)',
   },
   guideDescription: {
     color: colors.paper,
@@ -427,13 +440,18 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(34,31,26,0.95)',
     textShadowRadius: 6,
   },
-  qrGuide: { width: 220, height: 220 },
+  qrGuide: {
+    width: 220,
+    height: 220,
+    borderRadius: 28,
+    backgroundColor: 'rgba(0,0,0,0.08)',
+  },
   corner: {
     position: 'absolute',
     width: 44,
     height: 44,
-    borderColor: colors.paper,
-    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    borderWidth: 3,
   },
   topLeft: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },
   topRight: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },
@@ -443,7 +461,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 28,
     height: 2,
-    backgroundColor: colors.accent,
+    backgroundColor: '#FF5D73',
     left: 96,
     top: 109,
   },
@@ -451,7 +469,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 2,
     height: 28,
-    backgroundColor: colors.accent,
+    backgroundColor: '#FF5D73',
     left: 109,
     top: 96,
   },
@@ -470,7 +488,7 @@ const styles = StyleSheet.create({
     top: 12,
     width: 26,
     height: 2,
-    backgroundColor: colors.accent,
+    backgroundColor: '#FF5D73',
   },
   reticleVertical: {
     position: 'absolute',
@@ -478,45 +496,54 @@ const styles = StyleSheet.create({
     top: 0,
     width: 2,
     height: 26,
-    backgroundColor: colors.accent,
+    backgroundColor: '#FF5D73',
   },
   controls: {
     margin: 14,
-    padding: 14,
-    borderRadius: 22,
+    padding: 16,
+    borderRadius: 28,
     borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    gap: 12,
+    borderColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(8,10,14,0.84)',
+    gap: 14,
+    shadowColor: '#000000',
+    shadowOpacity: 0.32,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 11 },
+    elevation: 10,
   },
   alignButton: {
     height: 58,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 999,
-    backgroundColor: colors.ink,
+    backgroundColor: '#FFFFFF',
   },
-  alignButtonText: { color: colors.paper, fontSize: 15, fontWeight: '900' },
+  alignButtonText: { color: '#101114', fontSize: 15, fontWeight: '900' },
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statusText: { color: colors.inkSoft, fontSize: 12, fontWeight: '700' },
-  realignText: { color: colors.accent, fontSize: 12, fontWeight: '800' },
-  toolRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  colorRow: { flexDirection: 'row', gap: 10 },
+  statusText: { color: 'rgba(255,255,255,0.68)', fontSize: 12, fontWeight: '700' },
+  realignText: { color: '#FF8B9B', fontSize: 12, fontWeight: '800' },
+  toolRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  colorRow: { width: 184, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   colorButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.line,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.22)',
   },
-  selectedColor: { borderWidth: 3, borderColor: colors.accent },
+  selectedColor: {
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    transform: [{ scale: 0.86 }],
+  },
   drawButton: {
     height: 66,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.line,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   drawButtonText: { color: colors.ink, fontSize: 16, fontWeight: '900' },
   lightText: { color: colors.paper },

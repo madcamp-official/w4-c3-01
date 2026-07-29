@@ -49,14 +49,15 @@ export function landmarkToStagePoint(
   return { x, y }
 }
 
-export function smoothPoint(previous: Point | null, current: Point, alpha = 0.52): Point {
+export function smoothPoint(previous: Point | null, current: Point): Point {
   if (!previous) return current
 
-  // Keep tiny landmark jitters stable, but catch up quickly when the finger
-  // is actually moving. A fixed low alpha made the cursor trail the hand by
-  // several frames, especially when the detector was running below 30 FPS.
   const distance = Math.hypot(current.x - previous.x, current.y - previous.y)
-  const adaptiveAlpha = Math.min(0.88, alpha + distance / 140)
+  // Suppress sub-pixel landmark noise without making intentional hand motion
+  // feel heavy. The old 0.4/0.72 filter could remain multiple frames behind
+  // on a phone; this curve catches up aggressively once motion exceeds jitter.
+  const adaptiveAlpha =
+    distance < 2 ? 0.2 : Math.min(0.94, 0.58 + distance / 72)
 
   return {
     x: previous.x * (1 - adaptiveAlpha) + current.x * adaptiveAlpha,

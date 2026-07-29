@@ -14,6 +14,7 @@ export type AirViewToNativeMessage =
   | { type: 'status'; status: string }
   | { type: 'capture'; payload: AirDrawingCapture }
   | { type: 'close' }
+  | { type: 'home' }
   | { type: 'error'; message: string }
 
 export function postToNative(message: AirViewToNativeMessage): void {

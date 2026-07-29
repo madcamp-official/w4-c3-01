@@ -17,7 +17,8 @@ const modeParam = params.get('mode')
 const config = {
   mode: (modeParam === 'heart' || modeParam === 'message' || modeParam === 'lounge' ? modeParam : 'post') as AirDrawingMode,
   outputSize: params.has('outputSize') ? Number(params.get('outputSize')) : undefined,
-  maxDim: params.has('maxDim') ? Number(params.get('maxDim')) : undefined
+  maxDim: params.has('maxDim') ? Number(params.get('maxDim')) : undefined,
+  widgetEntry: params.get('widgetEntry') === '1'
 }
 
 function Root() {
@@ -33,6 +34,10 @@ function Root() {
     postToNative({ type: 'error', message })
   }, [])
 
+  const handleHome = useCallback(() => {
+    postToNative({ type: 'home' })
+  }, [])
+
   return (
     <AirDrawingStage
       mode={config.mode}
@@ -41,6 +46,7 @@ function Root() {
       onCapture={handleCapture}
       onClose={handleClose}
       onError={handleError}
+      onSwipeUpHome={config.widgetEntry ? handleHome : undefined}
     />
   )
 }

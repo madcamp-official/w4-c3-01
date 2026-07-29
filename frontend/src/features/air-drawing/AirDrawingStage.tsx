@@ -47,6 +47,7 @@ interface AirDrawingStageProps {
   onClose: () => void
   onCapture: (capture: AirDrawingCapture) => void
   onError?: (message: string) => void
+  onSwipeUpHome?: () => void
 }
 
 // Square (outputSize) captures crop the drawing canvas to a region centered
@@ -113,6 +114,43 @@ function drawCover(
   context.restore()
 }
 
+function drawCenteredStageSquare(
+  context: CanvasRenderingContext2D,
+  source: CanvasImageSource,
+  sourceWidth: number,
+  sourceHeight: number,
+  stageWidth: number,
+  stageHeight: number,
+  outputSize: number,
+  mirrored: boolean,
+  zoom: number,
+) {
+  const stageScale = outputSize / Math.min(stageWidth, stageHeight)
+  const renderedStageWidth = Math.max(1, Math.round(stageWidth * stageScale))
+  const renderedStageHeight = Math.max(1, Math.round(stageHeight * stageScale))
+  const stageCanvas = document.createElement('canvas')
+  stageCanvas.width = renderedStageWidth
+  stageCanvas.height = renderedStageHeight
+  const stageContext = stageCanvas.getContext('2d')
+  if (!stageContext) return
+
+  drawCover(
+    stageContext,
+    source,
+    sourceWidth,
+    sourceHeight,
+    renderedStageWidth,
+    renderedStageHeight,
+    mirrored,
+    zoom,
+  )
+
+  const cropSize = Math.min(renderedStageWidth, renderedStageHeight)
+  const cropX = (renderedStageWidth - cropSize) / 2
+  const cropY = (renderedStageHeight - cropSize) / 2
+  context.drawImage(stageCanvas, cropX, cropY, cropSize, cropSize, 0, 0, outputSize, outputSize)
+}
+
 type ImageCaptureLike = { takePhoto: () => Promise<Blob> }
 
 // The live <video> stream is often capped well below the camera's actual
@@ -143,10 +181,12 @@ export function AirDrawingStage({
   onClose,
   onCapture,
   onError,
+  onSwipeUpHome,
 }: AirDrawingStageProps) {
   // 하트(좋아요 아이콘)만 카메라 없이 종이+선으로 찍습니다. 채팅 손글씨 메시지와
   // 게시물/라운지는 카메라 프레임을 그대로 합성합니다.
   const isPaperMode = mode === 'heart'
+  const isSquarePostMode = mode === 'post'
   const showToolbars = mode !== 'heart'
   const zoomEnabled = mode !== 'heart'
 
@@ -258,6 +298,46 @@ export function AirDrawingStage({
     }
   }, [zoomEnabled])
 
+  useEffect(() => {
+    const element = stageRef.current
+    if (!element || !onSwipeUpHome) return
+    const goHome = onSwipeUpHome
+
+    let start: { x: number; y: number } | null = null
+    function handleTouchStart(event: TouchEvent) {
+      if (event.touches.length !== 1) {
+        start = null
+        return
+      }
+      start = {
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY,
+      }
+    }
+    function handleTouchEnd(event: TouchEvent) {
+      const touch = event.changedTouches[0]
+      if (!start || !touch) return
+      const deltaX = touch.clientX - start.x
+      const deltaY = touch.clientY - start.y
+      start = null
+      if (deltaY < -96 && Math.abs(deltaY) > Math.abs(deltaX) * 1.35) {
+        goHome()
+      }
+    }
+    function cancelSwipe() {
+      start = null
+    }
+
+    element.addEventListener('touchstart', handleTouchStart, { passive: true })
+    element.addEventListener('touchend', handleTouchEnd, { passive: true })
+    element.addEventListener('touchcancel', cancelSwipe)
+    return () => {
+      element.removeEventListener('touchstart', handleTouchStart)
+      element.removeEventListener('touchend', handleTouchEnd)
+      element.removeEventListener('touchcancel', cancelSwipe)
+    }
+  }, [onSwipeUpHome])
+
   const handleTrackedPoint = useCallback(
     (point: Point | null, isPinching: boolean, isErasing: boolean) => {
       setPinching(isPinching)
@@ -270,9 +350,10 @@ export function AirDrawingStage({
         cursor.className = `finger-cursor ${isErasing ? 'erasing' : isPinching ? 'drawing' : ''}`
       }
 
-      const overColorToolbar = colorToolbarRef.current?.handleAirInput(point, isPinching) ?? false
+      const overColorToolbar =
+        colorToolbarRef.current?.handleAirInput(point, isPinching, isErasing) ?? false
       const overPenStyleToolbar =
-        penStyleToolbarRef.current?.handleAirInput(point, isPinching) ?? false
+        penStyleToolbarRef.current?.handleAirInput(point, isPinching, isErasing) ?? false
 
       if (!point || overColorToolbar || overPenStyleToolbar) {
         drawingCanvasRef.current?.endStroke()
@@ -336,7 +417,12 @@ export function AirDrawingStage({
     const rect = stage.getBoundingClientRect()
     let width: number
     let height: number
-    if (outputSize) {
+    if (isSquarePostMode) {
+      const dpr = Math.min(window.devicePixelRatio || 1, 3)
+      const squareSize = Math.min(maxDim, Math.round(Math.min(rect.width, rect.height) * dpr))
+      width = squareSize
+      height = squareSize
+    } else if (outputSize) {
       width = outputSize
       height = outputSize
     } else {
@@ -371,15 +457,55 @@ export function AirDrawingStage({
           hqPhoto = null
         }
         if (hqPhoto) {
-          drawCover(context, hqPhoto, hqPhoto.width, hqPhoto.height, width, height, facingMode === 'user', zoomValue)
+          if (isSquarePostMode) {
+            drawCenteredStageSquare(
+              context,
+              hqPhoto,
+              hqPhoto.width,
+              hqPhoto.height,
+              rect.width,
+              rect.height,
+              width,
+              facingMode === 'user',
+              zoomValue,
+            )
+          } else {
+            drawCover(context, hqPhoto, hqPhoto.width, hqPhoto.height, width, height, facingMode === 'user', zoomValue)
+          }
           hqPhoto.close()
         } else {
-          drawCover(context, video, video.videoWidth, video.videoHeight, width, height, facingMode === 'user', zoomValue)
+          if (isSquarePostMode) {
+            drawCenteredStageSquare(
+              context,
+              video,
+              video.videoWidth,
+              video.videoHeight,
+              rect.width,
+              rect.height,
+              width,
+              facingMode === 'user',
+              zoomValue,
+            )
+          } else {
+            drawCover(context, video, video.videoWidth, video.videoHeight, width, height, facingMode === 'user', zoomValue)
+          }
         }
       }
       const drawing = drawingHandle.getDocument()
       let cropForStrokes: { x: number; y: number; size: number; canvasWidth: number; canvasHeight: number } | undefined
-      if (outputSize) {
+      if (isSquarePostMode) {
+        const cropSize = Math.min(drawingCanvas.width, drawingCanvas.height)
+        const cropX = (drawingCanvas.width - cropSize) / 2
+        const cropY = (drawingCanvas.height - cropSize) / 2
+        context.drawImage(drawingCanvas, cropX, cropY, cropSize, cropSize, 0, 0, width, height)
+        cropForStrokes = {
+          x: cropX,
+          y: cropY,
+          size: cropSize,
+          canvasWidth: drawingCanvas.width,
+          canvasHeight: drawingCanvas.height,
+        }
+      } else if (outputSize) {
         // 정사각형 출력(하트/메시지)은 늘리지 않고 정사각형으로 잘라냅니다 — 그대로
         // 늘리면 세로로 긴 화면이 눌린 것처럼 찌그러져 보입니다. 잘라내는 영역은
         // 캔버스 전체가 아니라 실제로 그린 부분(스트로크의 바운딩 박스)에 여백만 살짝
@@ -422,7 +548,7 @@ export function AirDrawingStage({
     } finally {
       setCapturing(false)
     }
-  }, [busy, capturing, facingMode, isPaperMode, maxDim, onCapture, onError, outputSize, stream, zoomValue])
+  }, [busy, capturing, facingMode, isPaperMode, isSquarePostMode, maxDim, onCapture, onError, outputSize, stream, zoomValue])
 
   const handleSwitchCamera = useCallback(async () => {
     setPinching(false)
@@ -451,6 +577,8 @@ export function AirDrawingStage({
         lineSize={lineSize}
       />
 
+      {isSquarePostMode ? <div className="square-capture-guide" aria-hidden="true" /> : null}
+
       <div ref={cursorRef} className="finger-cursor" style={{ opacity: 0 }} aria-hidden="true" />
 
       <StatusIndicator status={status} error={cameraError ?? modelError} />
@@ -464,6 +592,7 @@ export function AirDrawingStage({
       </div>
 
       {zoomEnabled && zoomValue > 1.02 ? <div className="zoom-badge">{zoomValue.toFixed(1)}x</div> : null}
+      {onSwipeUpHome ? <div className="widget-home-hint">↑ 위로 밀어 홈으로</div> : null}
 
       <div className="air-capture-panel">
         <button

@@ -35,6 +35,8 @@ const PINKY_PIP = 18
 const PINKY_TIP = 20
 const PINCH_START_RATIO = 0.35
 const PINCH_RELEASE_RATIO = 0.5
+const MAX_INFERENCE_SIDE = 640
+const LOST_HAND_GRACE_FRAMES = 2
 
 function distanceBetween(first: NormalizedLandmark, second: NormalizedLandmark) {
   return Math.hypot(first.x - second.x, first.y - second.y)
@@ -95,7 +97,9 @@ export function useHandTracking({
   const pinchingRef = useRef(false)
   const erasingRef = useRef(false)
   const eraserGestureScoreRef = useRef(0)
+  const lostHandFramesRef = useRef(0)
   const lastVideoTimeRef = useRef(-1)
+  const inferenceCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const onPointRef = useRef(onPoint)
   const zoomRef = useRef(zoom)
 
@@ -206,6 +210,8 @@ export function useHandTracking({
         !pinkyPip ||
         !pinkyTip
       ) {
+        lostHandFramesRef.current += 1
+        if (lostHandFramesRef.current <= LOST_HAND_GRACE_FRAMES) return
         previousPointRef.current = null
         pinchingRef.current = false
         erasingRef.current = false
@@ -214,6 +220,7 @@ export function useHandTracking({
         onPointRef.current(null, false, false)
         return
       }
+      lostHandFramesRef.current = 0
 
       const twoFingerGesture =
         isFingerExtended(wrist, indexMcp, indexPip, indexTip) &&
@@ -269,6 +276,7 @@ export function useHandTracking({
       pinchingRef.current = false
       erasingRef.current = false
       eraserGestureScoreRef.current = 0
+      lostHandFramesRef.current = 0
       setHandDetected(false)
       onPointRef.current(null, false, false)
       return
@@ -285,7 +293,27 @@ export function useHandTracking({
         video.currentTime !== lastVideoTimeRef.current
       ) {
         try {
-          const result = landmarker.detectForVideo(video, performance.now())
+          let inferenceCanvas = inferenceCanvasRef.current
+          if (!inferenceCanvas) {
+            inferenceCanvas = document.createElement('canvas')
+            inferenceCanvasRef.current = inferenceCanvas
+          }
+          const inferenceScale = Math.min(
+            1,
+            MAX_INFERENCE_SIDE / Math.max(video.videoWidth, video.videoHeight),
+          )
+          const inferenceWidth = Math.max(1, Math.round(video.videoWidth * inferenceScale))
+          const inferenceHeight = Math.max(1, Math.round(video.videoHeight * inferenceScale))
+          if (
+            inferenceCanvas.width !== inferenceWidth ||
+            inferenceCanvas.height !== inferenceHeight
+          ) {
+            inferenceCanvas.width = inferenceWidth
+            inferenceCanvas.height = inferenceHeight
+          }
+          const inferenceContext = inferenceCanvas.getContext('2d', { alpha: false })
+          inferenceContext?.drawImage(video, 0, 0, inferenceWidth, inferenceHeight)
+          const result = landmarker.detectForVideo(inferenceCanvas, performance.now())
           processResult(result)
           lastVideoTimeRef.current = video.currentTime
         } catch (detectionError) {
@@ -306,6 +334,7 @@ export function useHandTracking({
       pinchingRef.current = false
       erasingRef.current = false
       eraserGestureScoreRef.current = 0
+      lostHandFramesRef.current = 0
       lastVideoTimeRef.current = -1
       setHandDetected(false)
       onPointRef.current(null, false, false)
