@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
 import Icon from '@/components/Icon';
@@ -21,7 +21,8 @@ const EXIT_MS = 260;
  * list — removed by request. */
 export default function FeedPage() {
   const navigate = useNavigate();
-  const { posts, loadFeed, startConversationWith, sendText } = useAppState();
+  const { posts, chats, loadFeed, loadChats, startConversationWith, sendText } = useAppState();
+  const hasUnreadChats = useMemo(() => chats.some((c) => c.unread), [chats]);
   const { openComments } = useOverlay();
   const { isDark, toggleTheme } = useTheme();
   const { showToast } = useToast();
@@ -38,6 +39,7 @@ export default function FeedPage() {
 
   useEffect(() => {
     void loadFeed();
+    void loadChats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -144,6 +146,7 @@ export default function FeedPage() {
           </button>
           <button className="icon-btn sk" onClick={() => navigate('/chats')}>
             <Icon name="send" size={20} />
+            {hasUnreadChats ? <span className="unread-dot" /> : null}
           </button>
         </div>
       </div>

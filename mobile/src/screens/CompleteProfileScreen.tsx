@@ -18,7 +18,7 @@ import { buildCommon } from '@/theme/common';
 /** Google 등 OAuth로 처음 로그인한 사람이 아이디를 확인하고 프로필을 완성하는 필수 1회 화면. */
 export default function CompleteProfileScreen() {
   const { session, setAvatar, setHeart, updateProfile } = useAppState();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const common = buildCommon(colors);
   const bottomInset = useBottomInset();
   const { showToast } = useToast();
@@ -80,7 +80,11 @@ export default function CompleteProfileScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.ink }} edges={['top']}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <View style={{ width: 220, height: 220, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 }}>
-            <Image source={{ uri: heartPreview }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+            <Image
+              source={{ uri: heartPreview }}
+              style={{ width: '100%', height: '100%', tintColor: isDark ? '#fff' : undefined }}
+              resizeMode="contain"
+            />
           </View>
         </View>
         <View style={{ padding: 20, paddingBottom: 20 + bottomInset, gap: 10 }}>

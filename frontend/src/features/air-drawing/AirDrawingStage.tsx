@@ -21,6 +21,11 @@ const ERASE_MIN_STEP = 3
 const DEFAULT_PEN_COLOR = '#ffffff'
 const DEFAULT_PEN_TOOL: PenTool = 'pen'
 const DEFAULT_LINE_SIZE = 6
+// Heart ("paper") mode hides the pen-style toolbar (showToolbars below), so
+// there's no line-size slider to fall back on — it needs its own thicker
+// default since the plain 6px default reads as too thin for a small,
+// simple heart icon.
+const HEART_LINE_SIZE = 12
 const INK_COLOR = '#1E1B16'
 
 export interface AirDrawingCapture {
@@ -162,7 +167,7 @@ export function AirDrawingStage({
   const [erasing, setErasing] = useState(false)
   const [penColor, setPenColor] = useState(isPaperMode ? INK_COLOR : DEFAULT_PEN_COLOR)
   const [penTool, setPenTool] = useState<PenTool>(DEFAULT_PEN_TOOL)
-  const [lineSize, setLineSize] = useState(DEFAULT_LINE_SIZE)
+  const [lineSize, setLineSize] = useState(isPaperMode ? HEART_LINE_SIZE : DEFAULT_LINE_SIZE)
   const [capturing, setCapturing] = useState(false)
   const [zoomValue, setZoomValue] = useState(1)
 

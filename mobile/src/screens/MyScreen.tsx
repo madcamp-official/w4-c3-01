@@ -1,8 +1,8 @@
 // Ported from frontend/src/pages/MyPage.tsx — keep in sync.
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import Avatar from '@/components/Avatar';
 import SketchyButton from '@/components/SketchyButton';
@@ -34,16 +34,23 @@ export default function MyScreen() {
   const likedPosts = useMemo(() => posts.filter((p) => p.liked), [posts]);
   const items = tab === 'posts' ? myPosts : likedPosts;
 
-  useEffect(() => {
-    if (!session) return;
-    let cancelled = false;
-    followApi.fetchFollowCounts(session.id).then((result) => {
-      if (!cancelled) setCounts(result);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [session]);
+  // A plain mount-only effect only re-fetched once — native-stack/tabs keep
+  // this screen mounted underneath UserProfile, so following someone there
+  // and coming back never refreshed the (now stale) follower/following
+  // counts here until the app fully remounted. useFocusEffect re-fetches
+  // every time this tab is shown again, not just on first mount.
+  useFocusEffect(
+    useCallback(() => {
+      if (!session) return;
+      let cancelled = false;
+      followApi.fetchFollowCounts(session.id).then((result) => {
+        if (!cancelled) setCounts(result);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, [session])
+  );
 
   if (!session) return null;
 

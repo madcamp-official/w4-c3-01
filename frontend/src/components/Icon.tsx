@@ -42,8 +42,8 @@ const ICONS: Record<IconName, Def> = {
     ]
   },
   'message-circle': {
-    paths: ['M8 17 L6.5 20.5 L11 17'],
-    rects: [{ x: 3, y: 4, width: 18, height: 13, rx: 6 }]
+    paths: ['M8.7 18.3 L6.5 21.5 L12 19'],
+    circles: [{ cx: 12, cy: 11, r: 8 }]
   },
   x: { paths: ['M4 4 L20 20 M20 4 L4 20'] },
   link: {

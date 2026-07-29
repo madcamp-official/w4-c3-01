@@ -121,64 +121,26 @@ export function blobCornerRadiiForNative(width: number, height: number, variant:
   }
 }
 
-/** Smoothly-varying (correlated) pseudo-noise, so neighboring perimeter samples drift gently instead of jumping — avoids the sharp pinches/gaps independent per-point jitter can cause. */
-function makeNoise(seed: string) {
-  const rand = seededRandom(seed)
-  const waves = [1, 2, 3].map(() => ({
-    freq: 0.05 + rand() * 0.08,
-    phase: rand() * Math.PI * 2,
-    amp: 0.5 + rand() * 0.5
-  }))
-  return (t: number) => waves.reduce((sum, w) => sum + Math.sin(t * w.freq + w.phase) * w.amp, 0) / waves.length
-}
-
-/** The outline of the blob (now plain pill) shape above, as a dense polyline (closed path) — plain (wobble defaults to 0, see sketchyRoundedRect). */
-export function sketchyBlobRect(width: number, height: number, variant: BlobVariant, seed: string, wobble = 0): string {
+/** The outline of the blob (now plain pill) shape above — real SVG elliptical
+ * arcs per corner (wobble defaults to 0, see sketchyRoundedRect), not the
+ * dense polyline this used to be. The old version sampled each corner's
+ * curve into straight-line segments every ~7px, which looked visibly
+ * faceted/angular on larger elements (chat bubbles, search box, buttons) —
+ * an `A` arc traces the exact ellipse at any size. */
+export function sketchyBlobRect(width: number, height: number, variant: BlobVariant, _seed: string, _wobble = 0): string {
   if (width <= 0 || height <= 0) return ''
   const { tl, tr, br, bl } = blobCornerRadii(width, height, variant)
-  const noise = makeNoise(seed)
-  const STEP = 7
 
-  const pts: [number, number][] = []
-  let t = 0
-
-  function pushArc(cx: number, cy: number, rx: number, ry: number, a0: number, a1: number) {
-    const arcLen = Math.max(rx, ry) * Math.abs(a1 - a0)
-    const steps = Math.max(2, Math.round(arcLen / STEP))
-    for (let i = 0; i <= steps; i++) {
-      const a = a0 + ((a1 - a0) * i) / steps
-      const bx = cx + rx * Math.cos(a)
-      const by = cy + ry * Math.sin(a)
-      const n = noise(t) * wobble
-      pts.push([bx + Math.cos(a) * n, by + Math.sin(a) * n])
-      t += STEP
-    }
-  }
-
-  function pushEdge(x0: number, y0: number, x1: number, y1: number, nx: number, ny: number) {
-    const len = Math.hypot(x1 - x0, y1 - y0)
-    const steps = Math.max(1, Math.round(len / STEP))
-    for (let i = 1; i < steps; i++) {
-      const px = x0 + ((x1 - x0) * i) / steps
-      const py = y0 + ((y1 - y0) * i) / steps
-      const n = noise(t) * wobble
-      pts.push([px + nx * n, py + ny * n])
-      t += STEP
-    }
-  }
-
-  pushArc(tl.rx, tl.ry, tl.rx, tl.ry, Math.PI, Math.PI * 1.5)
-  pushEdge(tl.rx, 0, width - tr.rx, 0, 0, -1)
-  pushArc(width - tr.rx, tr.ry, tr.rx, tr.ry, Math.PI * 1.5, Math.PI * 2)
-  pushEdge(width, tr.ry, width, height - br.ry, 1, 0)
-  pushArc(width - br.rx, height - br.ry, br.rx, br.ry, 0, Math.PI * 0.5)
-  pushEdge(width - br.rx, height, bl.rx, height, 0, 1)
-  pushArc(bl.rx, height - bl.ry, bl.rx, bl.ry, Math.PI * 0.5, Math.PI)
-  pushEdge(0, height - bl.ry, 0, tl.ry, -1, 0)
-
-  if (pts.length < 3) return ''
-  let d = `M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)} `
-  for (let i = 1; i < pts.length; i++) d += `L ${pts[i][0].toFixed(2)} ${pts[i][1].toFixed(2)} `
-  d += 'Z'
-  return d
+  return [
+    `M ${tl.rx} 0`,
+    `L ${width - tr.rx} 0`,
+    `A ${tr.rx} ${tr.ry} 0 0 1 ${width} ${tr.ry}`,
+    `L ${width} ${height - br.ry}`,
+    `A ${br.rx} ${br.ry} 0 0 1 ${width - br.rx} ${height}`,
+    `L ${bl.rx} ${height}`,
+    `A ${bl.rx} ${bl.ry} 0 0 1 0 ${height - bl.ry}`,
+    `L 0 ${tl.ry}`,
+    `A ${tl.rx} ${tl.ry} 0 0 1 ${tl.rx} 0`,
+    'Z'
+  ].join(' ')
 }

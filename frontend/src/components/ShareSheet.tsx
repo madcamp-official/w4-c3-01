@@ -23,7 +23,7 @@ export default function ShareSheet() {
           링크 복사
         </button>
         <button className="share-option" onClick={() => handleOption('chat')}>
-          <Icon name="message-square" />
+          <Icon name="send" />
           채팅으로 보내기
         </button>
       </div>

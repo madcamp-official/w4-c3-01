@@ -18,7 +18,11 @@ function makeStyles(colors: import('@/theme/colors').ThemeColors) {
       position: 'absolute',
       bottom: 100,
       alignSelf: 'center',
-      backgroundColor: 'rgba(30,27,22,0.92)',
+      // Was a fixed dark bubble with colors.paper text — fine in light mode
+      // (white text on dark bg) but colors.paper flips to black in dark
+      // mode, so it was black-on-near-black there. ink/paper flip together
+      // across the theme so the bubble always contrasts against itself.
+      backgroundColor: colors.ink,
       color: colors.paper,
       paddingHorizontal: 16,
       paddingVertical: 10,

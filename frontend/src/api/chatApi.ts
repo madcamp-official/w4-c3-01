@@ -61,16 +61,17 @@ export async function fetchConversations(currentUserId: string): Promise<Chat[]>
   if (!convRows || convRows.length === 0) return [];
 
   const conversationIds = convRows.map((c) => c.id);
-  const { data: msgRows } = await supabase
-    .from('messages')
-    .select('*')
-    .in('conversation_id', conversationIds)
-    .order('created_at', { ascending: false });
+  const [{ data: msgRows }, { data: readRows }] = await Promise.all([
+    supabase.from('messages').select('*').in('conversation_id', conversationIds).order('created_at', { ascending: false }),
+    supabase.from('conversation_reads').select('conversation_id, last_read_at').eq('user_id', currentUserId).in('conversation_id', conversationIds)
+  ]);
 
   const latestByConversation = new Map<string, MessageRow>();
   (msgRows ?? []).forEach((row) => {
     if (!latestByConversation.has(row.conversation_id)) latestByConversation.set(row.conversation_id, row as MessageRow);
   });
+  const myReadAtByConversation = new Map<string, string>();
+  (readRows ?? []).forEach((row) => myReadAtByConversation.set(row.conversation_id, row.last_read_at));
 
   // 아직 메시지를 한 번도 안 보낸 대화방(채팅하기만 누르고 나간 경우)은 채팅 목록에 안 보이게 걸러냅니다.
   // 최근 메시지 순으로 정렬 — conversations 쿼리 자체엔 정렬이 없어서, 안 해주면 목록 순서가
@@ -89,13 +90,16 @@ export async function fetchConversations(currentUserId: string): Promise<Chat[]>
     const otherId = c.user_a === currentUserId ? c.user_b : c.user_a;
     const profile = profiles.get(otherId);
     const latest = latestByConversation.get(c.id)!;
+    const myReadAt = myReadAtByConversation.get(c.id);
+    const unread = latest.sender_id !== currentUserId && (!myReadAt || new Date(latest.created_at) > new Date(myReadAt));
     return {
       id: c.id,
       name: profile?.nickname ?? '알 수 없음',
       color: profile?.avatar_color ?? '#EAE2C9',
       avatarUrl: profile?.avatar_url ?? null,
       messages: [mapMessage(latest, currentUserId)],
-      otherReadAt: null // 목록에서는 안 씀 — 스레드를 열면 fetchThread가 채워줍니다.
+      otherReadAt: null, // 목록에서는 안 씀 — 스레드를 열면 fetchThread가 채워줍니다.
+      unread
     };
   });
 }
@@ -137,7 +141,8 @@ export async function fetchThread(chatId: string, currentUserId: string): Promis
     color: profile?.avatar_color ?? '#EAE2C9',
     avatarUrl: profile?.avatar_url ?? null,
     messages: (msgRows ?? []).map((row) => mapMessage(row as MessageRow, currentUserId)),
-    otherReadAt: readRow?.last_read_at ?? null
+    otherReadAt: readRow?.last_read_at ?? null,
+    unread: false // 스레드를 여는 것 자체가 읽는 행위라 항상 false — markThreadRead가 뒤이어 호출됩니다.
   };
 }
 
@@ -226,6 +231,29 @@ export async function sendAirMessage(
     .single();
   if (error || !data) throw new Error(error?.message ?? '메시지를 보내지 못했어요');
   return mapMessage(data as MessageRow, currentUserId);
+}
+
+/**
+ * 앱 전역에서 (지금 보고 있는 대화방이 아니어도) 내가 받는 새 메시지가 생기면 알려줍니다 —
+ * 채팅 아이콘의 안읽음 빨간 점용. 특정 대화방으로 필터링하지 않고 messages 테이블 전체를
+ * 구독한 뒤 발신자만 클라이언트에서 걸러냅니다 (Supabase realtime 필터는 IN 리스트를
+ * 지원하지 않아, "내가 속한 대화방들"로 서버 필터링은 못 함). 반환값을 호출하면 구독 해제됩니다.
+ */
+export function subscribeToNewMessages(currentUserId: string, onMessage: () => void): () => void {
+  if (!supabase) return () => {};
+
+  const client = supabase;
+  const channel: RealtimeChannel = client
+    .channel(`messages:inbox:${currentUserId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+      const row = payload.new as MessageRow;
+      if (row.sender_id !== currentUserId) onMessage();
+    })
+    .subscribe();
+
+  return () => {
+    void client.removeChannel(channel);
+  };
 }
 
 /**

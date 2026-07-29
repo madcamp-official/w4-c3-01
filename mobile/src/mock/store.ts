@@ -36,7 +36,9 @@ function buildSeedPosts(): Post[] {
       caption: d.caption,
       liked: false,
       likes: d.likes,
-      comments: [{ user: SEED_USERS[(i + 1) % 3].nickname, text: '완전 예뻐요 ✨' }] as Comment[],
+      comments: [
+        { id: i, authorId: 'seed-user-' + ((i + 1) % 3), user: SEED_USERS[(i + 1) % 3].nickname, text: '완전 예뻐요 ✨' }
+      ] as Comment[],
       mine: false
     };
   });
@@ -51,6 +53,7 @@ function buildSeedChats(): Chat[] {
       color: SEED_USERS[0].color,
       avatarUrl: null,
       otherReadAt: null,
+      unread: false,
       messages: [
         { id: 1, from: 'them', type: 'text', text: '오늘 올린 낙서 완전 좋더라 ㅎㅎ', time: '오후 2:01', createdAt: new Date().toISOString() },
         { id: 2, from: 'me', type: 'text', text: '고마워 ㅋㅋ 손 가는대로 그려봤어', time: '오후 2:03', createdAt: new Date().toISOString() }
@@ -62,6 +65,7 @@ function buildSeedChats(): Chat[] {
       color: SEED_USERS[2].color,
       avatarUrl: null,
       otherReadAt: null,
+      unread: false,
       messages: [
         { id: 1, from: 'them', type: 'air', image: DEFAULT_HEART_URL, strokes: heartMsgStrokes, time: '오전 11:40', createdAt: new Date().toISOString() },
         { id: 2, from: 'them', type: 'text', text: '허공에 써서 보냈어 💌', time: '오전 11:40', createdAt: new Date().toISOString() }
@@ -138,6 +142,14 @@ class MockStore {
     const post = this.posts.find((p) => p.id === postId);
     if (!post) return undefined;
     post.comments = [...post.comments, comment];
+    return post;
+  }
+
+  deleteComment(postId: string, commentId: number): Post | undefined {
+    this.ensureSeeded();
+    const post = this.posts.find((p) => p.id === postId);
+    if (!post) return undefined;
+    post.comments = post.comments.filter((c) => c.id !== commentId);
     return post;
   }
 

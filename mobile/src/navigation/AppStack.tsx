@@ -3,6 +3,7 @@ import MainTabs from '@/navigation/MainTabs';
 import AirwriteScreen from '@/screens/AirwriteScreen';
 import CameraScreen from '@/screens/CameraScreen';
 import ChatListScreen from '@/screens/ChatListScreen';
+import CommentScreen from '@/screens/CommentScreen';
 import ChatThreadScreen from '@/screens/ChatThreadScreen';
 import EditHeartScreen from '@/screens/EditHeartScreen';
 import EditProfileScreen from '@/screens/EditProfileScreen';
@@ -28,6 +29,16 @@ export default function AppStack() {
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
       <Stack.Screen name="FollowList" component={FollowListScreen} />
       <Stack.Screen name="LoungeView" component={LoungeViewScreen} />
+      <Stack.Screen
+        name="Comment"
+        component={CommentScreen}
+        // The screen itself only fades in — sliding the whole transparent
+        // screen (dim backdrop included) up as one unit looked like a solid
+        // black screen rising with the sheet. CommentScreen animates the
+        // backdrop fade and sheet slide separately instead, so only the
+        // sheet visibly moves.
+        options={{ presentation: 'transparentModal', animation: 'fade' }}
+      />
     </Stack.Navigator>
   );
 }

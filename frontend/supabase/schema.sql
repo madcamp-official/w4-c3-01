@@ -320,8 +320,13 @@ create policy "Users can comment as themselves"
   on public.post_comments for insert
   with check (auth.uid() = author_id);
 
+drop policy if exists "Users can delete their own comments" on public.post_comments;
+create policy "Users can delete their own comments"
+  on public.post_comments for delete
+  using (auth.uid() = author_id);
+
 grant select on public.post_comments to anon, authenticated;
-grant insert on public.post_comments to authenticated;
+grant insert, delete on public.post_comments to authenticated;
 
 -- 게시물 이미지를 담을 Storage 버킷. chat-images와 동일한 패턴(공개 조회, 본인 uid 폴더에만 업로드).
 insert into storage.buckets (id, name, public)

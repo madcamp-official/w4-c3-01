@@ -40,6 +40,7 @@ interface AppStateValue {
   sharePost: (input: { image: string; strokes: StrokePoint[]; drawing?: AirDrawingDocument; caption: string }) => Promise<Post>;
   likePost: (postId: string) => Promise<void>;
   commentOnPost: (postId: string, text: string) => Promise<void>;
+  deleteComment: (postId: string, commentId: number) => Promise<void>;
   deletePost: (postId: string) => Promise<void>;
 
   loadChats: () => Promise<void>;
@@ -174,8 +175,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const commentOnPost = useCallback(
     async (postId: string, text: string) => {
       if (!session) return;
-      const comment: Comment = { user: session.nickname, text };
+      // id/authorId here are just placeholders for the mock-store path — the
+      // Supabase path (postsApi.addComment) only reads `.text` off this
+      // object and refetches the real row (with its DB-generated id) right
+      // after inserting.
+      const comment: Comment = { id: Date.now(), authorId: session.id, user: session.nickname, text };
       const updated = await postsApi.addComment(postId, session.id, comment);
+      if (!updated) return;
+      setPosts((prev) => prev.map((p) => (p.id === postId ? updated : p)));
+    },
+    [session]
+  );
+
+  const deleteComment = useCallback(
+    async (postId: string, commentId: number) => {
+      if (!session) return;
+      const updated = await postsApi.deleteComment(postId, commentId, session.id);
       if (!updated) return;
       setPosts((prev) => prev.map((p) => (p.id === postId ? updated : p)));
     },
@@ -266,9 +281,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     async (chatId: string) => {
       if (!session) return;
       await chatApi.markThreadRead(chatId, session.id);
+      setChats((prev) => prev.map((c) => (c.id === chatId ? { ...c, unread: false } : c)));
     },
     [session]
   );
+
+  // App-wide "do I have any unread chats" listener for the chat icon's red
+  // dot — not scoped to whichever thread (if any) is currently open, so it
+  // stays live no matter what screen you're on. Cheapest correct approach is
+  // just re-fetching the conversation list (which recomputes each chat's
+  // unread flag against conversation_reads) rather than hand-patching local
+  // state per incoming message.
+  useEffect(() => {
+    if (!session) return;
+    return chatApi.subscribeToNewMessages(session.id, () => void loadChats());
+  }, [session, loadChats]);
 
   const loadLounges = useCallback(async () => {
     setLounges(await loungeApi.fetchLounges());
@@ -300,6 +327,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       sharePost,
       likePost,
       commentOnPost,
+      deleteComment,
       deletePost,
       loadChats,
       loadThread,
@@ -330,6 +358,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       sharePost,
       likePost,
       commentOnPost,
+      deleteComment,
       deletePost,
       loadChats,
       loadThread,
