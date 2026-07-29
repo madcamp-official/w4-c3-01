@@ -23,8 +23,8 @@ function seededRandom(seed: string) {
   };
 }
 
-/** A rounded-rect outline nudged off the ideal line at each corner/edge point. */
-export function sketchyRoundedRect(width: number, height: number, radius: number, seed: string, wobble = 1.6): string {
+/** A rounded-rect outline — `wobble` defaults to 0 (plain, no hand-drawn jitter) since the v2 design dropped the sketchy look; kept as a param so callers/signatures don't need to change. */
+export function sketchyRoundedRect(width: number, height: number, radius: number, seed: string, wobble = 0): string {
   if (width <= 0 || height <= 0) return ''
   const rand = seededRandom(seed)
   const jitter = () => (rand() - 0.5) * 2 * wobble
@@ -57,8 +57,8 @@ export function sketchyRoundedRect(width: number, height: number, radius: number
   ].join(' ')
 }
 
-/** A single hand-drawn horizontal line (for hr-style top/bottom dividers). */
-export function sketchyHLine(width: number, seed: string, wobble = 1.1): string {
+/** A single horizontal divider line — plain (wobble defaults to 0, see sketchyRoundedRect). */
+export function sketchyHLine(width: number, seed: string, wobble = 0): string {
   if (width <= 0) return ''
   const rand = seededRandom(seed)
   const jitter = () => (rand() - 0.5) * 2 * wobble
@@ -93,9 +93,15 @@ interface EllipseCorner {
   ry: number
 }
 
-function blobCornerRadii(width: number, height: number, variant: BlobVariant): { tl: EllipseCorner; tr: EllipseCorner; br: EllipseCorner; bl: EllipseCorner } {
-  const h = variant === 'a' ? [255, 18, 225, 18] : [225, 18, 255, 18]
-  const v = variant === 'a' ? [18, 225, 18, 255] : [18, 255, 18, 225]
+function blobCornerRadii(width: number, height: number, _variant: BlobVariant): { tl: EllipseCorner; tr: EllipseCorner; br: EllipseCorner; bl: EllipseCorner } {
+  // v2 design dropped the asymmetric "blob" shape for a plain pill — using an
+  // oversized equal radius on every corner and letting the same overlap-scaling
+  // math below shrink it produces an exact pill (min(width,height)/2), the same
+  // way `border-radius: 999px` behaves in CSS. `variant` no longer changes the
+  // outcome (both 'a'/'b' now render identically) but stays in the signature
+  // so call sites don't need to change.
+  const h = [999, 999, 999, 999]
+  const v = [999, 999, 999, 999]
   const topF = width / (h[0] + h[1])
   const rightF = height / (v[1] + v[2])
   const bottomF = width / (h[2] + h[3])
@@ -131,8 +137,8 @@ function makeNoise(seed: string) {
   return (t: number) => waves.reduce((sum, w) => sum + Math.sin(t * w.freq + w.phase) * w.amp, 0) / waves.length
 }
 
-/** The wobbled outline of the blob shape above, as a dense polyline (closed path). */
-export function sketchyBlobRect(width: number, height: number, variant: BlobVariant, seed: string, wobble = 1.4): string {
+/** The outline of the blob (now plain pill) shape above, as a dense polyline (closed path) — plain (wobble defaults to 0, see sketchyRoundedRect). */
+export function sketchyBlobRect(width: number, height: number, variant: BlobVariant, seed: string, wobble = 0): string {
   if (width <= 0 || height <= 0) return ''
   const { tl, tr, br, bl } = blobCornerRadii(width, height, variant)
   const noise = makeNoise(seed)

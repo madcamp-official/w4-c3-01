@@ -16,7 +16,7 @@ import MyScreen from '@/screens/MyScreen';
 import type { AppStackParamList, TabParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
-import { colors } from '@/theme/colors';
+import { useTheme } from '@/state/ThemeContext';
 import type { NavigationProp } from '@react-navigation/native';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -24,6 +24,8 @@ const Tab = createBottomTabNavigator<TabParamList>();
 function TabBar({ state, navigation }: BottomTabBarProps) {
   const { session } = useAppState();
   const { openLogout } = useOverlay();
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors);
   const parentNav = navigation.getParent<NavigationProp<AppStackParamList>>();
 
   const icons: Record<keyof TabParamList, IconName> = {
@@ -62,7 +64,12 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
             onPress={() => (isMy && focused ? openLogout() : navigation.navigate(route.name))}
           >
             {isMy && session?.heartUrl ? (
-              <Image source={{ uri: session.heartUrl }} style={{ width: 22, height: 22 }} resizeMode="contain" />
+              // Dark ink on transparent — tint white in dark mode so it stays visible.
+              <Image
+                source={{ uri: session.heartUrl }}
+                style={{ width: 22, height: 22, tintColor: isDark ? '#fff' : undefined }}
+                resizeMode="contain"
+              />
             ) : (
               <Icon name={icons[route.name as keyof TabParamList]} size={22} color={focused ? colors.ink : colors.muted} />
             )}
@@ -84,24 +91,26 @@ export default function MainTabs() {
   );
 }
 
-const styles = StyleSheet.create({
-  bar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    backgroundColor: colors.paper,
-    paddingTop: 6,
-    position: 'relative'
-  },
-  btn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
-  plusBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 4,
-    marginTop: -14
-  }
-});
+function makeStyles(colors: import('@/theme/colors').ThemeColors) {
+  return StyleSheet.create({
+    bar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-around',
+      backgroundColor: colors.paper,
+      paddingTop: 6,
+      position: 'relative'
+    },
+    btn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
+    plusBtn: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.ink,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginHorizontal: 4,
+      marginTop: -14
+    }
+  });
+}

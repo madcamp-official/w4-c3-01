@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
 import * as followApi from '@/api/followApi';
@@ -12,15 +12,6 @@ export default function MyPage() {
   const { openViewer } = useOverlay();
   const [tab, setTab] = useState<'posts' | 'likes'>('posts');
   const [counts, setCounts] = useState<FollowCounts | null>(null);
-  const [avatarSpin, setAvatarSpin] = useState(false);
-  const spinTimer = useRef<ReturnType<typeof setTimeout>>();
-
-  function handleAvatarClick() {
-    setAvatarSpin(false);
-    requestAnimationFrame(() => setAvatarSpin(true));
-    clearTimeout(spinTimer.current);
-    spinTimer.current = setTimeout(() => setAvatarSpin(false), 900);
-  }
 
   const myPosts = useMemo(() => posts.filter((p) => p.mine), [posts]);
   const likedPosts = useMemo(() => posts.filter((p) => p.liked), [posts]);
@@ -45,23 +36,7 @@ export default function MyPage() {
         마이페이지
       </div>
       <div className="profile-card">
-        <button className="avatar-pressable" onClick={handleAvatarClick} aria-label="프로필 사진">
-          <Avatar nickname={session.nickname} color={session.avatarColor} size={54} fontSize={20} avatarUrl={session.avatarUrl} />
-          {avatarSpin ? (
-            <svg width={64} height={64} viewBox="0 0 64 64" className="avatar-ring" style={{ top: -5, left: -5 }}>
-              <circle
-                cx={32}
-                cy={32}
-                r={29}
-                fill="none"
-                stroke="var(--accent)"
-                strokeWidth={2.4}
-                strokeDasharray={340}
-                style={{ animation: 'sketchDraw 0.9s ease forwards' }}
-              />
-            </svg>
-          ) : null}
-        </button>
+        <Avatar nickname={session.nickname} color={session.avatarColor} size={61} fontSize={20} avatarUrl={session.avatarUrl} outline />
         <div className="profile-names">
           <b>{session.nickname}</b>
           <span>{session.username ? '@' + session.username : 'ALine에서 손글씨로 이야기해요'}</span>

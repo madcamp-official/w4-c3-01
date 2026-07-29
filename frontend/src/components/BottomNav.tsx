@@ -27,7 +27,7 @@ export default function BottomNav({ heartUrl }: { heartUrl: string | null }) {
               onClick={() => (active === 'mypage' ? openLogout() : navigate(item.path))}
             >
               {heartUrl ? (
-                <img src={heartUrl} className="icon-sk" style={{ width: 21, height: 21, objectFit: 'contain' }} alt="" />
+                <img src={heartUrl} className="icon-sk heart-doodle" style={{ width: 21, height: 21, objectFit: 'contain' }} alt="" />
               ) : (
                 <Icon name={item.icon} />
               )}

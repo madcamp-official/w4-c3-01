@@ -11,14 +11,18 @@ import * as userApi from '@/api/userApi';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
-import { colors, radius } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { useTheme } from '@/state/ThemeContext';
+import { radius } from '@/theme/colors';
+import { buildCommon } from '@/theme/common';
 import type { UserSummary } from '@/types';
 
 export default function SearchScreen() {
   const navigation = useNavigation();
   const { posts, session } = useAppState();
   const { openViewer } = useOverlay();
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
+  const styles = makeStyles(colors);
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<UserSummary[]>([]);
 
@@ -45,7 +49,7 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView style={common.screen} edges={['top']}>
-      <Text style={[common.title, { marginBottom: 10 }]}>검색</Text>
+      <Text style={[common.title, { fontSize: 26, fontWeight: '800', marginBottom: 14 }]}>검색</Text>
       <View style={styles.searchRow}>
         <Sketchy
           shape="blob"
@@ -57,6 +61,7 @@ export default function SearchScreen() {
           seed="search-box"
           style={styles.searchBox}
         >
+          <Icon name="search" size={16} color={colors.inkSoft} />
           <TextInput
             style={styles.searchInput}
             placeholder="아이디 또는 닉네임으로 검색"
@@ -87,14 +92,14 @@ export default function SearchScreen() {
                       style={styles.userRow}
                       onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('UserProfile', { userId: u.id })}
                     >
-                      <Avatar nickname={u.nickname} color={u.avatarColor} size={36} fontSize={14} avatarUrl={u.avatarUrl} />
+                      <Avatar nickname={u.nickname} color={u.avatarColor} size={40} fontSize={14} avatarUrl={u.avatarUrl} />
                       <Text style={styles.userName}>{u.nickname}</Text>
                     </Pressable>
                   ))}
                 </>
               ) : null}
-              <Text style={[styles.sectionH, { marginTop: 14 }]}>게시물</Text>
-              {results.length === 0 ? <Text style={common.subtitle}>검색 결과가 없어요</Text> : null}
+              <Text style={[styles.sectionH, { marginTop: 16 }]}>게시물</Text>
+              {results.length === 0 ? <Text style={[common.subtitle, { marginBottom: 0 }]}>검색 결과가 없어요</Text> : null}
             </>
           }
           renderItem={({ item }) => (
@@ -111,13 +116,15 @@ export default function SearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  searchBox: { flex: 1, height: 48, justifyContent: 'center', paddingHorizontal: 16 },
-  searchInput: { paddingVertical: 10, fontSize: 14, color: colors.ink },
-  searchSubmitBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  sectionH: { fontSize: 13, fontWeight: '700', color: colors.ink, marginBottom: 6 },
-  userRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
-  userName: { fontSize: 14, fontWeight: '700', color: colors.ink },
-  cell: { flex: 1 / 3, aspectRatio: 1, margin: 2, backgroundColor: colors.paper2, borderRadius: radius.md, overflow: 'hidden' }
-});
+function makeStyles(colors: import('@/theme/colors').ThemeColors) {
+  return StyleSheet.create({
+    searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+    searchBox: { flex: 1, height: 48, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16 },
+    searchInput: { flex: 1, paddingVertical: 10, fontSize: 14, color: colors.ink },
+    searchSubmitBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+    sectionH: { fontSize: 13, fontWeight: '700', color: colors.inkSoft, marginBottom: 10 },
+    userRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
+    userName: { fontSize: 14, fontWeight: '600', color: colors.ink },
+    cell: { flex: 1 / 3, aspectRatio: 1, margin: 2, backgroundColor: colors.paper2, borderRadius: radius.md, overflow: 'hidden' }
+  });
+}

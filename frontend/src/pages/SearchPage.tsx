@@ -37,7 +37,7 @@ export default function SearchPage() {
 
   return (
     <section className="screen active" id="screen-search">
-      <div className="logo" style={{ fontSize: 19, padding: '0 12px 10px 0' }}>
+      <div className="logo" style={{ fontSize: 26, padding: '0 12px 14px 0' }}>
         검색
       </div>
       <div className="search-box">
@@ -83,7 +83,9 @@ export default function SearchPage() {
               ))}
             </div>
           ) : (
-            <div className="empty-note">검색 결과가 없어요</div>
+            <div className="empty-note" style={{ textAlign: 'left', padding: 0 }}>
+              검색 결과가 없어요
+            </div>
           )}
         </div>
       ) : null}

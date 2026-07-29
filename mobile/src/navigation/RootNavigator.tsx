@@ -6,10 +6,11 @@ import AppStack from '@/navigation/AppStack';
 import AuthStack from '@/navigation/AuthStack';
 import CompleteProfileScreen from '@/screens/CompleteProfileScreen';
 import { useAppState } from '@/state/AppStateContext';
-import { colors } from '@/theme/colors';
+import { useTheme } from '@/state/ThemeContext';
 
 export default function RootNavigator() {
   const { session, sessionLoading, loadFeed, loadChats, loadLounges } = useAppState();
+  const { colors } = useTheme();
   const bootstrapped = useRef(false);
 
   useEffect(() => {

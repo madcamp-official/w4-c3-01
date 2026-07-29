@@ -15,8 +15,32 @@ import RootNavigator from '@/navigation/RootNavigator';
 import { AppStateProvider } from '@/state/AppStateContext';
 import { OverlayProvider } from '@/state/OverlayContext';
 import { PlacementProvider } from '@/state/PlacementContext';
+import { ThemeProvider, useTheme } from '@/state/ThemeContext';
 import { ToastProvider } from '@/state/ToastContext';
 import { colors } from '@/theme/colors';
+
+function AppContent() {
+  const { isDark } = useTheme();
+  return (
+    <ToastProvider>
+      <AppStateProvider>
+        <OverlayProvider>
+          <PlacementProvider>
+            <NavigationContainer linking={linking}>
+              <RootNavigator />
+            </NavigationContainer>
+            <ViewerOverlay />
+            <CommentSheet />
+            <ShareSheet />
+            <LogoutSheet />
+            <Toast />
+          </PlacementProvider>
+        </OverlayProvider>
+      </AppStateProvider>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+    </ToastProvider>
+  );
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -37,23 +61,9 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ToastProvider>
-          <AppStateProvider>
-            <OverlayProvider>
-              <PlacementProvider>
-                <NavigationContainer linking={linking}>
-                  <RootNavigator />
-                </NavigationContainer>
-                <ViewerOverlay />
-                <CommentSheet />
-                <ShareSheet />
-                <LogoutSheet />
-                <Toast />
-              </PlacementProvider>
-            </OverlayProvider>
-          </AppStateProvider>
-        </ToastProvider>
-        <StatusBar style="dark" />
+        <ThemeProvider>
+          <AppContent />
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

@@ -8,14 +8,16 @@ import SketchyInput from '@/components/SketchyInput';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
+import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
-import { colors } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { buildCommon } from '@/theme/common';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
   const { loginUser, loginWithGoogle } = useAppState();
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
   const { showToast } = useToast();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -48,7 +50,7 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
-      <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
+      <Pressable style={{ width: 36, height: 36, justifyContent: 'center', marginBottom: 12 }} onPress={() => navigation.goBack()}>
         <Icon name="chevron-left" size={24} color={colors.ink} />
       </Pressable>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}>

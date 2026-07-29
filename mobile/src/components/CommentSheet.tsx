@@ -8,11 +8,14 @@ import Sketchy from '@/components/Sketchy';
 import SketchyInput from '@/components/SketchyInput';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
-import { colors, radius } from '@/theme/colors';
+import { useTheme } from '@/state/ThemeContext';
+import { radius } from '@/theme/colors';
 
 export default function CommentSheet() {
   const { commentPostId, closeComments } = useOverlay();
   const { posts, commentOnPost } = useAppState();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [text, setText] = useState('');
 
   const post = commentPostId ? posts.find((p) => p.id === commentPostId) : undefined;
@@ -63,13 +66,15 @@ export default function CommentSheet() {
   );
 }
 
-const styles = StyleSheet.create({
-  sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 24 },
-  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, alignSelf: 'center', marginBottom: 10 },
-  title: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: 10 },
-  empty: { fontSize: 13, color: colors.inkSoft, paddingVertical: 20, textAlign: 'center' },
-  commentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 6 },
-  commentText: { flex: 1, fontSize: 13, color: colors.ink },
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
-  sendBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' }
-});
+function makeStyles(colors: import('@/theme/colors').ThemeColors) {
+  return StyleSheet.create({
+    sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 24 },
+    handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, alignSelf: 'center', marginBottom: 10 },
+    title: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: 10 },
+    empty: { fontSize: 13, color: colors.inkSoft, paddingVertical: 20, textAlign: 'center' },
+    commentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 6 },
+    commentText: { flex: 1, fontSize: 13, color: colors.ink },
+    inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+    sendBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' }
+  });
+}

@@ -73,7 +73,15 @@ export async function fetchConversations(currentUserId: string): Promise<Chat[]>
   });
 
   // 아직 메시지를 한 번도 안 보낸 대화방(채팅하기만 누르고 나간 경우)은 채팅 목록에 안 보이게 걸러냅니다.
-  const startedConvRows = convRows.filter((c) => latestByConversation.has(c.id));
+  // 최근 메시지 순으로 정렬 — conversations 쿼리 자체엔 정렬이 없어서, 안 해주면 목록 순서가
+  // 매번 바뀌어 보이는(가장 최근 채팅이 위에 안 오는) 문제가 있었습니다.
+  const startedConvRows = convRows
+    .filter((c) => latestByConversation.has(c.id))
+    .sort((a, b) => {
+      const at = new Date(latestByConversation.get(a.id)!.created_at).getTime();
+      const bt = new Date(latestByConversation.get(b.id)!.created_at).getTime();
+      return bt - at;
+    });
   const otherIds = startedConvRows.map((c) => (c.user_a === currentUserId ? c.user_b : c.user_a));
   const profiles = await fetchProfilesByIds(otherIds);
 

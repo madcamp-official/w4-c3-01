@@ -4,11 +4,14 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import BottomSheetModal from '@/components/BottomSheetModal';
 import Icon from '@/components/Icon';
 import { useOverlay } from '@/state/OverlayContext';
+import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
-import { colors, radius } from '@/theme/colors';
+import { radius } from '@/theme/colors';
 
 export default function ShareSheet() {
   const { sharePostId, closeShare } = useOverlay();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const { showToast } = useToast();
   const open = Boolean(sharePostId);
 
@@ -38,10 +41,12 @@ export default function ShareSheet() {
   );
 }
 
-const styles = StyleSheet.create({
-  sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 28 },
-  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, alignSelf: 'center', marginBottom: 10 },
-  title: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: 10 },
-  option: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
-  optionText: { fontSize: 14, color: colors.ink }
-});
+function makeStyles(colors: import('@/theme/colors').ThemeColors) {
+  return StyleSheet.create({
+    sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 28 },
+    handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, alignSelf: 'center', marginBottom: 10 },
+    title: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: 10 },
+    option: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
+    optionText: { fontSize: 14, color: colors.ink }
+  });
+}

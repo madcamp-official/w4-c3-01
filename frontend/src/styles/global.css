@@ -1,22 +1,36 @@
 :root {
-  /* Palette matches 4주차/week4/ALine Prototype.dc.html (the approved new design). */
-  --ink: #221f1a;
-  --ink-soft: #8a8272;
+  /* Palette matches week4_1/ALine.dc.html (v2 design — minimal black/white/red,
+     replaces the earlier hand-drawn cream palette). Dark mode overrides below. */
+  --ink: #000000;
+  --ink-soft: #8e8e8e;
   --paper: #ffffff;
-  --paper-2: #f4efe2;
-  --paper-3: #f4efe2;
-  --line: #c9b48a;
-  --muted: #b7ac91;
-  --accent: #b3382e;
-  --danger: #b3382e;
+  --paper-2: #f5f5f5;
+  --paper-3: #f5f5f5;
+  --border: #dbdbdb;
+  --line: #dbdbdb;
+  --muted: #8e8e8e;
+  --accent: #b23b2e;
+  --danger: #b23b2e;
   --radius-pill: 999px;
   --radius-md: 16px;
-  --radius-lg: 22px;
-  /* "Blob" corner shape from the prototype — .btn/input.sk use blob-a by
-     default; add a `blob-b` class on the second of a neighboring pair for
-     the hand-drawn shape variety the prototype alternates between. */
-  --blob-a: 255px 18px 225px 18px / 18px 225px 18px 255px;
-  --blob-b: 225px 18px 255px 18px / 18px 255px 18px 225px;
+  --radius-lg: 18px;
+  /* No longer an asymmetric "blob" shape — both now resolve to a plain pill.
+     Kept as two variables (rather than deleting `.blob-b` call sites) since
+     that class is applied throughout the app to alternate neighboring
+     fields/buttons; today it's a harmless no-op. */
+  --blob-a: 999px;
+  --blob-b: 999px;
+}
+
+:root[data-theme='dark'] {
+  --ink: #ffffff;
+  --ink-soft: #8e8e8e;
+  --paper: #000000;
+  --paper-2: #141414;
+  --paper-3: #141414;
+  --border: #333333;
+  --line: #333333;
+  --muted: #8e8e8e;
 }
 
 * {
@@ -63,24 +77,11 @@ svg.defs {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border: 1.6px solid var(--ink);
+  border: 1.4px solid var(--border);
   pointer-events: none;
 }
-.sk::before {
-  filter: url(#sketchyA);
-}
-.sk2::before {
-  filter: url(#sketchyB);
-}
 .btn.ghost::before {
-  border-color: var(--line);
-  border-width: 2px;
-}
-.icon-sk {
-  filter: url(#sketchyA);
-}
-.icon-sk2 {
-  filter: url(#sketchyB);
+  border-color: var(--border);
 }
 
 /* ---------- app shell (mobile web: always full-bleed, no desktop device-mockup frame) ---------- */
@@ -100,7 +101,7 @@ svg.defs {
   justify-content: space-between;
   align-items: center;
   padding: 13px 26px 6px;
-  font-family: 'Gaegu', cursive;
+  font-family: 'Noto Sans KR', sans-serif;
   font-weight: 700;
   font-size: 14px;
   flex-shrink: 0;
@@ -123,21 +124,22 @@ svg.defs {
 
 /* ---------- typography ---------- */
 .logo {
-  font-family: 'Gaegu', cursive;
-  font-weight: 700;
-  font-size: 27px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.5px;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 6px;
 }
 .logo .dot {
-  width: 7px;
-  height: 7px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  border: 1.6px solid var(--ink);
+  background: var(--accent);
 }
 .screen-title {
-  font-family: 'Gaegu', cursive;
+  font-family: 'Noto Sans KR', sans-serif;
   font-weight: 700;
   font-size: 23px;
   text-align: center;
@@ -163,7 +165,7 @@ h2.section-h {
 .btn {
   position: relative;
   font-family: 'Noto Sans KR';
-  font-weight: 800;
+  font-weight: 700;
   font-size: 13.5px;
   letter-spacing: 0.2px;
   border: none;
@@ -172,28 +174,23 @@ h2.section-h {
   background: var(--paper);
   color: var(--ink);
   cursor: pointer;
-  box-shadow: 1.5px 2px 0 rgba(34, 31, 26, 0.12);
-  transition:
-    transform 0.1s,
-    box-shadow 0.1s;
+  transition: transform 0.1s;
 }
 .btn.blob-b {
   border-radius: var(--blob-b);
-  box-shadow: -1.5px 2px 0 rgba(34, 31, 26, 0.12);
 }
 .btn:active {
   transform: translateY(1.5px);
-  box-shadow: 0 0.5px 0 rgba(34, 31, 26, 0.08);
 }
 .btn.primary {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--accent);
+  color: #fff;
 }
 .btn.primary::before {
-  border-color: var(--paper);
+  content: none;
 }
 .btn.ghost {
-  border: 2px solid var(--line);
+  border: 1.4px solid var(--border);
 }
 .btn:disabled {
   opacity: 0.45;
@@ -255,11 +252,14 @@ h2.section-h {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Gaegu', cursive;
+  font-family: 'Noto Sans KR', sans-serif;
   font-weight: 700;
   background: var(--paper-2);
   flex-shrink: 0;
   position: relative;
+}
+.avatar-outline::before {
+  border: 2px solid var(--ink);
 }
 
 /* ---------- fields ---------- */
@@ -268,10 +268,10 @@ h2.section-h {
 }
 .field label {
   display: block;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--ink-soft);
   margin-bottom: 6px;
-  font-weight: 700;
+  font-weight: 400;
 }
 .sk-hr-b {
   position: relative;
@@ -283,8 +283,7 @@ h2.section-h {
   right: 0;
   bottom: 0;
   height: 0;
-  border-bottom: 1.6px solid var(--line);
-  filter: url(#sketchyA);
+  border-bottom: 1.4px solid var(--border);
   pointer-events: none;
 }
 .sk-hr-t {
@@ -297,8 +296,7 @@ h2.section-h {
   right: 0;
   top: 0;
   height: 0;
-  border-top: 1.6px solid var(--line);
-  filter: url(#sketchyA);
+  border-top: 1.4px solid var(--border);
   pointer-events: none;
 }
 input[type='text'],
@@ -316,15 +314,12 @@ input[type='password'] {
 }
 input[type='text'].sk,
 input[type='password'].sk {
-  border: 2px solid var(--line) !important;
+  border: 1.4px solid var(--border) !important;
   border-radius: var(--blob-a);
-  box-shadow: 1.5px 2px 0 rgba(34, 31, 26, 0.12);
-  filter: url(#sketchyLight);
 }
 input[type='text'].sk.blob-b,
 input[type='password'].sk.blob-b {
   border-radius: var(--blob-b);
-  box-shadow: -1.5px 2px 0 rgba(34, 31, 26, 0.12);
 }
 input[type='text'].sk::before,
 input[type='password'].sk::before {
@@ -377,7 +372,7 @@ input[type='password'].sk::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Gaegu', cursive;
+  font-family: 'Noto Sans KR', sans-serif;
   font-weight: 700;
 }
 .avatar-pick.selected::before {
@@ -437,40 +432,127 @@ input[type='password'].sk::before {
 }
 
 /* ---------- dual-mode home feed (matches the design prototype) ---------- */
-.feed-strip {
-  flex: 1;
+.feed-dots {
   display: flex;
+  gap: 6px;
+  justify-content: center;
+  padding: 2px 0 10px;
+  flex-shrink: 0;
+}
+.feed-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--muted);
+  background: transparent;
+}
+.feed-dot.active {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.story-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 14px 4px 0;
+}
+.story-frame {
   position: relative;
+  width: 350px;
+  height: 350px;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+.story-peek {
+  position: absolute;
+  inset: 8px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transform: scale(0.94) translateY(10px);
+  opacity: 0.55;
+  background: var(--paper-2);
+}
+.story-peek img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.story-card {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--paper-2);
+  border: 1.5px solid var(--border);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
   touch-action: none;
   user-select: none;
-  /* .screen has a fixed padding-left; escape it so pages are truly edge-to-edge. */
-  margin-left: -14px;
-  width: calc(100% + 14px);
+  cursor: grab;
 }
-.feed-page {
-  flex: 0 0 100%;
-  display: flex;
-  flex-direction: column;
+.story-card-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
   height: 100%;
-  min-width: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.story-card-topbar {
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+.story-card-stats {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #fff;
+  font-size: 12px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.story-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-shadow: inherit;
+  cursor: pointer;
+}
+.story-like {
+  padding: 0;
+}
+.story-like .heart-icon {
+  width: 18px;
+  height: 18px;
 }
 .feed-swipe-hint {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 78px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  padding: 8px 0 4px;
   color: var(--ink-soft);
   font-size: 11px;
   cursor: pointer;
-  animation: bounceUp 1.6s ease-in-out infinite;
-  pointer-events: none;
+  flex-shrink: 0;
 }
 .feed-swipe-hint button {
-  pointer-events: auto;
   background: none;
   border: none;
   color: inherit;
@@ -480,6 +562,7 @@ input[type='password'].sk::before {
   align-items: center;
   gap: 2px;
   cursor: pointer;
+  animation: bounceUp 1.6s ease-in-out infinite;
 }
 @keyframes bounceUp {
   0%,
@@ -489,25 +572,6 @@ input[type='password'].sk::before {
   50% {
     transform: translateY(-6px);
   }
-}
-@keyframes sketchDraw {
-  from {
-    stroke-dashoffset: 340;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-.avatar-pressable {
-  position: relative;
-  cursor: pointer;
-  border: none;
-  background: none;
-  padding: 0;
-}
-.avatar-ring {
-  position: absolute;
-  pointer-events: none;
 }
 .post-vertical {
   border-bottom: 1px solid var(--paper-2);
@@ -590,6 +654,11 @@ input[type='password'].sk::before {
 .like-btn.pop .heart-icon {
   animation: heartpop 0.4s ease;
 }
+/* The heart doodle is always drawn in dark ink on a transparent background —
+   invisible on a dark background, so flip it to light ink in dark mode. */
+:root[data-theme='dark'] .heart-doodle {
+  filter: invert(1);
+}
 @keyframes heartpop {
   0% {
     transform: scale(1);
@@ -659,7 +728,7 @@ input[type='password'].sk::before {
 }
 .search-box input {
   padding: 12px 13px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
 }
 #search-submit-btn {
   background: var(--ink);
@@ -694,12 +763,12 @@ input[type='password'].sk::before {
   font-family: 'Noto Sans KR';
 }
 .user-row .avatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   font-size: 14px;
 }
 .user-row b {
-  font-size: 13px;
+  font-size: 14px;
 }
 .grid3 {
   display: grid;
@@ -957,24 +1026,22 @@ input[type='password'].sk::before {
 }
 .bubble {
   max-width: 68%;
-  padding: 9px 13px;
-  border-radius: var(--blob-b);
-  font-size: 13px;
+  padding: 9px 14px;
+  border-radius: 18px;
+  font-size: 14px;
   line-height: 1.45;
-  background: #fff;
-  border: 2px solid var(--line);
-  box-shadow: -1.5px 2px 0 rgba(34, 31, 26, 0.12);
+  background: var(--paper);
+  border: 1.4px solid var(--ink);
   position: relative;
 }
 .msg-row.me .bubble {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--accent);
+  color: #fff;
   border: none;
-  border-radius: var(--blob-a);
-  box-shadow: 1.5px 2px 0 rgba(34, 31, 26, 0.12);
+  border-radius: var(--radius-pill);
 }
 .msg-row.me .bubble::before {
-  border-color: var(--paper);
+  content: none;
 }
 .air-message-image {
   width: 160px;
@@ -1025,6 +1092,20 @@ input[type='password'].sk::before {
   width: 16px;
   height: 16px;
 }
+/* bare, unwrapped icon button (no circle/background) — used where the mockup
+   shows a plain stroked icon with no button chrome, e.g. the chat thread's
+   input row */
+.icon-bare {
+  border: none;
+  background: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: var(--ink);
+}
 
 /* ---------- mypage ---------- */
 .profile-card {
@@ -1034,8 +1115,8 @@ input[type='password'].sk::before {
   padding: 6px 14px 14px 0;
 }
 .profile-card .avatar {
-  width: 54px;
-  height: 54px;
+  width: 61px;
+  height: 61px;
   font-size: 20px;
   flex-shrink: 0;
 }
@@ -1082,6 +1163,10 @@ input[type='password'].sk::before {
   display: flex;
   gap: 8px;
 }
+.profile-actions .btn.ghost,
+.profile-actions .btn.ghost::before {
+  border-color: var(--ink);
+}
 .tabbar {
   display: flex;
   flex-shrink: 0;
@@ -1101,18 +1186,17 @@ input[type='password'].sk::before {
   position: relative;
 }
 .tabbar button.active {
-  color: var(--ink);
+  color: var(--accent);
   border-color: transparent;
 }
 .tabbar button.active::after {
   content: '';
   position: absolute;
-  left: 10px;
-  right: 10px;
+  left: 20%;
+  right: 20%;
   bottom: -1.5px;
-  height: 0;
-  border-bottom: 2.5px solid var(--ink);
-  filter: url(#sketchyA);
+  height: 2px;
+  background: var(--accent);
   pointer-events: none;
 }
 .mypage-body {
@@ -1195,7 +1279,6 @@ input[type='password'].sk::before {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: url(#sketchyA);
 }
 .sticker.ghost {
   opacity: 0.55;
@@ -1250,7 +1333,7 @@ input[type='password'].sk::before {
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(251, 248, 239, 0.98);
+  background: var(--paper);
   z-index: 20;
   display: none;
   flex-direction: column;

@@ -7,14 +7,17 @@ import AirDrawingWebView, { type AirDrawingCapture } from '@/components/AirDrawi
 import SketchyButton from '@/components/SketchyButton';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
+import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
-import { colors, radius } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { radius } from '@/theme/colors';
+import { buildCommon } from '@/theme/common';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'EditHeart'>;
 
 export default function EditHeartScreen({ navigation }: Props) {
   const { setHeart } = useAppState();
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
   const { showToast } = useToast();
   const [preview, setPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);

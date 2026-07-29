@@ -10,21 +10,20 @@ import {
   type ViewStyle,
 } from 'react-native';
 import Sketchy from '@/components/Sketchy';
-import { colors } from '@/theme/colors';
+import { useTheme } from '@/state/ThemeContext';
 import type { BlobVariant } from '@/lib/sketchyPath';
 
 type Props = TextInputProps & { blobVariant?: BlobVariant };
 
 const SketchyInput = forwardRef<TextInput, Props>(function SketchyInput({ style, blobVariant = 'a', ...props }, ref) {
-  const shadowDx = blobVariant === 'a' ? 1.5 : -1.5;
+  const { colors } = useTheme();
   return (
     <Sketchy
       shape="blob"
       variant={blobVariant}
-      color={colors.line}
-      fill="#fff"
-      shadow={{ dx: shadowDx, dy: 2 }}
-      strokeWidth={2}
+      color={colors.border}
+      fill={colors.paper}
+      strokeWidth={1.4}
       seed={`input-${blobVariant}`}
       style={[
         props.multiline ? undefined : { justifyContent: 'center' },

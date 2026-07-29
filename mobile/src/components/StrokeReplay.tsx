@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Svg, { Path } from 'react-native-svg';
 import type { StrokePoint } from '@/types';
-import { colors } from '@/theme/colors';
+import { useTheme } from '@/state/ThemeContext';
 
 function strokesToPath(strokes: StrokePoint[], count: number, w: number, h: number, sourceAspect: number): string {
   // Strokes are normalized 0..1 against the *original* capture canvas, which
@@ -59,6 +59,7 @@ export default function StrokeReplay({
   strokeWidth = 5,
   onDone
 }: StrokeReplayProps) {
+  const { colors } = useTheme();
   const [count, setCount] = useState(0);
   const startRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);

@@ -4,7 +4,6 @@ import BottomNav from '@/components/BottomNav';
 import CommentSheet from '@/components/CommentSheet';
 import LogoutSheet from '@/components/LogoutSheet';
 import ShareSheet from '@/components/ShareSheet';
-import SketchyDefs from '@/components/SketchyDefs';
 import Toast from '@/components/Toast';
 import ViewerOverlay from '@/components/ViewerOverlay';
 import { useAppState } from '@/state/AppStateContext';
@@ -18,7 +17,6 @@ export default function AppShell() {
 
   return (
     <div className="book" id="book">
-      <SketchyDefs />
       <Outlet />
       {showNav ? <BottomNav heartUrl={session?.heartUrl ?? null} /> : null}
       <ViewerOverlay />

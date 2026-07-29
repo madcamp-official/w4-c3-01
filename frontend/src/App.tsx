@@ -5,6 +5,7 @@ import PublicOnlyLayout from '@/components/PublicOnlyLayout';
 import { AppStateProvider } from '@/state/AppStateContext';
 import { OverlayProvider } from '@/state/OverlayContext';
 import { PlacementProvider } from '@/state/PlacementContext';
+import { ThemeProvider } from '@/state/ThemeContext';
 import { ToastProvider } from '@/state/ToastContext';
 
 import LandingPage from '@/pages/LandingPage';
@@ -28,42 +29,44 @@ import ArLoungePage from '@/pages/ArLoungePage';
 
 export default function App() {
   return (
-    <ToastProvider>
-      <AppStateProvider>
-        <OverlayProvider>
-          <PlacementProvider>
-            <HashRouter>
-              <Routes>
-                <Route path="/ar-lounge/:loungeId" element={<ArLoungePage />} />
-                <Route element={<AppShell />}>
-                  <Route element={<PublicOnlyLayout />}>
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/signup" element={<OnboardingPage />} />
-                  </Route>
+    <ThemeProvider>
+      <ToastProvider>
+        <AppStateProvider>
+          <OverlayProvider>
+            <PlacementProvider>
+              <HashRouter>
+                <Routes>
+                  <Route path="/ar-lounge/:loungeId" element={<ArLoungePage />} />
+                  <Route element={<AppShell />}>
+                    <Route element={<PublicOnlyLayout />}>
+                      <Route path="/" element={<LandingPage />} />
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route path="/signup" element={<OnboardingPage />} />
+                    </Route>
 
-                  <Route element={<ProtectedLayout />}>
-                    <Route path="/complete-profile" element={<CompleteProfilePage />} />
-                    <Route path="/feed" element={<FeedPage />} />
-                    <Route path="/search" element={<SearchPage />} />
-                    <Route path="/camera" element={<CameraPage />} />
-                    <Route path="/preview" element={<PreviewPage />} />
-                    <Route path="/chats" element={<ChatListPage />} />
-                    <Route path="/chats/:chatId" element={<ChatThreadPage />} />
-                    <Route path="/chats/:chatId/airwrite" element={<AirwritePage />} />
-                    <Route path="/mypage" element={<MyPage />} />
-                    <Route path="/mypage/heart" element={<EditHeartPage />} />
-                    <Route path="/mypage/edit" element={<EditProfilePage />} />
-                    <Route path="/users/:userId" element={<UserProfilePage />} />
-                    <Route path="/lounges" element={<LoungeListPage />} />
-                    <Route path="/lounges/:loungeId" element={<LoungeViewPage />} />
+                    <Route element={<ProtectedLayout />}>
+                      <Route path="/complete-profile" element={<CompleteProfilePage />} />
+                      <Route path="/feed" element={<FeedPage />} />
+                      <Route path="/search" element={<SearchPage />} />
+                      <Route path="/camera" element={<CameraPage />} />
+                      <Route path="/preview" element={<PreviewPage />} />
+                      <Route path="/chats" element={<ChatListPage />} />
+                      <Route path="/chats/:chatId" element={<ChatThreadPage />} />
+                      <Route path="/chats/:chatId/airwrite" element={<AirwritePage />} />
+                      <Route path="/mypage" element={<MyPage />} />
+                      <Route path="/mypage/heart" element={<EditHeartPage />} />
+                      <Route path="/mypage/edit" element={<EditProfilePage />} />
+                      <Route path="/users/:userId" element={<UserProfilePage />} />
+                      <Route path="/lounges" element={<LoungeListPage />} />
+                      <Route path="/lounges/:loungeId" element={<LoungeViewPage />} />
+                    </Route>
                   </Route>
-                </Route>
-              </Routes>
-            </HashRouter>
-          </PlacementProvider>
-        </OverlayProvider>
-      </AppStateProvider>
-    </ToastProvider>
+                </Routes>
+              </HashRouter>
+            </PlacementProvider>
+          </OverlayProvider>
+        </AppStateProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }

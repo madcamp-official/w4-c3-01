@@ -10,14 +10,16 @@ import SketchyInput from '@/components/SketchyInput';
 import { useUsernameCheck, usernameStatusMessage, type UsernameStatus } from '@/hooks/useUsernameCheck';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
+import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
-import { colors } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { buildCommon } from '@/theme/common';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'EditProfile'>;
 
 export default function EditProfileScreen({ navigation }: Props) {
   const { session, setAvatar, updateProfile } = useAppState();
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
   const { showToast } = useToast();
 
   const [dataUrl, setDataUrl] = useState<string | null>(session?.avatarUrl ?? null);
@@ -28,7 +30,7 @@ export default function EditProfileScreen({ navigation }: Props) {
   const usernameChanged = username.trim() !== session?.username;
   const liveStatus = useUsernameCheck(usernameChanged ? username : '', session?.id);
   const usernameStatus: UsernameStatus = usernameChanged ? liveStatus : 'available';
-  const usernameHint = usernameChanged ? usernameStatusMessage(usernameStatus) : null;
+  const usernameHint = usernameChanged ? usernameStatusMessage(usernameStatus, colors) : null;
 
   if (!session) return null;
 
@@ -60,11 +62,11 @@ export default function EditProfileScreen({ navigation }: Props) {
         <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
           <Icon name="chevron-left" size={24} color={colors.ink} />
         </Pressable>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: colors.ink }}>프로필 수정</Text>
+        <Text style={{ fontSize: 17, fontWeight: '800', color: colors.ink }}>프로필 수정</Text>
         <View style={{ width: 36 }} />
       </View>
       <ScrollView contentContainerStyle={{ paddingTop: 14, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
-        <View style={{ alignItems: 'center', marginBottom: 20 }}>
+        <View style={{ alignItems: 'center', marginBottom: 24 }}>
           <AvatarPicker dataUrl={dataUrl} nickname={session.nickname} color={session.avatarColor} size={100} onChange={setDataUrl} />
         </View>
         <View style={common.field}>
@@ -72,7 +74,7 @@ export default function EditProfileScreen({ navigation }: Props) {
           <SketchyInput blobVariant="a" value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
           {usernameHint ? <Text style={[common.hint, { color: usernameHint.color }]}>{usernameHint.text}</Text> : null}
         </View>
-        <View style={common.field}>
+        <View style={[common.field, { marginBottom: 24 }]}>
           <Text style={common.label}>이름</Text>
           <SketchyInput blobVariant="b" maxLength={16} value={nickname} onChangeText={setNickname} />
         </View>

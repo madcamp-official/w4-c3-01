@@ -4,12 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import SketchyButton from '@/components/SketchyButton';
 import type { AuthStackParamList } from '@/navigation/types';
-import { colors } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { useTheme } from '@/state/ThemeContext';
+import { buildCommon } from '@/theme/common';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Landing'>;
 
 export default function LandingScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
+  const styles = makeStyles(colors);
   return (
     <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
       <View style={styles.spacer} />
@@ -20,7 +23,7 @@ export default function LandingScreen({ navigation }: Props) {
         </View>
         <Text style={styles.sub}>손으로 그리고, 허공에 쓰는{'\n'}당신만의 SNS</Text>
       </View>
-      <View style={{ gap: 10 }}>
+      <View style={{ gap: 12 }}>
         <SketchyButton variant="primary" blobVariant="a" onPress={() => navigation.navigate('Login')}>
           <Text style={common.btnPrimaryText}>로그인</Text>
         </SketchyButton>
@@ -33,10 +36,12 @@ export default function LandingScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  spacer: { flex: 1 },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.danger },
-  logo: { fontSize: 36, fontWeight: '800', color: colors.ink },
-  sub: { fontSize: 14, color: colors.inkSoft, textAlign: 'center', lineHeight: 21, marginBottom: 34 }
-});
+function makeStyles(colors: import('@/theme/colors').ThemeColors) {
+  return StyleSheet.create({
+    spacer: { flex: 1 },
+    logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+    dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.danger },
+    logo: { fontSize: 34, fontWeight: '800', color: colors.ink },
+    sub: { fontSize: 14, color: colors.inkSoft, textAlign: 'center', lineHeight: 21, marginBottom: 34 }
+  });
+}

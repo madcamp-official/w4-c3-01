@@ -4,7 +4,7 @@
 import { useCallback, useState } from 'react';
 import { View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
-import { colors } from '@/theme/colors';
+import { useTheme } from '@/state/ThemeContext';
 import { sketchyHLine } from '@/lib/sketchyPath';
 
 // See Sketchy.tsx for why the canvas needs padding — RNSVG hard-clips at its
@@ -18,7 +18,9 @@ type Props = {
   seed?: string;
 };
 
-export default function SketchyLine({ color = colors.line, strokeWidth = 1.6, style, seed = 'hr' }: Props) {
+export default function SketchyLine({ color, strokeWidth = 1.6, style, seed = 'hr' }: Props) {
+  const { colors } = useTheme();
+  const lineColor = color ?? colors.border;
   const [width, setWidth] = useState(0);
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
@@ -36,7 +38,7 @@ export default function SketchyLine({ color = colors.line, strokeWidth = 1.6, st
           pointerEvents="none"
         >
           <G transform={`translate(${PAD} ${PAD + 3})`}>
-            <Path d={sketchyHLine(width, seed)} stroke={color} strokeWidth={strokeWidth} fill="none" strokeLinecap="round" />
+            <Path d={sketchyHLine(width, seed)} stroke={lineColor} strokeWidth={strokeWidth} fill="none" strokeLinecap="round" />
           </G>
         </Svg>
       ) : null}

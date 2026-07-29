@@ -7,15 +7,18 @@ import SketchyButton from '@/components/SketchyButton';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
+import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
-import { colors, radius } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { radius } from '@/theme/colors';
+import { buildCommon } from '@/theme/common';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Airwrite'>;
 
 export default function AirwriteScreen({ navigation, route }: Props) {
   const { chatId } = route.params;
   const { sendAir } = useAppState();
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
   const { showToast } = useToast();
   const [preview, setPreview] = useState<AirDrawingCapture | null>(null);
   const [sending, setSending] = useState(false);

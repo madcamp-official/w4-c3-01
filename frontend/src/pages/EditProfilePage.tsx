@@ -58,7 +58,7 @@ export default function EditProfilePage() {
       </div>
       <div className="onb-step active" style={{ padding: '20px 14px', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 24px' }}>
-          <AvatarPicker dataUrl={dataUrl} nickname={session.nickname} color={session.avatarColor} size={100} onChange={setDataUrl} />
+          <AvatarPicker dataUrl={dataUrl} nickname={session.nickname} color={session.avatarColor} size={96} onChange={setDataUrl} outline />
         </div>
         <div className="field">
           <label>아이디</label>

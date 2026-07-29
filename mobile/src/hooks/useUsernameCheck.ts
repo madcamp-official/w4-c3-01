@@ -1,7 +1,7 @@
 // Ported from frontend/src/hooks/useUsernameCheck.ts — keep in sync (CSS var colors -> hex).
 import { useEffect, useState } from 'react';
 import * as userApi from '@/api/userApi';
-import { colors } from '@/theme/colors';
+import type { ThemeColors } from '@/theme/colors';
 
 export type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
 
@@ -44,7 +44,7 @@ export function useUsernameCheck(username: string, excludeUserId?: string): User
   return status;
 }
 
-export function usernameStatusMessage(status: UsernameStatus): { text: string; color: string } | null {
+export function usernameStatusMessage(status: UsernameStatus, colors: ThemeColors): { text: string; color: string } | null {
   switch (status) {
     case 'checking':
       return null;

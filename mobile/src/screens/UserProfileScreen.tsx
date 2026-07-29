@@ -12,9 +12,9 @@ import * as userApi from '@/api/userApi';
 import type { FollowCounts } from '@/api/followApi';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
+import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
-import { colors } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { buildCommon } from '@/theme/common';
 import type { UserSummary } from '@/types';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'UserProfile'>;
@@ -22,6 +22,8 @@ type Props = NativeStackScreenProps<AppStackParamList, 'UserProfile'>;
 export default function UserProfileScreen({ navigation, route }: Props) {
   const { userId } = route.params;
   const { session, posts, startConversationWith } = useAppState();
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
   const { showToast } = useToast();
 
   const [profile, setProfile] = useState<UserSummary | null>(null);

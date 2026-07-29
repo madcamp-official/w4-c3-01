@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
 import Icon from '@/components/Icon';
@@ -23,8 +23,16 @@ export default function ChatThreadPage() {
   const { openViewerForMessage } = useOverlay();
   const { showToast } = useToast();
   const [text, setText] = useState('');
+  const bodyRef = useRef<HTMLDivElement | null>(null);
 
   const chat = getChat(chatId);
+
+  // Instantly shows the latest message (no smooth-scroll animation) whenever
+  // the thread first loads or grows — matches the mobile app's behavior.
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [chat?.messages.length]);
 
   useEffect(() => {
     void loadThread(chatId);
@@ -85,7 +93,7 @@ export default function ChatThreadPage() {
         <Avatar nickname={chat.name} color={chat.color} size={30} fontSize={12} avatarUrl={chat.avatarUrl} />
         <b>{chat.name}</b>
       </div>
-      <div className="thread-body">
+      <div className="thread-body" ref={bodyRef}>
         {chat.messages.map((m, i) => {
           const showDateDivider = i === 0 || !isSameDay(chat.messages[i - 1].createdAt, m.createdAt);
           return (
@@ -116,7 +124,7 @@ export default function ChatThreadPage() {
         })}
       </div>
       <div className="thread-input">
-        <button className="round-icon sk" onClick={() => navigate(`/chats/${chatId}/airwrite`)} aria-label="에어라이팅 메시지">
+        <button className="icon-bare" onClick={() => navigate(`/chats/${chatId}/airwrite`)} aria-label="에어라이팅 메시지">
           <Icon name="edit-2" size={18} />
         </button>
         <input
@@ -127,8 +135,8 @@ export default function ChatThreadPage() {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
         />
-        <button className="round-icon send sk" onClick={handleSend} aria-label="전송">
-          <Icon name="send" size={18} />
+        <button className="icon-bare" onClick={handleSend} aria-label="전송">
+          <Icon name="send" size={20} />
         </button>
       </div>
     </section>

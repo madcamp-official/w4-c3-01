@@ -4,12 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@/components/Icon';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '@/navigation/types';
-import { colors } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { useTheme } from '@/state/ThemeContext';
+import { buildCommon } from '@/theme/common';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'LoungeView'>;
 
 export default function LoungeViewScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
   return (
     <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
       <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>

@@ -4,14 +4,18 @@ import BottomSheetModal from '@/components/BottomSheetModal';
 import SketchyButton from '@/components/SketchyButton';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
+import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
-import { colors, radius } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { radius } from '@/theme/colors';
+import { buildCommon } from '@/theme/common';
 
 export default function LogoutSheet() {
   const { logoutOpen, closeLogout } = useOverlay();
   const { logoutUser } = useAppState();
   const { showToast } = useToast();
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
+  const styles = makeStyles(colors);
 
   function handleLogout() {
     closeLogout();
@@ -33,8 +37,10 @@ export default function LogoutSheet() {
   );
 }
 
-const styles = StyleSheet.create({
-  sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 28 },
-  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, alignSelf: 'center', marginBottom: 10 },
-  title: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: 10 }
-});
+function makeStyles(colors: import('@/theme/colors').ThemeColors) {
+  return StyleSheet.create({
+    sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 16, paddingBottom: 28 },
+    handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, alignSelf: 'center', marginBottom: 10 },
+    title: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: 10 }
+  });
+}

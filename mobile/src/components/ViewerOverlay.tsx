@@ -7,8 +7,8 @@ import SketchyButton from '@/components/SketchyButton';
 import StrokeReplay from '@/components/StrokeReplay';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
-import { colors } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { useTheme } from '@/state/ThemeContext';
+import { buildCommon } from '@/theme/common';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MEDIA_SIZE = SCREEN_WIDTH - 40;
@@ -16,6 +16,9 @@ const MEDIA_SIZE = SCREEN_WIDTH - 40;
 export default function ViewerOverlay() {
   const { viewer, closeViewer } = useOverlay();
   const { posts, deletePost } = useAppState();
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
+  const styles = makeStyles(colors);
   const [replayKey, setReplayKey] = useState(0);
   const [replaying, setReplaying] = useState(false);
   const [sourceAspect, setSourceAspect] = useState(1);
@@ -61,7 +64,9 @@ export default function ViewerOverlay() {
       <View style={styles.overlay}>
         <View style={styles.top}>
           <Pressable style={styles.iconBtn} onPress={closeViewer}>
-            <Icon name="x" size={22} color={colors.paper} />
+            {/* Fixed white, not colors.paper — this overlay's backdrop is
+                always near-black regardless of app theme (see styles.overlay). */}
+            <Icon name="x" size={22} color="#fff" />
           </Pressable>
         </View>
         <View style={[styles.media, { width: MEDIA_SIZE, height: MEDIA_SIZE }]}>
@@ -95,11 +100,13 @@ export default function ViewerOverlay() {
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(20,17,12,0.94)', alignItems: 'center', paddingTop: 50 },
-  top: { width: '100%', paddingHorizontal: 16, flexDirection: 'row' },
-  iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  media: { marginTop: 16, borderRadius: 18, overflow: 'hidden', backgroundColor: colors.paper2 },
-  bottom: { width: MEDIA_SIZE, marginTop: 20 },
-  caption: { color: colors.paper, fontSize: 14, marginBottom: 14, textAlign: 'center' }
-});
+function makeStyles(colors: import('@/theme/colors').ThemeColors) {
+  return StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: 'rgba(20,17,12,0.94)', alignItems: 'center', paddingTop: 50 },
+    top: { width: '100%', paddingHorizontal: 16, flexDirection: 'row' },
+    iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+    media: { marginTop: 16, borderRadius: 18, overflow: 'hidden', backgroundColor: colors.paper2 },
+    bottom: { width: MEDIA_SIZE, marginTop: 20 },
+    caption: { color: '#fff', fontSize: 14, marginBottom: 14, textAlign: 'center' }
+  });
+}

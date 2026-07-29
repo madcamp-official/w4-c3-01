@@ -9,13 +9,16 @@ import SketchyInput from '@/components/SketchyInput';
 import { useUsernameCheck, usernameStatusMessage, type UsernameStatus } from '@/hooks/useUsernameCheck';
 import { defaultHeartUrl } from '@/mock/store';
 import { useAppState } from '@/state/AppStateContext';
+import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
-import { colors, radius } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { radius } from '@/theme/colors';
+import { buildCommon } from '@/theme/common';
 
 /** Google 등 OAuth로 처음 로그인한 사람이 아이디를 확인하고 프로필을 완성하는 필수 1회 화면. */
 export default function CompleteProfileScreen() {
   const { session, setAvatar, setHeart, updateProfile } = useAppState();
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
   const { showToast } = useToast();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -28,7 +31,7 @@ export default function CompleteProfileScreen() {
   const usernameChanged = username.trim() !== session?.username;
   const liveStatus = useUsernameCheck(usernameChanged ? username : '', session?.id);
   const usernameStatus: UsernameStatus = usernameChanged ? liveStatus : 'available';
-  const usernameHint = usernameChanged ? usernameStatusMessage(usernameStatus) : null;
+  const usernameHint = usernameChanged ? usernameStatusMessage(usernameStatus, colors) : null;
 
   if (!session) return null;
 

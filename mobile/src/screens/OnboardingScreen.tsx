@@ -12,15 +12,16 @@ import { useUsernameCheck, usernameStatusMessage } from '@/hooks/useUsernameChec
 import { AVATAR_TONES, defaultHeartUrl } from '@/mock/store';
 import type { AuthStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
+import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
-import { colors, radius } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { radius, type ThemeColors } from '@/theme/colors';
+import { buildCommon } from '@/theme/common';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Onboarding'>;
 
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,12}$/;
 
-function passwordHint(password: string): { text: string; color: string } | null {
+function passwordHint(password: string, colors: ThemeColors): { text: string; color: string } | null {
   if (!password) return null;
   if (PASSWORD_RULE.test(password)) return { text: '사용할 수 있는 비밀번호예요', color: colors.inkSoft };
   return { text: '8~12자, 영문·숫자·특수문자를 모두 포함해주세요', color: colors.danger };
@@ -28,6 +29,8 @@ function passwordHint(password: string): { text: string; color: string } | null 
 
 export default function OnboardingScreen({ navigation }: Props) {
   const { signupUser, loginWithGoogle } = useAppState();
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
   const { showToast } = useToast();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -37,8 +40,8 @@ export default function OnboardingScreen({ navigation }: Props) {
   const [submitting, setSubmitting] = useState(false);
 
   const usernameStatus = useUsernameCheck(form.username);
-  const usernameHint = usernameStatusMessage(usernameStatus);
-  const pwHint = passwordHint(form.password);
+  const usernameHint = usernameStatusMessage(usernameStatus, colors);
+  const pwHint = passwordHint(form.password, colors);
   const passwordValid = PASSWORD_RULE.test(form.password);
 
   const step1Filled = Object.values(form).every((v) => v.trim().length > 0);
@@ -133,7 +136,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
-      <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={handleBack}>
+      <Pressable style={{ width: 36, height: 36, justifyContent: 'center', marginBottom: step === 1 ? 8 : 0 }} onPress={handleBack}>
         <Icon name="chevron-left" size={24} color={colors.ink} />
       </Pressable>
 

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
+import Icon from '@/components/Icon';
 import { useAppState } from '@/state/AppStateContext';
 
 export default function ChatListPage() {
@@ -14,8 +15,13 @@ export default function ChatListPage() {
 
   return (
     <section className="screen active" id="screen-chatlist">
-      <div className="logo" style={{ fontSize: 19, padding: '0 14px 10px 0' }}>
-        채팅
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 14px 10px 0' }}>
+        <button className="icon-btn sk" onClick={() => navigate('/feed')} aria-label="뒤로">
+          <Icon name="chevron-left" size={20} strokeWidth={2.2} />
+        </button>
+        <div className="logo" style={{ fontSize: 20 }}>
+          채팅
+        </div>
       </div>
       <div className="chat-list">
         {chats.map((chat) => {

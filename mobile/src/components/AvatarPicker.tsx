@@ -4,8 +4,8 @@ import Icon from '@/components/Icon';
 import Avatar from '@/components/Avatar';
 import Sketchy from '@/components/Sketchy';
 import { pickAvatarDataUrl } from '@/lib/imagePicker';
+import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
-import { colors } from '@/theme/colors';
 
 interface AvatarPickerProps {
   dataUrl: string | null;
@@ -16,6 +16,7 @@ interface AvatarPickerProps {
 }
 
 export default function AvatarPicker({ dataUrl, nickname, color, size = 96, onChange }: AvatarPickerProps) {
+  const { colors } = useTheme();
   const { showToast } = useToast();
 
   async function handlePress() {

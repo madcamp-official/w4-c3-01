@@ -1,28 +1,39 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Avatar from '@/components/Avatar';
 import Icon from '@/components/Icon';
+import LikeButton from '@/components/LikeButton';
 import PostCard from '@/components/PostCard';
 import { useAppState } from '@/state/AppStateContext';
+import { useOverlay } from '@/state/OverlayContext';
+import { useTheme } from '@/state/ThemeContext';
+import { useToast } from '@/state/ToastContext';
 
 const SWIPE_THRESHOLD = 70;
-const SWIPE_UP_THRESHOLD = 60;
+const EXIT_MS = 260;
 
-/** Dual-mode home feed matching 4주차/week4/ALine Prototype.dc.html: "horizontal"
- * is one full-bleed post per page, dragged forward-only (once you've moved on
- * to the next post you can't drag back to a previous one — the prototype's
- * `if (dx > 0) dx = 0` clamp, kept as-is here); a clear upward swipe switches
- * to "vertical", a compact scrolling list. There's no way back to horizontal
- * mode from vertical — removed by request.
- * Manual pointer-drag (not CSS scroll-snap) because scroll-snap can't be
- * made one-directional and doesn't compose cleanly with a separate
- * vertical-swipe gesture on the same element. */
+/** Dual-mode home feed matching week4_1/ALine.dc.html: "card" mode shows one
+ * floating story-style card (with the next post peeking out from behind),
+ * dragged forward-only (dragging "back" past center is heavily damped —
+ * matches the prototype's `if (dx > 0) dx *= 0.2`) with a fling-off exit
+ * animation when released past threshold; a clear upward swipe switches to
+ * "list", a compact scrolling list. There's no way back to card mode from
+ * list — removed by request. */
 export default function FeedPage() {
   const navigate = useNavigate();
-  const { posts, loadFeed } = useAppState();
-  const [mode, setMode] = useState<'horizontal' | 'vertical'>('horizontal');
+  const { posts, loadFeed, startConversationWith, sendText } = useAppState();
+  const { openComments } = useOverlay();
+  const { isDark, toggleTheme } = useTheme();
+  const { showToast } = useToast();
+  const [mode, setMode] = useState<'card' | 'list'>('card');
   const [idx, setIdx] = useState(0);
-  const [dragDx, setDragDx] = useState(0);
+  const [dragX, setDragX] = useState(0);
+  const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [exiting, setExiting] = useState(false);
+  const [snapping, setSnapping] = useState(false);
+  const [messageDraft, setMessageDraft] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
   const start = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -31,10 +42,50 @@ export default function FeedPage() {
   }, []);
 
   useEffect(() => {
-    if (mode === 'horizontal') setIdx(0);
+    if (mode === 'card') setIdx(0);
   }, [mode]);
 
+  useEffect(() => {
+    setMessageDraft('');
+  }, [idx]);
+
+  // After advancing to the next post, the reset-to-center transform lands in
+  // the SAME render as the new post's content, but the transition below is
+  // still enabled — without suppressing it for exactly one paint, the new
+  // post would visibly slide in from the outgoing card's fly-off position
+  // instead of just appearing already centered. Cleared on the next frame so
+  // ordinary drag-release springs keep animating normally.
+  useEffect(() => {
+    if (!snapping) return;
+    const raf = requestAnimationFrame(() => setSnapping(false));
+    return () => cancelAnimationFrame(raf);
+  }, [snapping]);
+
+  const currentPost = posts[idx];
+  const peekPost = idx + 1 < posts.length ? posts[idx + 1] : null;
+
+  async function handleSendMessage() {
+    const text = messageDraft.trim();
+    if (!text || !currentPost || sendingMessage) return;
+    setSendingMessage(true);
+    try {
+      const chatId = await startConversationWith(currentPost.authorId);
+      if (!chatId) {
+        showToast('채팅을 시작하지 못했어요');
+        return;
+      }
+      await sendText(chatId, text);
+      setMessageDraft('');
+      showToast('메시지를 보냈어요');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '메시지를 보내지 못했어요');
+    } finally {
+      setSendingMessage(false);
+    }
+  }
+
   function handlePointerDown(e: React.PointerEvent) {
+    if (exiting) return;
     start.current = { x: e.clientX, y: e.clientY };
     setDragging(true);
   }
@@ -42,27 +93,43 @@ export default function FeedPage() {
   function handlePointerMove(e: React.PointerEvent) {
     if (!start.current) return;
     let dx = e.clientX - start.current.x;
-    if (dx > 0) dx = 0; // forward-only — dragging "back" never moves the strip
-    if (idx >= posts.length - 1) dx = 0;
-    setDragDx(dx);
+    const dy = e.clientY - start.current.y;
+    if (dx > 0) dx *= 0.2; // dragging "back" resists instead of hard-stopping
+    setDragX(dx);
+    setDragY(dy);
   }
 
-  function handlePointerUp(e: React.PointerEvent) {
+  function handlePointerUp() {
     if (!start.current) return;
-    const dx = dragDx;
-    const dy = e.clientY - start.current.y;
     start.current = null;
     setDragging(false);
-    if (Math.abs(dy) > Math.abs(dx) && dy < -SWIPE_UP_THRESHOLD) {
-      setDragDx(0);
-      setMode('vertical');
+    if (dragY < -SWIPE_THRESHOLD && Math.abs(dragY) > Math.abs(dragX)) {
+      setDragX(0);
+      setDragY(0);
+      setMode('list');
       return;
     }
-    if (dx < -SWIPE_THRESHOLD && idx < posts.length - 1) {
-      setIdx((i) => i + 1);
+    if (dragX < -(SWIPE_THRESHOLD + 20) && idx < posts.length - 1) {
+      setExiting(true);
+      setTimeout(() => {
+        setIdx((i) => Math.min(i + 1, posts.length - 1));
+        setExiting(false);
+        setDragX(0);
+        setDragY(0);
+        setSnapping(true);
+      }, EXIT_MS);
+      return;
     }
-    setDragDx(0);
+    setDragX(0);
+    setDragY(0);
   }
+
+  const rot = Math.max(-18, Math.min(6, dragX / 14));
+  const cardStyle: CSSProperties = {
+    transform: `translate(${exiting ? -560 : dragX}px, ${exiting ? 40 : dragY * 0.15}px) rotate(${exiting ? -16 : rot}deg)`,
+    transition: dragging || snapping ? 'none' : 'transform 300ms cubic-bezier(.22,.9,.35,1), opacity 300ms',
+    opacity: exiting ? 0 : 1
+  };
 
   return (
     <section className="screen active" id="screen-feed">
@@ -71,38 +138,99 @@ export default function FeedPage() {
           <span className="dot" />
           ALine
         </div>
-        <button className="icon-btn sk" onClick={() => navigate('/chats')}>
-          <Icon name="send" size={20} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button className="icon-btn" onClick={toggleTheme} aria-label="테마 전환">
+            <Icon name={isDark ? 'sun' : 'moon'} size={19} className="" />
+          </button>
+          <button className="icon-btn sk" onClick={() => navigate('/chats')}>
+            <Icon name="send" size={20} />
+          </button>
+        </div>
       </div>
-      {mode === 'horizontal' ? (
+      {mode === 'card' ? (
         <>
-          <div
-            className="feed-strip"
-            style={{
-              transform: `translateX(calc(-${idx * 100}% + ${dragDx}px))`,
-              transition: dragging ? 'none' : 'transform 0.3s cubic-bezier(.2,.8,.3,1)'
-            }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-          >
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} variant="horizontal" />
-            ))}
+          {posts.length ? (
+            <div className="feed-dots">
+              {posts.map((post, i) => (
+                <span key={post.id} className={i <= idx ? 'feed-dot active' : 'feed-dot'} />
+              ))}
+            </div>
+          ) : null}
+          <div className="story-stage">
+            <div className="story-frame">
+              {peekPost ? (
+                <div className="story-peek">
+                  <img src={peekPost.image} alt="" />
+                </div>
+              ) : null}
+              {currentPost ? (
+                <div
+                  className="story-card"
+                  style={cardStyle}
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerUp}
+                >
+                  <img className="story-card-img" src={currentPost.image} alt="" />
+                  <div className="story-card-topbar">
+                    <Avatar nickname={currentPost.username} color={currentPost.avatarColor} size={30} fontSize={12} avatarUrl={currentPost.avatarUrl} />
+                    <span>
+                      {currentPost.username} · {currentPost.time}
+                    </span>
+                  </div>
+                  <div className="story-card-stats">
+                    <span className="story-stat">
+                      <LikeButton post={currentPost} className="story-like" />
+                      {currentPost.likes}
+                    </span>
+                    <button
+                      className="story-stat story-comment"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openComments(currentPost.id);
+                      }}
+                    >
+                      <Icon name="message-circle" size={16} className="" />
+                      {currentPost.comments.length}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
           <div className="feed-swipe-hint">
-            <button onClick={() => setMode('vertical')} aria-label="세로 피드로 보기">
+            <button onClick={() => setMode('list')} aria-label="세로 피드로 보기">
               <Icon name="chevron-left" size={18} className="" style={{ transform: 'rotate(90deg)' }} />
-              위로 스와이프하면 피드 보기
+              위로 밀어 피드 보기 · 옆으로 밀어 다음 이야기
             </button>
           </div>
+          {currentPost ? (
+            <div className="thread-input" style={{ padding: '8px 0 4px' }}>
+              <input
+                type="text"
+                className="sk"
+                value={messageDraft}
+                onChange={(e) => setMessageDraft(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                placeholder={`${currentPost.username}에게 메시지 보내기...`}
+              />
+              <button
+                className="round-icon send sk"
+                onClick={handleSendMessage}
+                disabled={sendingMessage || !messageDraft.trim()}
+                aria-label="메시지 보내기"
+              >
+                <Icon name="send" size={17} />
+              </button>
+            </div>
+          ) : null}
         </>
       ) : (
         <div className="feed-list">
           {posts.map((post) => (
-            <PostCard key={post.id} post={post} variant="vertical" />
+            <PostCard key={post.id} post={post} />
           ))}
         </div>
       )}

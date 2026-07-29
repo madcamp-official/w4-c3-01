@@ -6,8 +6,8 @@ export default function LandingPage() {
     <section className="screen active" id="screen-landing">
       <div className="onb-spacer" />
       <div style={{ textAlign: 'center', padding: '0 26px' }}>
-        <div className="logo" style={{ fontSize: 36, justifyContent: 'center', marginBottom: 12 }}>
-          <span className="dot" />
+        <div className="logo" style={{ fontSize: 34, justifyContent: 'center', gap: 8, marginBottom: 12 }}>
+          <span className="dot" style={{ width: 12, height: 12 }} />
           ALine
         </div>
         <p className="screen-sub" style={{ margin: '0 6px 34px' }}>

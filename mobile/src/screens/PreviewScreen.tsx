@@ -9,9 +9,10 @@ import SketchyInput from '@/components/SketchyInput';
 import type { AppStackParamList } from '@/navigation/types';
 import { usePlacement } from '@/state/PlacementContext';
 import { useAppState } from '@/state/AppStateContext';
+import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
-import { colors, radius } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { radius } from '@/theme/colors';
+import { buildCommon } from '@/theme/common';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Preview'>;
 
@@ -19,6 +20,8 @@ export default function PreviewScreen({ navigation, route }: Props) {
   const { image, strokes, drawing, intent } = route.params;
   const { sharePost } = useAppState();
   const { startPlacing } = usePlacement();
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
   const { showToast } = useToast();
   const [caption, setCaption] = useState('');
   const [sharing, setSharing] = useState(false);

@@ -11,9 +11,10 @@ import SketchyLine from '@/components/SketchyLine';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
+import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
-import { colors, radius } from '@/theme/colors';
-import { common } from '@/theme/common';
+import { radius } from '@/theme/colors';
+import { buildCommon } from '@/theme/common';
 import type { ChatMessage } from '@/types';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ChatThread'>;
@@ -32,6 +33,8 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
   const { chatId } = route.params;
   const { loadThread, sendText, getChat, subscribeToThread, markThreadRead } = useAppState();
   const { openViewerForMessage } = useOverlay();
+  const { colors } = useTheme();
+  const common = buildCommon(colors);
   const { showToast } = useToast();
   const [text, setText] = useState('');
   const listRef = useRef<FlatList<ChatMessage>>(null);
@@ -90,20 +93,22 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
     const mine = m.from === 'me';
     return (
       <View>
-        {showDateDivider ? <Text style={{ textAlign: 'center', fontSize: 11, color: colors.inkSoft, marginVertical: 10 }}>{formatDateDivider(m.createdAt)}</Text> : null}
-        <View style={{ alignItems: mine ? 'flex-end' : 'flex-start', paddingHorizontal: 12, marginBottom: 6 }}>
+        {showDateDivider ? <Text style={{ textAlign: 'center', fontSize: 11, color: colors.inkSoft, marginVertical: 6 }}>{formatDateDivider(m.createdAt)}</Text> : null}
+        <View style={{ alignItems: mine ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
           {m.type === 'text' ? (
             <Sketchy
               shape="blob"
               variant={mine ? 'a' : 'b'}
-              color={mine ? colors.paper : colors.line}
-              fill={mine ? colors.ink : '#fff'}
-              shadow={{ dx: mine ? 1.5 : -1.5, dy: 2 }}
-              strokeWidth={2}
+              color={mine ? 'transparent' : colors.border}
+              fill={mine ? colors.accent : colors.paper}
+              strokeWidth={1.4}
               seed={`bubble-${m.id}`}
               style={bubbleStyle}
             >
-              <Text style={{ color: mine ? colors.paper : colors.ink, fontSize: 14 }}>{m.text}</Text>
+              {/* Mine bubble is always accent red, so its text stays fixed
+                  white regardless of theme (not colors.paper, which flips to
+                  black in dark mode and would vanish on the red fill). */}
+              <Text style={{ color: mine ? '#fff' : colors.ink, fontSize: 14 }}>{m.text}</Text>
             </Sketchy>
           ) : (
             <Pressable onPress={() => openViewerForMessage(m)}>
@@ -122,12 +127,12 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
   return (
     <SafeAreaView style={common.screen} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={8}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 }}>
           <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
             <Icon name="chevron-left" size={24} color={colors.ink} />
           </Pressable>
-          <Avatar nickname={chat.name} color={chat.color} size={30} fontSize={12} avatarUrl={chat.avatarUrl} />
-          <Text style={{ fontWeight: '700', color: colors.ink, fontSize: 15 }}>{chat.name}</Text>
+          <Avatar nickname={chat.name} color={chat.color} size={34} fontSize={12} avatarUrl={chat.avatarUrl} />
+          <Text style={{ fontWeight: '800', color: colors.ink, fontSize: 15 }}>{chat.name}</Text>
         </View>
         <SketchyLine seed="chat-thread-header" />
 
@@ -137,12 +142,12 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
           keyExtractor={(m) => String(m.id)}
           renderItem={renderItem}
           contentContainerStyle={{ paddingVertical: 10 }}
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
         />
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 }}>
           <Pressable onPress={() => navigation.navigate('Airwrite', { chatId })} accessibilityLabel="에어라이팅 메시지">
-            <Sketchy radius={20} color={colors.line} strokeWidth={2} seed="chat-round-edit" style={roundIconStyle}>
+            <Sketchy radius={20} color={colors.line} strokeWidth={2} seed="chat-round-edit" style={[roundIconStyle, { backgroundColor: colors.paper }]}>
               <Icon name="edit-2" size={18} color={colors.ink} />
             </Sketchy>
           </Pressable>
@@ -155,7 +160,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
           />
           <Pressable onPress={handleSend} accessibilityLabel="전송">
             <Sketchy radius={20} color={colors.paper} seed="chat-round-send" style={[roundIconStyle, { backgroundColor: colors.ink, borderWidth: 0 }]}>
-              <Icon name="send" size={18} color={colors.paper} />
+              <Icon name="send" size={20} color={colors.paper} />
             </Sketchy>
           </Pressable>
         </View>
@@ -164,13 +169,12 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
   );
 }
 
-const bubbleStyle = { maxWidth: '78%' as const, paddingHorizontal: 12, paddingVertical: 8 };
+const bubbleStyle = { maxWidth: '78%' as const, paddingHorizontal: 14, paddingVertical: 9 };
 const airImageStyle = { width: 160, height: 160, borderRadius: radius.md };
 const roundIconStyle = {
   width: 40,
   height: 40,
   borderRadius: 20,
-  backgroundColor: '#fff',
   alignItems: 'center' as const,
   justifyContent: 'center' as const
 };

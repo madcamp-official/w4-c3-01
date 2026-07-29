@@ -27,6 +27,11 @@ import type {
   SpatialStrokePoint,
 } from '@/features/lounge/spatialTypes';
 import { useAppState } from '@/state/AppStateContext';
+// Deliberately static, not useTheme() — this is a fullscreen AR camera
+// passthrough (like AirDrawingWebView.tsx): the dark screen backdrop and the
+// light glass control panels overlaid on the live camera feed are fixed for
+// legibility against an unpredictable camera image, independent of the app's
+// light/dark toggle.
 import { colors } from '@/theme/colors';
 
 const LOUNGE_ID = 'lounge-cafe-01';

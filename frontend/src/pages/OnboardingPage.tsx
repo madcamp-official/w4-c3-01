@@ -106,8 +106,12 @@ export default function OnboardingPage() {
       </div>
 
       <div className={'onb-step' + (step === 1 ? ' active' : '')}>
-        <div className="screen-title">반가워요 👋</div>
-        <p className="screen-sub">ALine에서 활동할 계정을 만들어주세요</p>
+        <div className="screen-title" style={{ textAlign: 'left', fontWeight: 800, margin: '2px 0 8px' }}>
+          반가워요 👋
+        </div>
+        <p className="screen-sub" style={{ textAlign: 'left', margin: '0 0 16px' }}>
+          ALine에서 활동할 계정을 만들어주세요
+        </p>
         <div className="field">
           <label>아이디</label>
           <input

@@ -47,8 +47,12 @@ export default function LoginPage() {
         <div style={{ width: 36 }} />
       </div>
       <div className="onb-step active" style={{ padding: '6px 14px 20px 0', overflowY: 'auto' }}>
-        <div className="screen-title">다시 만나서 반가워요</div>
-        <p className="screen-sub">아이디 또는 이메일과 비밀번호를 입력해주세요</p>
+        <div className="screen-title" style={{ textAlign: 'left', fontWeight: 800, margin: '2px 0 8px' }}>
+          다시 만나서 반가워요
+        </div>
+        <p className="screen-sub" style={{ textAlign: 'left', margin: '0 0 20px' }}>
+          아이디 또는 이메일과 비밀번호를 입력해주세요
+        </p>
         <div className="field">
           <label>아이디 또는 이메일</label>
           <input type="text" className="sk" value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
