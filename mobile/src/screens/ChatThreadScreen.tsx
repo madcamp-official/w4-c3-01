@@ -34,7 +34,7 @@ function formatDateDivider(iso: string): string {
 export default function ChatThreadScreen({ navigation, route }: Props) {
   const { chatId } = route.params;
   const { loadThread, sendText, getChat, subscribeToThread, markThreadRead } = useAppState();
-  const { openViewerForMessage } = useOverlay();
+  const { openViewer, openViewerForMessage } = useOverlay();
   const { colors } = useTheme();
   const common = buildCommon(colors);
   const bottomInset = useBottomInset();
@@ -149,6 +149,32 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
                   black in dark mode and would vanish on the red fill). */}
               <Text style={{ color: mine ? '#fff' : colors.ink, fontSize: 14 }}>{m.text}</Text>
             </Sketchy>
+          ) : m.type === 'post' ? (
+            <Pressable
+              style={{ width: 160, borderRadius: radius.md, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, backgroundColor: colors.paper }}
+              onPress={() => {
+                // Goes to the real post page (live caption, likes/comments,
+                // "본인 글이면 삭제하기") — falls back to the message's own
+                // send-time snapshot only if the original post is gone
+                // (post_id is set null on delete, so there's nowhere to go).
+                if (m.postId) {
+                  navigation.navigate('PostDetail', { postId: m.postId });
+                } else {
+                  openViewer({ image: m.image ?? '', caption: m.text ?? '' });
+                }
+              }}
+            >
+              <View>
+                <Image source={{ uri: m.image }} style={{ width: 160, height: 160 }} resizeMode="cover" resizeMethod="resize" />
+                <View style={{ position: 'absolute', top: 6, left: 6, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(20,17,12,0.55)', borderRadius: radius.pill, paddingHorizontal: 7, paddingVertical: 3 }}>
+                  <Icon name="send" size={10} color="#fff" />
+                  <Text style={{ fontSize: 10, color: '#fff', fontWeight: '600' }}>게시물</Text>
+                </View>
+              </View>
+              <Text style={{ fontSize: 12, color: colors.ink, padding: 8, maxWidth: 160 }} numberOfLines={2}>
+                {m.text || '게시물 보기'}
+              </Text>
+            </Pressable>
           ) : (
             <Pressable onPress={() => openViewerForMessage(m)}>
               {/* Air-write captures are saved large (up to 960px, for the

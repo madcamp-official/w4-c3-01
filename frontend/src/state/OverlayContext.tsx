@@ -5,8 +5,6 @@ interface ViewerPayload {
   image: string;
   caption: string;
   strokes?: StrokePoint[];
-  /** 게시물을 보여줄 때만 넘겨줍니다 — 있으면 본인 글일 때 삭제 버튼을 보여줍니다. */
-  postId?: string;
 }
 
 interface OverlayValue {
@@ -23,6 +21,10 @@ interface OverlayValue {
   openShare: (postId: string) => void;
   closeShare: () => void;
 
+  sendToChatPostId: string | null;
+  openSendToChat: (postId: string) => void;
+  closeSendToChat: () => void;
+
   logoutOpen: boolean;
   openLogout: () => void;
   closeLogout: () => void;
@@ -34,6 +36,7 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
   const [viewer, setViewer] = useState<ViewerPayload | null>(null);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
   const [sharePostId, setSharePostId] = useState<string | null>(null);
+  const [sendToChatPostId, setSendToChatPostId] = useState<string | null>(null);
   const [logoutOpen, setLogoutOpen] = useState(false);
 
   const value = useMemo<OverlayValue>(
@@ -52,11 +55,15 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
       openShare: (postId) => setSharePostId(postId),
       closeShare: () => setSharePostId(null),
 
+      sendToChatPostId,
+      openSendToChat: (postId) => setSendToChatPostId(postId),
+      closeSendToChat: () => setSendToChatPostId(null),
+
       logoutOpen,
       openLogout: () => setLogoutOpen(true),
       closeLogout: () => setLogoutOpen(false)
     }),
-    [viewer, commentPostId, sharePostId, logoutOpen]
+    [viewer, commentPostId, sharePostId, sendToChatPostId, logoutOpen]
   );
 
   return <OverlayContext.Provider value={value}>{children}</OverlayContext.Provider>;

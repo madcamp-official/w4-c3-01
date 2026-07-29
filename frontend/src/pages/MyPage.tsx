@@ -4,12 +4,10 @@ import Avatar from '@/components/Avatar';
 import * as followApi from '@/api/followApi';
 import type { FollowCounts } from '@/api/followApi';
 import { useAppState } from '@/state/AppStateContext';
-import { useOverlay } from '@/state/OverlayContext';
 
 export default function MyPage() {
   const navigate = useNavigate();
   const { session, posts } = useAppState();
-  const { openViewer } = useOverlay();
   const [tab, setTab] = useState<'posts' | 'likes'>('posts');
   const [counts, setCounts] = useState<FollowCounts | null>(null);
 
@@ -77,11 +75,7 @@ export default function MyPage() {
         ) : (
           <div className="grid3">
             {items.map((p) => (
-              <div
-                key={p.id}
-                className="cell"
-                onClick={() => openViewer({ image: p.image, caption: p.caption, strokes: p.strokes, postId: p.id })}
-              >
+              <div key={p.id} className="cell" onClick={() => navigate(`/posts/${p.id}`)}>
                 <img src={p.image} alt="" />
               </div>
             ))}

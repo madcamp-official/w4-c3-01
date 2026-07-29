@@ -115,7 +115,11 @@ function assemblePosts(
   });
 }
 
-async function fetchSinglePost(postId: string, currentUserId: string): Promise<Post | undefined> {
+export async function fetchSinglePost(postId: string, currentUserId: string): Promise<Post | undefined> {
+  if (!supabase) {
+    mockStore.ensureSeeded();
+    return mockStore.posts.find((p) => p.id === postId);
+  }
   const { data: row, error } = await supabase!.from('posts').select('*').eq('id', postId).maybeSingle();
   if (error) throw new Error(error.message);
   if (!row) return undefined;

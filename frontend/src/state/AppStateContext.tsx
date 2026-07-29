@@ -34,6 +34,11 @@ interface AppStateValue {
   updateProfile: (updates: { username: string; nickname: string; onboarded?: boolean }) => Promise<void>;
 
   loadFeed: () => Promise<void>;
+  /** Looks up a post locally first (already-loaded feed/own posts); falls back to
+   * fetching it directly (RLS allows reading any post) and merging it into `posts`
+   * so like/comment/delete keep working on it — used by PostDetail for posts from
+   * authors the viewer doesn't follow (e.g. shared into a chat). */
+  loadPost: (postId: string) => Promise<Post | undefined>;
   sharePost: (input: {
     image: string;
     strokes: StrokePoint[];
@@ -50,6 +55,7 @@ interface AppStateValue {
   getChat: (chatId: string) => Chat | undefined;
   sendText: (chatId: string, text: string) => Promise<void>;
   sendAir: (chatId: string, image: string, strokes: StrokePoint[]) => Promise<void>;
+  sendPost: (chatId: string, post: Post) => Promise<void>;
   startConversationWith: (otherUserId: string) => Promise<string | null>;
   subscribeToThread: (chatId: string) => () => void;
   markThreadRead: (chatId: string) => Promise<void>;
@@ -130,6 +136,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (!session) return;
     setPosts(await postsApi.fetchFeed(session.id));
   }, [session]);
+
+  const loadPost = useCallback(
+    async (postId: string) => {
+      if (!session) return undefined;
+      const existing = posts.find((p) => p.id === postId);
+      if (existing) return existing;
+      const fetched = await postsApi.fetchSinglePost(postId, session.id);
+      if (fetched) setPosts((prev) => (prev.some((p) => p.id === postId) ? prev : [...prev, fetched]));
+      return fetched;
+    },
+    [session, posts]
+  );
 
   const sharePost = useCallback(
     async (input: {
@@ -245,6 +263,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [session, receiveMessage]
   );
 
+  const sendPost = useCallback(
+    async (chatId: string, post: Post) => {
+      if (!session) return;
+      const message = await chatApi.sendPostMessage(chatId, session.id, { id: post.id, image: post.image, caption: post.caption });
+      if (message) receiveMessage(chatId, message);
+    },
+    [session, receiveMessage]
+  );
+
   const startConversationWith = useCallback(
     async (otherUserId: string) => {
       if (!session) return null;
@@ -312,6 +339,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setAvatar,
       updateProfile,
       loadFeed,
+      loadPost,
       sharePost,
       likePost,
       commentOnPost,
@@ -322,6 +350,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       getChat,
       sendText,
       sendAir,
+      sendPost,
       startConversationWith,
       subscribeToThread,
       markThreadRead,
@@ -342,6 +371,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setAvatar,
       updateProfile,
       loadFeed,
+      loadPost,
       sharePost,
       likePost,
       commentOnPost,
@@ -352,6 +382,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       getChat,
       sendText,
       sendAir,
+      sendPost,
       startConversationWith,
       subscribeToThread,
       markThreadRead,

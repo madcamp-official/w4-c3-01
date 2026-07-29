@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
 import Icon from '@/components/Icon';
 import LikeButton from '@/components/LikeButton';
@@ -6,7 +7,8 @@ import type { Post } from '@/types';
 
 /** Compact list-mode card — see FeedPage.tsx for the swipeable story-card mode (a separate renderer). */
 export default function PostCard({ post }: { post: Post }) {
-  const { openViewer, openComments, openShare } = useOverlay();
+  const navigate = useNavigate();
+  const { openComments, openShare } = useOverlay();
 
   return (
     <article className="post post-vertical sk-hr-b">
@@ -17,10 +19,7 @@ export default function PostCard({ post }: { post: Post }) {
           <small>{post.time}</small>
         </div>
       </div>
-      <div
-        className="post-media"
-        onClick={() => openViewer({ image: post.image, caption: post.caption, strokes: post.strokes, postId: post.id })}
-      >
+      <div className="post-media" onClick={() => navigate(`/posts/${post.id}`)}>
         <img src={post.image} alt="" />
       </div>
       <div className="post-actions">

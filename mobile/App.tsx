@@ -10,6 +10,7 @@ import ShareSheet from '@/components/ShareSheet';
 import Toast from '@/components/Toast';
 import ViewerOverlay from '@/components/ViewerOverlay';
 import { linking } from '@/navigation/linking';
+import { navigationRef } from '@/navigation/navigationRef';
 import RootNavigator from '@/navigation/RootNavigator';
 import { AppStateProvider } from '@/state/AppStateContext';
 import { OverlayProvider } from '@/state/OverlayContext';
@@ -25,7 +26,7 @@ function AppContent() {
       <AppStateProvider>
         <OverlayProvider>
           <PlacementProvider>
-            <NavigationContainer linking={linking}>
+            <NavigationContainer ref={navigationRef} linking={linking}>
               <RootNavigator />
             </NavigationContainer>
             <ViewerOverlay />

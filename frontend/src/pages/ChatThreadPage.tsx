@@ -20,7 +20,7 @@ export default function ChatThreadPage() {
   const navigate = useNavigate();
   const { chatId = '' } = useParams();
   const { loadThread, sendText, getChat, subscribeToThread, markThreadRead } = useAppState();
-  const { openViewerForMessage } = useOverlay();
+  const { openViewer, openViewerForMessage } = useOverlay();
   const { showToast } = useToast();
   const [text, setText] = useState('');
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -119,6 +119,28 @@ export default function ChatThreadPage() {
                 >
                   {m.type === 'text' ? (
                     <div className="bubble sk">{m.text}</div>
+                  ) : m.type === 'post' ? (
+                    <button
+                      className="post-message-card"
+                      onClick={() => {
+                        // Goes to the real post page (live caption,
+                        // likes/comments, "본인 글이면 삭제하기") — falls
+                        // back to the message's own send-time snapshot only
+                        // if the original post is gone (post_id is set null
+                        // on delete, so there's nowhere to go).
+                        if (m.postId) navigate(`/posts/${m.postId}`);
+                        else openViewer({ image: m.image ?? '', caption: m.text ?? '' });
+                      }}
+                    >
+                      <div className="post-message-thumb">
+                        <img src={m.image} alt={m.text || '게시물'} />
+                        <span className="post-message-tag">
+                          <Icon name="send" size={10} />
+                          게시물
+                        </span>
+                      </div>
+                      <span className="post-message-caption">{m.text || '게시물 보기'}</span>
+                    </button>
                   ) : (
                     <img className="air-message-image" src={m.image} alt="손글씨 메시지" onClick={() => openViewerForMessage(m)} />
                   )}

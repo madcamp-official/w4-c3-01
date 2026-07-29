@@ -11,7 +11,6 @@ import * as followApi from '@/api/followApi';
 import type { FollowCounts } from '@/api/followApi';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
-import { useOverlay } from '@/state/OverlayContext';
 import { useTheme } from '@/state/ThemeContext';
 import { radius } from '@/theme/colors';
 import { buildCommon } from '@/theme/common';
@@ -23,7 +22,6 @@ const AVATAR_SIZE = 61;
 export default function MyScreen() {
   const navigation = useNavigation();
   const { session, posts } = useAppState();
-  const { openViewer } = useOverlay();
   const { colors } = useTheme();
   const common = buildCommon(colors);
   const styles = makeStyles(colors);
@@ -58,7 +56,7 @@ export default function MyScreen() {
     return (
       <Pressable
         style={styles.cell}
-        onPress={() => openViewer({ image: item.image, caption: item.caption, strokes: item.strokes, postId: item.id })}
+        onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('PostDetail', { postId: item.id })}
       >
         <Image source={{ uri: item.image }} style={{ width: '100%', height: '100%' }} />
       </Pressable>

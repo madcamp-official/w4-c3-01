@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import BottomSheetModal from '@/components/BottomSheetModal';
 import Icon from '@/components/Icon';
 import { useBottomInset } from '@/lib/useBottomInset';
+import { navigateFromOutsideTree } from '@/navigation/navigationRef';
 import { useOverlay } from '@/state/OverlayContext';
 import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
@@ -18,12 +19,17 @@ export default function ShareSheet() {
   const open = Boolean(sharePostId);
 
   async function handleOption(kind: 'link' | 'chat') {
+    const postId = sharePostId;
     closeShare();
     if (kind === 'link') {
-      await Clipboard.setStringAsync(`aline://posts/${sharePostId}`);
+      await Clipboard.setStringAsync(`aline://posts/${postId}`);
       showToast('링크를 복사했어요');
-    } else {
-      showToast('채팅 목록에서 보낼 친구를 선택하세요');
+    } else if (postId) {
+      // ShareSheet is mounted as a sibling of <NavigationContainer> (so it
+      // stays visible/animatable independent of whatever screen is showing),
+      // which means useNavigation() has no context to read here — the ref
+      // escape hatch is the only way to navigate from this component.
+      navigateFromOutsideTree('SendToChat', { postId });
     }
   }
 

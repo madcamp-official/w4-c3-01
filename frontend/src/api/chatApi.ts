@@ -8,10 +8,11 @@ interface MessageRow {
   id: number;
   conversation_id: string;
   sender_id: string;
-  type: 'text' | 'air';
+  type: 'text' | 'air' | 'post';
   text: string | null;
   image_url: string | null;
   strokes: StrokePoint[] | null;
+  post_id: string | null;
   created_at: string;
 }
 
@@ -34,6 +35,7 @@ function mapMessage(row: MessageRow, currentUserId: string): ChatMessage {
     text: row.text ?? undefined,
     image: row.image_url ?? undefined,
     strokes: row.strokes ?? undefined,
+    postId: row.type === 'post' ? row.post_id : undefined,
     time: formatMessageTime(row.created_at),
     createdAt: row.created_at
   };
@@ -227,6 +229,35 @@ export async function sendAirMessage(
   const { data, error } = await supabase
     .from('messages')
     .insert({ conversation_id: chatId, sender_id: currentUserId, type: 'air', image_url: imageUrl, strokes })
+    .select()
+    .single();
+  if (error || !data) throw new Error(error?.message ?? '메시지를 보내지 못했어요');
+  return mapMessage(data as MessageRow, currentUserId);
+}
+
+/** 게시물을 채팅으로 공유합니다 — 게시물 이미지는 이미 공개 버킷의 URL이라 재업로드 없이 그대로 참조합니다. */
+export async function sendPostMessage(
+  chatId: string,
+  currentUserId: string,
+  post: { id: string; image: string; caption: string }
+): Promise<ChatMessage | undefined> {
+  if (!supabase) {
+    const message: ChatMessage = {
+      id: Date.now(),
+      from: 'me',
+      type: 'post',
+      image: post.image,
+      text: post.caption,
+      postId: post.id,
+      time: '방금',
+      createdAt: new Date().toISOString()
+    };
+    return mockStore.sendMessage(chatId, message) ? message : undefined;
+  }
+
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({ conversation_id: chatId, sender_id: currentUserId, type: 'post', image_url: post.image, text: post.caption, post_id: post.id })
     .select()
     .single();
   if (error || !data) throw new Error(error?.message ?? '메시지를 보내지 못했어요');

@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import BottomNav from '@/components/BottomNav';
 import CommentSheet from '@/components/CommentSheet';
 import LogoutSheet from '@/components/LogoutSheet';
+import SendToChatSheet from '@/components/SendToChatSheet';
 import ShareSheet from '@/components/ShareSheet';
 import Toast from '@/components/Toast';
 import ViewerOverlay from '@/components/ViewerOverlay';
@@ -22,6 +23,7 @@ export default function AppShell() {
       <ViewerOverlay />
       <CommentSheet />
       <ShareSheet />
+      <SendToChatSheet />
       <LogoutSheet />
       <Toast />
     </div>
