@@ -223,7 +223,18 @@ export default function FeedScreen() {
                   ) : null}
                   {currentPost ? (
                     <Animated.View style={[styles.storyCard, cardAnimatedStyle]}>
-                      <Image source={{ uri: currentPost.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                      {/* A plain Pressable nested here (rather than composing
+                          a tap gesture with `pan`) works the same way the
+                          hint button below already does: RNGH's Pan only
+                          claims the touch once it exceeds its move
+                          threshold, so a stationary tap still reaches this
+                          Pressable untouched. */}
+                      <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('PostDetail', { postId: currentPost.id })}
+                      >
+                        <Image source={{ uri: currentPost.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                      </Pressable>
                       <View style={styles.storyTopbar}>
                         <Avatar nickname={currentPost.username} color={currentPost.avatarColor} size={30} fontSize={12} avatarUrl={currentPost.avatarUrl} />
                         <Text style={styles.storyTopbarText}>

@@ -9,7 +9,9 @@ import EditHeartScreen from '@/screens/EditHeartScreen';
 import EditProfileScreen from '@/screens/EditProfileScreen';
 import FollowListScreen from '@/screens/FollowListScreen';
 import LoungeViewScreen from '@/screens/LoungeViewScreen';
+import PostDetailScreen from '@/screens/PostDetailScreen';
 import PreviewScreen from '@/screens/PreviewScreen';
+import SendToChatScreen from '@/screens/SendToChatScreen';
 import UserProfileScreen from '@/screens/UserProfileScreen';
 import type { AppStackParamList } from '@/navigation/types';
 
@@ -28,6 +30,14 @@ export default function AppStack() {
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
       <Stack.Screen name="FollowList" component={FollowListScreen} />
+      <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+      <Stack.Screen
+        name="SendToChat"
+        component={SendToChatScreen}
+        // Same reasoning as the Comment screen below: transparentModal +
+        // 'fade' so only the sheet itself visibly slides, not the backdrop.
+        options={{ presentation: 'transparentModal', animation: 'fade' }}
+      />
       <Stack.Screen name="LoungeView" component={LoungeViewScreen} />
       <Stack.Screen
         name="Comment"

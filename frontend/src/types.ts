@@ -32,7 +32,7 @@ export interface Post {
   mine: boolean;
 }
 
-export type MessageType = 'text' | 'air';
+export type MessageType = 'text' | 'air' | 'post';
 
 export interface ChatMessage {
   id: number;
@@ -41,6 +41,8 @@ export interface ChatMessage {
   text?: string;
   image?: string;
   strokes?: StrokePoint[];
+  /** type: 'post'일 때만 — 원본 게시물 id (게시물이 삭제됐으면 null이 됩니다). */
+  postId?: string | null;
   time: string;
   /** ISO timestamp — 날짜 구분선/읽음 계산용. time은 화면에 보여주는 포맷된 문자열입니다. */
   createdAt: string;

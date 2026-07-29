@@ -144,12 +144,19 @@ create table if not exists public.messages (
   id bigint generated always as identity primary key,
   conversation_id uuid not null references public.conversations (id) on delete cascade,
   sender_id uuid not null references public.profiles (id) on delete cascade,
-  type text not null check (type in ('text', 'air')),
+  type text not null check (type in ('text', 'air', 'post')),
   text text,
   image_url text,
   strokes jsonb,
+  -- 게시물 공유 메시지(type='post')용 — 원본이 삭제돼도 메시지 자체(캡션/이미지 스냅샷)는 남도록 set null.
+  post_id uuid references public.posts (id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+-- 이미 만들어진 테이블에 새로 추가된 컬럼/체크 제약 — 기존 DB에 반영하려면 이 부분만 따로 실행하면 됩니다.
+alter table public.messages add column if not exists post_id uuid references public.posts (id) on delete set null;
+alter table public.messages drop constraint if exists messages_type_check;
+alter table public.messages add constraint messages_type_check check (type in ('text', 'air', 'post'));
 
 alter table public.messages enable row level security;
 

@@ -4,13 +4,11 @@ import Avatar from '@/components/Avatar';
 import Icon from '@/components/Icon';
 import * as userApi from '@/api/userApi';
 import { useAppState } from '@/state/AppStateContext';
-import { useOverlay } from '@/state/OverlayContext';
 import type { UserSummary } from '@/types';
 
 export default function SearchPage() {
   const navigate = useNavigate();
   const { posts, session } = useAppState();
-  const { openViewer } = useOverlay();
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<UserSummary[]>([]);
 
@@ -73,11 +71,7 @@ export default function SearchPage() {
           {results.length ? (
             <div className="grid3">
               {results.map((p) => (
-                <div
-                  key={p.id}
-                  className="cell"
-                  onClick={() => openViewer({ image: p.image, caption: p.caption, strokes: p.strokes, postId: p.id })}
-                >
+                <div key={p.id} className="cell" onClick={() => navigate(`/posts/${p.id}`)}>
                   <img src={p.image} alt="" />
                 </div>
               ))}

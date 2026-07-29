@@ -1,11 +1,12 @@
-// Ported from frontend/src/components/ViewerOverlay.tsx — keep in sync
-// (canvas replay -> StrokeReplay, window.confirm -> Alert).
+// Ported from frontend/src/components/ViewerOverlay.tsx — keep in sync.
+// Only handles chat air-write message thumbnails (image + caption + optional
+// stroke replay) — viewing an actual post now goes through PostDetailScreen
+// instead, which also owns the "본인 글이면 삭제하기" gating.
 import { useEffect, useState } from 'react';
-import { Alert, Dimensions, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Icon from '@/components/Icon';
 import SketchyButton from '@/components/SketchyButton';
 import StrokeReplay from '@/components/StrokeReplay';
-import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 import { useTheme } from '@/state/ThemeContext';
 import { buildCommon } from '@/theme/common';
@@ -15,7 +16,6 @@ const MEDIA_SIZE = SCREEN_WIDTH - 40;
 
 export default function ViewerOverlay() {
   const { viewer, closeViewer } = useOverlay();
-  const { posts, deletePost } = useAppState();
   const { colors } = useTheme();
   const common = buildCommon(colors);
   const styles = makeStyles(colors);
@@ -37,26 +37,9 @@ export default function ViewerOverlay() {
 
   if (!viewer) return null;
 
-  const post = viewer.postId ? posts.find((p) => p.id === viewer.postId) : undefined;
-
   function handleReplay() {
     setReplaying(true);
     setReplayKey((k) => k + 1);
-  }
-
-  function handleDelete() {
-    if (!post) return;
-    Alert.alert('이 게시물을 삭제할까요?', undefined, [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: async () => {
-          await deletePost(post.id);
-          closeViewer();
-        }
-      }
-    ]);
   }
 
   return (
@@ -86,12 +69,7 @@ export default function ViewerOverlay() {
           <Text style={styles.caption}>{viewer.caption}</Text>
           {viewer.strokes ? (
             <SketchyButton variant="primary" onPress={handleReplay}>
-              <Text style={common.btnPrimaryText}>✏️ 다시 쓰는 순간 보기</Text>
-            </SketchyButton>
-          ) : null}
-          {post?.mine ? (
-            <SketchyButton variant="ghost" style={{ marginTop: 8 }} onPress={handleDelete}>
-              <Text style={[common.btnGhostText, { color: colors.danger }]}>삭제하기</Text>
+              <Text style={common.btnPrimaryText}>다시 쓰는 순간 보기</Text>
             </SketchyButton>
           ) : null}
         </View>

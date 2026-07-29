@@ -35,7 +35,13 @@ export default function ChatListScreen({ navigation }: Props) {
 
   function renderRow({ item }: { item: Chat }) {
     const lastMsg = item.messages[item.messages.length - 1];
-    const preview = !lastMsg ? '대화를 시작해보세요' : lastMsg.type === 'text' ? lastMsg.text : '✏️ 손글씨 메시지';
+    const preview = !lastMsg
+      ? '대화를 시작해보세요'
+      : lastMsg.type === 'text'
+        ? lastMsg.text
+        : lastMsg.type === 'post'
+          ? '게시물'
+          : '손글씨 메시지';
     return (
       <Pressable
         style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 12 }}

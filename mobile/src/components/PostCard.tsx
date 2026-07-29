@@ -13,12 +13,14 @@ import { radius as radiusTokens } from '@/theme/colors';
 import type { Post } from '@/types';
 
 export default function PostCard({ post }: { post: Post }) {
-  const { openViewer, openShare } = useOverlay();
+  const { openShare } = useOverlay();
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   const navigation = useNavigation();
   const openComments = (postId: string) =>
     navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('Comment', { postId });
+  const openPostDetail = (postId: string) =>
+    navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('PostDetail', { postId });
 
   return (
     <View style={styles.card}>
@@ -29,10 +31,7 @@ export default function PostCard({ post }: { post: Post }) {
           <Text style={styles.time}>{post.time}</Text>
         </View>
       </View>
-      <Pressable
-        style={[styles.mediaWrap, styles.mediaWrapRounded]}
-        onPress={() => openViewer({ image: post.image, caption: post.caption, strokes: post.strokes, postId: post.id })}
-      >
+      <Pressable style={[styles.mediaWrap, styles.mediaWrapRounded]} onPress={() => openPostDetail(post.id)}>
         <Image source={{ uri: post.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
       </Pressable>
       <View style={styles.actions}>

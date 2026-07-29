@@ -36,6 +36,10 @@ export default function FeedPage() {
   const [messageDraft, setMessageDraft] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const start = useRef<{ x: number; y: number } | null>(null);
+  // Distinguishes a tap (navigate to the post) from a drag (swipe) — click
+  // events still fire on pointerup after a drag, so onClick alone can't tell
+  // them apart.
+  const movedRef = useRef(false);
 
   useEffect(() => {
     void loadFeed();
@@ -89,6 +93,7 @@ export default function FeedPage() {
   function handlePointerDown(e: React.PointerEvent) {
     if (exiting) return;
     start.current = { x: e.clientX, y: e.clientY };
+    movedRef.current = false;
     setDragging(true);
   }
 
@@ -96,6 +101,7 @@ export default function FeedPage() {
     if (!start.current) return;
     let dx = e.clientX - start.current.x;
     const dy = e.clientY - start.current.y;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) movedRef.current = true;
     if (dx > 0) dx *= 0.2; // dragging "back" resists instead of hard-stopping
     setDragX(dx);
     setDragY(dy);
@@ -179,7 +185,14 @@ export default function FeedPage() {
                   </div>
                 ) : null}
                 {currentPost ? (
-                  <div className="story-card" style={cardStyle}>
+                  <div
+                    className="story-card"
+                    style={{ ...cardStyle, cursor: 'pointer' }}
+                    onClick={() => {
+                      if (movedRef.current || exiting) return;
+                      navigate(`/posts/${currentPost.id}`);
+                    }}
+                  >
                     <img className="story-card-img" src={currentPost.image} alt="" />
                     <div className="story-card-topbar">
                       <Avatar nickname={currentPost.username} color={currentPost.avatarColor} size={30} fontSize={12} avatarUrl={currentPost.avatarUrl} />

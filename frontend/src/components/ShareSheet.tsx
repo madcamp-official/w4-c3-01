@@ -3,13 +3,18 @@ import { useOverlay } from '@/state/OverlayContext';
 import { useToast } from '@/state/ToastContext';
 
 export default function ShareSheet() {
-  const { sharePostId, closeShare } = useOverlay();
+  const { sharePostId, closeShare, openSendToChat } = useOverlay();
   const { showToast } = useToast();
   const open = Boolean(sharePostId);
 
   function handleOption(kind: 'link' | 'chat') {
+    const postId = sharePostId;
     closeShare();
-    showToast(kind === 'link' ? '링크를 복사했어요' : '채팅 목록에서 보낼 친구를 선택하세요');
+    if (kind === 'link') {
+      showToast('링크를 복사했어요');
+    } else if (postId) {
+      openSendToChat(postId);
+    }
   }
 
   return (
