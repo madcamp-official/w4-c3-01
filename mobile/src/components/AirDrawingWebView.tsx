@@ -91,9 +91,11 @@ async function ensureBundleCached(onProgress: (done: number, total: number) => v
 
     let done = 0;
     for (const rel of BUNDLE_FILES) {
-      console.log('[airview] downloading', `${REMOTE_BASE}/${rel}`);
+      const versionQuery = encodeURIComponent(remoteVersion ?? String(Date.now()));
+      const remoteUrl = `${REMOTE_BASE}/${rel}?v=${versionQuery}`;
+      console.log('[airview] downloading', remoteUrl);
       const dest = new File(rootDir, rel);
-      await File.downloadFileAsync(`${REMOTE_BASE}/${rel}`, dest, { idempotent: true });
+      await File.downloadFileAsync(remoteUrl, dest, { idempotent: true });
       console.log('[airview] done', rel, dest.size, 'bytes');
       done += 1;
       onProgress(done, BUNDLE_FILES.length);

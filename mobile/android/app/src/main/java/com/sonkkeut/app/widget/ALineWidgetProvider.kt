@@ -37,9 +37,16 @@ class ALineWidgetProvider : AppWidgetProvider() {
       if (widgetIds.isEmpty()) return
       val snapshot = WidgetStorage.read(context)
       val hasPost = snapshot.hasPost && snapshot.imageFile.exists()
+      val launchHome = PendingIntent.getActivity(
+        context,
+        4102,
+        Intent(Intent.ACTION_VIEW, Uri.parse("aline://app"), context, MainActivity::class.java)
+          .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+      )
       val launchCamera = PendingIntent.getActivity(
         context,
-        4101,
+        4103,
         Intent(Intent.ACTION_VIEW, Uri.parse("aline://app/camera?source=widget"), context, MainActivity::class.java)
           .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
@@ -47,7 +54,7 @@ class ALineWidgetProvider : AppWidgetProvider() {
 
       widgetIds.forEach { widgetId ->
         val views = RemoteViews(context.packageName, R.layout.aline_widget)
-        views.setOnClickPendingIntent(R.id.aline_widget_root, launchCamera)
+        views.setOnClickPendingIntent(R.id.aline_widget_root, launchHome)
         views.setOnClickPendingIntent(R.id.aline_widget_camera, launchCamera)
         views.setViewVisibility(R.id.aline_widget_photo, if (hasPost) View.VISIBLE else View.GONE)
         views.setViewVisibility(R.id.aline_widget_scrim, if (hasPost) View.VISIBLE else View.GONE)
