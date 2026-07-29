@@ -2,13 +2,13 @@
   /* Palette matches week4_1/ALine.dc.html (v2 design — minimal black/white/red,
      replaces the earlier hand-drawn cream palette). Dark mode overrides below. */
   --ink: #000000;
-  --ink-soft: #8e8e8e;
-  --paper: #ffffff;
-  --paper-2: #f5f5f5;
-  --paper-3: #f5f5f5;
-  --border: #dbdbdb;
-  --line: #dbdbdb;
-  --muted: #8e8e8e;
+  --ink-soft: #847b73;
+  --paper: #fff9f2;
+  --paper-2: #f7efe6;
+  --paper-3: #f1e6db;
+  --border: #e2d6ca;
+  --line: #e2d6ca;
+  --muted: #91877e;
   --accent: #b23b2e;
   --danger: #b23b2e;
   --radius-pill: 999px;
@@ -441,21 +441,23 @@ input[type='password'].sk::before {
 }
 .feed-dots {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   justify-content: center;
-  padding: 2px 0 10px;
+  align-items: center;
+  padding: 4px 0 12px;
   flex-shrink: 0;
 }
 .feed-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  border: 1px solid var(--muted);
-  background: transparent;
+  width: 5px;
+  height: 4px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--border);
+  transition: width 180ms ease, background 180ms ease;
 }
 .feed-dot.active {
+  width: 14px;
   background: var(--ink);
-  border-color: var(--ink);
 }
 .story-stage {
   flex: 1;
@@ -463,22 +465,21 @@ input[type='password'].sk::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 14px 4px 0;
+  padding: 12px 34px 12px 20px;
 }
 .story-frame {
   position: relative;
-  width: 350px;
-  height: 350px;
-  max-width: 100%;
+  width: min(318px, calc(100% - 24px));
+  aspect-ratio: 1;
   flex-shrink: 0;
 }
 .story-peek {
   position: absolute;
   inset: 8px;
-  border-radius: var(--radius-lg);
+  border-radius: 24px;
   overflow: hidden;
-  transform: scale(0.94) translateY(10px);
-  opacity: 0.55;
+  transform: scale(0.95) translateY(12px);
+  opacity: 0.38;
   background: var(--paper-2);
 }
 .story-peek img {
@@ -489,11 +490,11 @@ input[type='password'].sk::before {
 .story-card {
   position: absolute;
   inset: 0;
-  border-radius: var(--radius-lg);
+  border-radius: 24px;
   overflow: hidden;
   background: var(--paper-2);
   border: 1.5px solid var(--border);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18);
   touch-action: none;
   user-select: none;
   cursor: grab;
@@ -508,7 +509,7 @@ input[type='password'].sk::before {
 }
 .story-card-topbar {
   position: absolute;
-  left: 14px;
+  left: 12px;
   top: 12px;
   display: flex;
   align-items: center;
@@ -518,17 +519,25 @@ input[type='password'].sk::before {
   font-weight: 600;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   white-space: nowrap;
+  padding: 5px 12px 5px 5px;
+  border-radius: 999px;
+  background: rgba(8, 10, 14, 0.48);
+  backdrop-filter: blur(10px);
 }
 .story-card-stats {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
+  right: 12px;
+  bottom: 12px;
   display: flex;
   align-items: center;
   gap: 14px;
   color: #fff;
   font-size: 12px;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: rgba(8, 10, 14, 0.48);
+  backdrop-filter: blur(10px);
 }
 .story-stat {
   display: flex;
@@ -553,7 +562,7 @@ input[type='password'].sk::before {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 8px 0 4px;
+  padding: 10px 0 4px;
   color: var(--ink-soft);
   font-size: 11px;
   cursor: pointer;
@@ -584,14 +593,14 @@ input[type='password'].sk::before {
   border-bottom: 1px solid var(--paper-2);
 }
 .post {
-  padding: 0 0 14px;
+  padding: 0 0 18px;
   margin-bottom: 10px;
 }
 .post-head {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 8px 0 10px;
+  padding: 10px 30px 12px;
 }
 .post-head .avatar {
   width: 32px;
@@ -611,12 +620,13 @@ input[type='password'].sk::before {
   font-size: 11px;
 }
 .post-media {
-  width: 100%;
+  width: calc(100% - 60px);
+  margin: 0 30px;
   aspect-ratio: 1 / 1;
   position: relative;
   cursor: pointer;
   background: var(--paper-2);
-  border-radius: var(--radius-md);
+  border-radius: 22px;
   overflow: hidden;
 }
 .post-media img {
@@ -629,7 +639,7 @@ input[type='password'].sk::before {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 0 2px;
+  padding: 11px 30px 2px;
 }
 .like-btn,
 .action-btn {
@@ -682,7 +692,7 @@ input[type='password'].sk::before {
   height: 20px;
 }
 .post-meta {
-  padding: 2px 0 0;
+  padding: 2px 30px 0;
   font-size: 12.5px;
 }
 .post-meta .likes {
@@ -1516,7 +1526,8 @@ input[type='password'].sk::before {
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 8px 14px calc(12px + env(safe-area-inset-bottom, 0px)) 14px;
+  min-height: 66px;
+  padding: 11px 14px calc(16px + env(safe-area-inset-bottom, 0px)) 14px;
   background: var(--paper);
   position: absolute;
   left: 0;
@@ -1537,7 +1548,8 @@ input[type='password'].sk::before {
   align-items: center;
   gap: 2px;
   cursor: pointer;
-  padding: 4px 8px;
+  min-height: 44px;
+  padding: 8px;
 }
 .nav-btn svg {
   width: 21px;
@@ -1547,14 +1559,14 @@ input[type='password'].sk::before {
   color: var(--ink);
 }
 .nav-plus {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: var(--ink);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: -16px;
+  margin-top: -14px;
   border: none;
   cursor: pointer;
 }

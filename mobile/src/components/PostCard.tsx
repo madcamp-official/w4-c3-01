@@ -57,15 +57,15 @@ export default function PostCard({ post }: { post: Post }) {
 
 function makeStyles(colors: import('@/theme/colors').ThemeColors) {
   return StyleSheet.create({
-    card: { paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
-    head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
+    card: { paddingBottom: 18, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: colors.border },
+    head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 34, paddingVertical: 12 },
     username: { fontWeight: '700', color: colors.ink, fontSize: 13.5 },
     time: { fontSize: 11, color: colors.inkSoft },
     mediaWrap: { width: '100%', aspectRatio: 1, backgroundColor: colors.paper2, overflow: 'hidden' },
-    mediaWrapRounded: { borderRadius: radiusTokens.lg, marginHorizontal: 16, width: undefined },
-    actions: { flexDirection: 'row', gap: 16, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 2 },
+    mediaWrapRounded: { borderRadius: 22, marginHorizontal: 34, width: undefined },
+    actions: { flexDirection: 'row', gap: 16, paddingHorizontal: 34, paddingTop: 11, paddingBottom: 2 },
     actionBtn: { padding: 2 },
-    meta: { paddingHorizontal: 16, paddingTop: 4, gap: 2, paddingBottom: 4 },
+    meta: { paddingHorizontal: 34, paddingTop: 4, gap: 2, paddingBottom: 4 },
     likes: { fontWeight: '700', fontSize: 13, color: colors.ink },
     caption: { fontSize: 13, color: colors.ink }
   });

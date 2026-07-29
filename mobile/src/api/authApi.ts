@@ -10,6 +10,7 @@ import type { LoginPayload, Session, SignupPayload } from '@/types';
 interface ProfileRow {
   username: string;
   nickname: string;
+  bio: string;
   avatar_color: string;
   heart_url: string | null;
   avatar_url: string | null;
@@ -22,6 +23,7 @@ function toSession(userId: string, profile: ProfileRow): Session {
     isAuthenticated: true,
     username: profile.username,
     nickname: profile.nickname,
+    bio: profile.bio ?? '',
     avatarColor: profile.avatar_color,
     heartUrl: profile.heart_url,
     avatarUrl: profile.avatar_url,
@@ -98,6 +100,7 @@ export async function signup(payload: SignupPayload): Promise<Session> {
     isAuthenticated: true,
     username: payload.username,
     nickname: payload.nickname,
+    bio: '',
     avatarColor: AVATAR_TONES[0],
     heartUrl: payload.heartUrl,
     avatarUrl: payload.avatarUrl,

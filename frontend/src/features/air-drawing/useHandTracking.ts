@@ -35,7 +35,7 @@ const PINKY_PIP = 18
 const PINKY_TIP = 20
 const PINCH_START_RATIO = 0.35
 const PINCH_RELEASE_RATIO = 0.5
-const MAX_INFERENCE_SIDE = 640
+const MAX_INFERENCE_SIDE = 512
 const LOST_HAND_GRACE_FRAMES = 2
 
 function distanceBetween(first: NormalizedLandmark, second: NormalizedLandmark) {

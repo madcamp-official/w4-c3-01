@@ -18,6 +18,8 @@ export type IconName =
   | 'x'
   | 'link'
   | 'message-square'
+  | 'trash-2'
+  | 'qr-code'
   | 'chevron-left'
   | 'sun'
   | 'moon';
@@ -54,6 +56,19 @@ const ICONS: Record<IconName, Def> = {
     ]
   },
   'message-square': { paths: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'] },
+  'trash-2': {
+    paths: ['M3 6h18', 'M8 6V4h8v2', 'M6 6l1 14h10l1-14', 'M10 10v6', 'M14 10v6']
+  },
+  'qr-code': {
+    paths: [
+      'M3 3h7v7H3z',
+      'M14 3h7v7h-7z',
+      'M3 14h7v7H3z',
+      'M14 14h3v3h-3z',
+      'M18 14h3v7h-3',
+      'M14 18v3h3'
+    ]
+  },
   'chevron-left': { paths: ['M16 2 L6 12 L16 22'] },
   sun: {
     paths: ['M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1'],

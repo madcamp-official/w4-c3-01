@@ -18,13 +18,13 @@ export interface ThemeColors {
 
 export const lightColors: ThemeColors = {
   ink: '#000000',
-  inkSoft: '#8E8E8E',
-  paper: '#FFFFFF',
-  paper2: '#F5F5F5',
-  paper3: '#F5F5F5',
-  border: '#DBDBDB',
-  line: '#DBDBDB',
-  muted: '#8E8E8E',
+  inkSoft: '#847B73',
+  paper: '#FFF9F2',
+  paper2: '#F7EFE6',
+  paper3: '#F1E6DB',
+  border: '#E2D6CA',
+  line: '#E2D6CA',
+  muted: '#91877E',
   accent: '#B23B2E',
   danger: '#B23B2E'
 };

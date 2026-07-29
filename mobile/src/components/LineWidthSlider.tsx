@@ -16,6 +16,7 @@ type Props = {
   step?: number;
   onValueChange: (value: number) => void;
   variant?: 'light' | 'dark';
+  compact?: boolean;
 };
 
 export default function LineWidthSlider({
@@ -25,6 +26,7 @@ export default function LineWidthSlider({
   step = 2,
   onValueChange,
   variant = 'light',
+  compact = false,
 }: Props) {
   const dark = variant === 'dark';
   const [trackWidth, setTrackWidth] = useState(0);
@@ -55,7 +57,7 @@ export default function LineWidthSlider({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, compact && styles.compactContainer]}>
       <Text style={[styles.label, dark && styles.darkLabel]}>라인</Text>
       <View
         accessibilityActions={[
@@ -72,7 +74,7 @@ export default function LineWidthSlider({
         onLayout={(event: LayoutChangeEvent) =>
           setTrackWidth(event.nativeEvent.layout.width)
         }
-        style={styles.trackTouchArea}
+        style={[styles.trackTouchArea, compact && styles.compactTrackTouchArea]}
         {...panResponder.panHandlers}>
         <View style={[styles.track, dark && styles.darkTrack]}>
           <View style={[styles.fill, { width: `${progress * 100}%` }]} />
@@ -101,6 +103,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     minWidth: 150,
+  },
+  compactContainer: {
+    gap: 5,
+    minWidth: 126,
   },
   label: {
     color: colors.inkSoft,
@@ -146,6 +152,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textAlign: 'center',
   },
+  compactTrackTouchArea: { width: 62 },
   darkLabel: { color: 'rgba(255,255,255,0.62)' },
   darkTrack: { backgroundColor: 'rgba(255,255,255,0.18)' },
   darkThumb: { backgroundColor: '#101114', borderColor: '#FF8B9B' },

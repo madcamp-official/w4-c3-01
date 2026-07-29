@@ -12,6 +12,7 @@ const PEN_STYLES = [
 
 export interface PenStyleToolbarHandle {
   handleAirInput: (point: Point | null, pinching: boolean, twoFinger: boolean) => boolean
+  setOpen: (open: boolean) => void
 }
 
 interface PenStyleToolbarProps {
@@ -53,6 +54,7 @@ export const PenStyleToolbar = forwardRef<PenStyleToolbarHandle, PenStyleToolbar
     useImperativeHandle(
       ref,
       () => ({
+        setOpen,
         handleAirInput(point, pinching, twoFinger) {
           const toolbar = toolbarRef.current
           const toggle = toggleRef.current
@@ -136,7 +138,7 @@ export const PenStyleToolbar = forwardRef<PenStyleToolbarHandle, PenStyleToolbar
             const trackRect = sizeTrack.getBoundingClientRect()
             const ratio = Math.min(
               1,
-              Math.max(0, 1 - (clientY - trackRect.top) / trackRect.height),
+              Math.max(0, (clientX - trackRect.left) / trackRect.width),
             )
             onSelectLineSize(Math.round(2 + ratio * 22))
             airPinchingRef.current = pinching

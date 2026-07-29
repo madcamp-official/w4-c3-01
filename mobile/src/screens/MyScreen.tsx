@@ -87,6 +87,11 @@ export default function MyScreen() {
           </Pressable>
         </View>
       </View>
+      <View style={styles.bioBlock}>
+        <Text style={[styles.bio, !session.bio && styles.bioPlaceholder]}>
+          {session.bio || '자기소개를 추가해보세요'}
+        </Text>
+      </View>
       <View style={styles.actionsRow}>
         <SketchyButton
           variant="ghost"
@@ -131,15 +136,18 @@ export default function MyScreen() {
 
 function makeStyles(colors: import('@/theme/colors').ThemeColors) {
   return StyleSheet.create({
-    profileCard: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+    profileCard: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
     name: { fontSize: 17, fontWeight: '800', color: colors.ink },
     handle: { fontSize: 12, color: colors.inkSoft, marginTop: 2 },
     stats: { flexDirection: 'row', gap: 16, marginLeft: 'auto', alignItems: 'center' },
     statItem: { alignItems: 'center' },
     statNum: { fontSize: 16, fontWeight: '800', color: colors.ink },
     statLabel: { fontSize: 11, color: colors.inkSoft, marginTop: 2 },
-    actionsRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-    tabbar: { flexDirection: 'row', marginBottom: 2 },
+    bioBlock: { minHeight: 38, justifyContent: 'center', marginBottom: 22, paddingHorizontal: 2 },
+    bio: { fontSize: 13, lineHeight: 19, color: colors.ink },
+    bioPlaceholder: { color: colors.inkSoft },
+    actionsRow: { flexDirection: 'row', gap: 8, marginBottom: 26 },
+    tabbar: { flexDirection: 'row', marginBottom: 8 },
     tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 10 },
     tabText: { fontSize: 13, color: colors.muted, fontWeight: '700' },
     tabTextActive: { color: colors.accent },

@@ -27,7 +27,7 @@ export async function isUsernameAvailable(username: string, excludeUserId?: stri
 
 export async function updateProfile(
   userId: string,
-  updates: { username: string; nickname: string; onboarded?: boolean }
+  updates: { username: string; nickname: string; bio?: string; onboarded?: boolean }
 ): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
@@ -44,13 +44,13 @@ export async function searchUsers(query: string, excludeUserId: string): Promise
     return SEED_USERS.map((u) => ({ id: `seed-${u.nickname}`, username: u.nickname, nickname: u.nickname, avatarColor: u.color, avatarUrl: null }));
   }
 
-  let request = supabase.from('profiles').select('id, username, nickname, avatar_color, avatar_url').neq('id', excludeUserId).limit(20);
+  let request = supabase.from('profiles').select('id, username, nickname, bio, avatar_color, avatar_url').neq('id', excludeUserId).limit(20);
   const trimmed = query.trim();
   if (trimmed) request = request.or(`username.ilike.%${trimmed}%,nickname.ilike.%${trimmed}%`);
 
   const { data, error } = await request;
   if (error) throw new Error(error.message);
-  return (data ?? []).map((p) => ({ id: p.id, username: p.username, nickname: p.nickname, avatarColor: p.avatar_color, avatarUrl: p.avatar_url }));
+  return (data ?? []).map((p) => ({ id: p.id, username: p.username, nickname: p.nickname, bio: p.bio ?? '', avatarColor: p.avatar_color, avatarUrl: p.avatar_url }));
 }
 
 export async function fetchProfile(userId: string): Promise<UserSummary | undefined> {
@@ -60,9 +60,9 @@ export async function fetchProfile(userId: string): Promise<UserSummary | undefi
   }
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, nickname, avatar_color, avatar_url')
+    .select('id, username, nickname, bio, avatar_color, avatar_url')
     .eq('id', userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return data ? { id: data.id, username: data.username, nickname: data.nickname, avatarColor: data.avatar_color, avatarUrl: data.avatar_url } : undefined;
+  return data ? { id: data.id, username: data.username, nickname: data.nickname, bio: data.bio ?? '', avatarColor: data.avatar_color, avatarUrl: data.avatar_url } : undefined;
 }

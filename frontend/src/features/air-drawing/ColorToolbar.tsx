@@ -20,6 +20,7 @@ const COLORS_PER_PAGE = 6
 
 export interface ColorToolbarHandle {
   handleAirInput: (point: Point | null, pinching: boolean, twoFinger: boolean) => boolean
+  setOpen: (open: boolean) => void
 }
 
 interface ColorToolbarProps {
@@ -66,6 +67,7 @@ export const ColorToolbar = forwardRef<ColorToolbarHandle, ColorToolbarProps>(
     useImperativeHandle(
       ref,
       () => ({
+        setOpen,
         handleAirInput(point, pinching, twoFinger) {
           const toolbar = toolbarRef.current
           const toggle = toggleRef.current

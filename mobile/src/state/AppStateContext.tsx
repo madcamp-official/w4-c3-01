@@ -34,7 +34,7 @@ interface AppStateValue {
   logoutUser: () => void;
   setHeart: (heartUrl: string) => Promise<void>;
   setAvatar: (avatarUrl: string) => Promise<void>;
-  updateProfile: (updates: { username: string; nickname: string; onboarded?: boolean }) => Promise<void>;
+  updateProfile: (updates: { username: string; nickname: string; bio?: string; onboarded?: boolean }) => Promise<void>;
 
   loadFeed: () => Promise<void>;
   sharePost: (input: { image: string; strokes: StrokePoint[]; drawing?: AirDrawingDocument; caption: string }) => Promise<Post>;
@@ -125,7 +125,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   );
 
   const updateProfile = useCallback(
-    async (updates: { username: string; nickname: string; onboarded?: boolean }) => {
+    async (updates: { username: string; nickname: string; bio?: string; onboarded?: boolean }) => {
       if (!session) return;
       await userApi.updateProfile(session.id, updates);
       setSession((prev) => (prev ? { ...prev, ...updates } : prev));

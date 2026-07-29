@@ -103,19 +103,20 @@ function makeStyles(colors: import('@/theme/colors').ThemeColors) {
       alignItems: 'center',
       justifyContent: 'space-around',
       backgroundColor: colors.paper,
-      paddingTop: 6,
+      minHeight: 62,
+      paddingTop: 10,
       position: 'relative'
     },
-    btn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
+    btn: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', paddingVertical: 11 },
     plusBtn: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 52,
+      height: 52,
+      borderRadius: 26,
       backgroundColor: colors.ink,
       alignItems: 'center',
       justifyContent: 'center',
       marginHorizontal: 4,
-      marginTop: -14
+      marginTop: -12
     }
   });
 }

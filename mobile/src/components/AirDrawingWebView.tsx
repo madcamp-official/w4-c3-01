@@ -19,6 +19,7 @@ import { useCameraPermissions } from 'expo-camera';
 import { Directory, File, Paths } from 'expo-file-system';
 import StaticServer from '@dr.pogodin/react-native-static-server';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@/components/Icon';
 import type { AirDrawingDocument } from '@/air-drawing-types';
 import type { StrokePoint } from '@/types';
@@ -147,15 +148,18 @@ interface AirDrawingWebViewProps {
   onError?: (message: string) => void;
 }
 
-function buildAirViewUrl(origin: string, mode: AirDrawingMode, outputSize?: number, maxDim?: number, widgetEntry?: boolean): string {
+function buildAirViewUrl(origin: string, mode: AirDrawingMode, outputSize?: number, maxDim?: number, widgetEntry?: boolean, safeTop = 0, safeBottom = 0): string {
   const params = new URLSearchParams({ mode });
   if (outputSize) params.set('outputSize', String(outputSize));
   if (maxDim) params.set('maxDim', String(maxDim));
   if (widgetEntry) params.set('widgetEntry', '1');
+  params.set('safeTop', String(Math.round(safeTop)));
+  params.set('safeBottom', String(Math.round(safeBottom)));
   return `${origin}/index.html?${params.toString()}`;
 }
 
 export default function AirDrawingWebView({ mode, outputSize, maxDim, busy, onCapture, onClose, onHome, widgetEntry, onError }: AirDrawingWebViewProps) {
+  const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const [permissionChecked, setPermissionChecked] = useState(false);
   const [origin, setOrigin] = useState<string | null>(null);
@@ -274,7 +278,7 @@ export default function AirDrawingWebView({ mode, outputSize, maxDim, busy, onCa
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <WebView
-        source={{ uri: buildAirViewUrl(origin, mode, outputSize, maxDim, widgetEntry) }}
+        source={{ uri: buildAirViewUrl(origin, mode, outputSize, maxDim, widgetEntry, insets.top, insets.bottom) }}
         style={{ flex: 1 }}
         onMessage={handleMessage}
         allowsInlineMediaPlayback

@@ -18,8 +18,13 @@ const config = {
   mode: (modeParam === 'heart' || modeParam === 'message' || modeParam === 'lounge' ? modeParam : 'post') as AirDrawingMode,
   outputSize: params.has('outputSize') ? Number(params.get('outputSize')) : undefined,
   maxDim: params.has('maxDim') ? Number(params.get('maxDim')) : undefined,
-  widgetEntry: params.get('widgetEntry') === '1'
+  widgetEntry: params.get('widgetEntry') === '1',
+  safeTop: Math.max(0, Number(params.get('safeTop')) || 0),
+  safeBottom: Math.max(0, Number(params.get('safeBottom')) || 0)
 }
+
+document.documentElement.style.setProperty('--native-safe-top', `${config.safeTop}px`)
+document.documentElement.style.setProperty('--native-safe-bottom', `${config.safeBottom}px`)
 
 function Root() {
   const handleCapture = useCallback((capture: AirDrawingCapture) => {
@@ -43,6 +48,8 @@ function Root() {
       mode={config.mode}
       outputSize={config.outputSize}
       maxDim={config.maxDim}
+      safeTop={config.safeTop}
+      safeBottom={config.safeBottom}
       onCapture={handleCapture}
       onClose={handleClose}
       onError={handleError}

@@ -27,6 +27,7 @@ export default function EditProfileScreen({ navigation }: Props) {
   const [dataUrl, setDataUrl] = useState<string | null>(session?.avatarUrl ?? null);
   const [username, setUsername] = useState(session?.username ?? '');
   const [nickname, setNickname] = useState(session?.nickname ?? '');
+  const [bio, setBio] = useState(session?.bio ?? '');
   const [saving, setSaving] = useState(false);
 
   const usernameChanged = username.trim() !== session?.username;
@@ -48,7 +49,7 @@ export default function EditProfileScreen({ navigation }: Props) {
     setSaving(true);
     try {
       if (dataUrl && dataUrl !== session!.avatarUrl) await setAvatar(dataUrl);
-      await updateProfile({ username: username.trim(), nickname: nickname.trim() });
+      await updateProfile({ username: username.trim(), nickname: nickname.trim(), bio: bio.trim() });
       showToast('프로필을 저장했어요');
       navigation.goBack();
     } catch (err) {
@@ -68,7 +69,7 @@ export default function EditProfileScreen({ navigation }: Props) {
         <View style={{ width: 36 }} />
       </View>
       <ScrollView contentContainerStyle={{ paddingTop: 14, paddingBottom: 24 + bottomInset }} keyboardShouldPersistTaps="handled">
-        <View style={{ alignItems: 'center', marginBottom: 24 }}>
+        <View style={{ alignItems: 'center', marginBottom: 36 }}>
           <AvatarPicker dataUrl={dataUrl} nickname={session.nickname} color={session.avatarColor} size={100} onChange={setDataUrl} />
         </View>
         <View style={common.field}>
@@ -76,9 +77,24 @@ export default function EditProfileScreen({ navigation }: Props) {
           <SketchyInput blobVariant="a" value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
           {usernameHint ? <Text style={[common.hint, { color: usernameHint.color }]}>{usernameHint.text}</Text> : null}
         </View>
-        <View style={[common.field, { marginBottom: 24 }]}>
+        <View style={common.field}>
           <Text style={common.label}>이름</Text>
           <SketchyInput blobVariant="b" maxLength={16} value={nickname} onChangeText={setNickname} />
+        </View>
+        <View style={[common.field, { marginBottom: 32 }]}>
+          <Text style={common.label}>자기소개</Text>
+          <SketchyInput
+            blobVariant="a"
+            maxLength={160}
+            multiline
+            numberOfLines={3}
+            placeholder="나를 소개하는 짧은 글을 적어보세요"
+            style={{ minHeight: 92 }}
+            textAlignVertical="top"
+            value={bio}
+            onChangeText={setBio}
+          />
+          <Text style={[common.hint, { textAlign: 'right' }]}>{bio.length}/160</Text>
         </View>
         <SketchyButton variant="primary" disabled={saving} onPress={handleSave}>
           <Text style={common.btnPrimaryText}>저장</Text>

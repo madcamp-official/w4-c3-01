@@ -46,7 +46,13 @@ export function landmarkToStagePoint(
     y = stageHeight / 2 + (y - stageHeight / 2) * zoom
   }
 
-  return { x, y }
+  // Keep the pointer visible across the full camera stage, including the
+  // darkened area above and below the square post guide. The guide only
+  // affects capture framing; it must never become a tracking boundary.
+  return {
+    x: Math.min(stageWidth - 1, Math.max(0, x)),
+    y: Math.min(stageHeight - 1, Math.max(0, y)),
+  }
 }
 
 export function smoothPoint(previous: Point | null, current: Point): Point {
@@ -57,7 +63,7 @@ export function smoothPoint(previous: Point | null, current: Point): Point {
   // feel heavy. The old 0.4/0.72 filter could remain multiple frames behind
   // on a phone; this curve catches up aggressively once motion exceeds jitter.
   const adaptiveAlpha =
-    distance < 2 ? 0.2 : Math.min(0.94, 0.58 + distance / 72)
+    distance < 1.5 ? 0.34 : Math.min(0.97, 0.72 + distance / 64)
 
   return {
     x: previous.x * (1 - adaptiveAlpha) + current.x * adaptiveAlpha,

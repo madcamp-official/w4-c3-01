@@ -82,6 +82,7 @@ export interface UserSummary {
   id: string;
   username: string;
   nickname: string;
+  bio?: string;
   avatarColor: string;
   avatarUrl: string | null;
 }
@@ -91,6 +92,7 @@ export interface Session {
   isAuthenticated: boolean;
   username: string;
   nickname: string;
+  bio: string;
   avatarColor: string;
   heartUrl: string | null;
   avatarUrl: string | null;

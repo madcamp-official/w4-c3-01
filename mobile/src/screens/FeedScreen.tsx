@@ -37,7 +37,7 @@ import { useToast } from '@/state/ToastContext';
 import { radius } from '@/theme/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_SIZE = Math.min(350, SCREEN_WIDTH - 40);
+const CARD_SIZE = Math.min(318, SCREEN_WIDTH - 68);
 const SWIPE_THRESHOLD = 70;
 const EXIT_MS = 260;
 
@@ -282,15 +282,15 @@ export default function FeedScreen() {
 function makeStyles(colors: import('@/theme/colors').ThemeColors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.paper },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
     logoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     dot: { width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.accent },
     logo: { fontSize: 19, fontWeight: '800', color: colors.ink },
     iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-    dotsRow: { flexDirection: 'row', gap: 6, justifyContent: 'center', paddingBottom: 8 },
-    dotInactive: { width: 6, height: 6, borderRadius: 3, borderWidth: 1, borderColor: colors.muted },
-    dotActive: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.ink },
-    storyStage: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
+    dotsRow: { flexDirection: 'row', gap: 5, justifyContent: 'center', paddingTop: 4, paddingBottom: 12 },
+    dotInactive: { width: 5, height: 4, borderRadius: 2, backgroundColor: colors.border },
+    dotActive: { width: 14, height: 4, borderRadius: 2, backgroundColor: colors.ink },
+    storyStage: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34, paddingVertical: 12 },
     storyFrame: { position: 'relative' },
     storyPeek: {
       position: 'absolute',
@@ -298,11 +298,11 @@ function makeStyles(colors: import('@/theme/colors').ThemeColors) {
       left: 8,
       right: 8,
       bottom: 8,
-      borderRadius: radius.lg,
+      borderRadius: 24,
       overflow: 'hidden',
       backgroundColor: colors.paper2,
-      opacity: 0.55,
-      transform: [{ scale: 0.94 }, { translateY: 10 }]
+      opacity: 0.38,
+      transform: [{ scale: 0.95 }, { translateY: 12 }]
     },
     storyCard: {
       position: 'absolute',
@@ -310,26 +310,49 @@ function makeStyles(colors: import('@/theme/colors').ThemeColors) {
       left: 0,
       right: 0,
       bottom: 0,
-      borderRadius: radius.lg,
+      borderRadius: 24,
       overflow: 'hidden',
       backgroundColor: colors.paper2,
       borderWidth: 1.5,
       borderColor: colors.border,
       shadowColor: '#000',
-      shadowOpacity: 0.25,
-      shadowRadius: 20,
-      shadowOffset: { width: 0, height: 10 },
-      elevation: 10
+      shadowOpacity: 0.18,
+      shadowRadius: 24,
+      shadowOffset: { width: 0, height: 12 },
+      elevation: 8
     },
-    storyTopbar: { position: 'absolute', left: 14, top: 12, flexDirection: 'row', alignItems: 'center', gap: 8 },
+    storyTopbar: {
+      position: 'absolute',
+      left: 12,
+      top: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingRight: 12,
+      paddingVertical: 5,
+      paddingLeft: 5,
+      borderRadius: radius.pill,
+      backgroundColor: 'rgba(8,10,14,0.48)'
+    },
     storyTopbarText: { color: '#fff', fontSize: 12, fontWeight: '600', textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } },
-    storyStats: { position: 'absolute', right: 16, bottom: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
+    storyStats: {
+      position: 'absolute',
+      right: 12,
+      bottom: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      paddingHorizontal: 11,
+      paddingVertical: 8,
+      borderRadius: radius.pill,
+      backgroundColor: 'rgba(8,10,14,0.48)'
+    },
     storyStat: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     storyStatText: { color: '#fff', fontSize: 12, textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } },
-    hint: { alignItems: 'center', paddingTop: 6 },
+    hint: { alignItems: 'center', paddingTop: 10 },
     hintInner: { alignItems: 'center', gap: 2 },
     hintText: { fontSize: 11, color: colors.inkSoft },
-    dmRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
+    dmRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 24, paddingTop: 10, paddingBottom: 8 },
     dmInput: {
       flex: 1,
       paddingHorizontal: 16,

@@ -44,6 +44,8 @@ interface AirDrawingStageProps {
   outputSize?: number
   /** Longest-edge cap for post/lounge captures. */
   maxDim?: number
+  safeTop?: number
+  safeBottom?: number
   onClose: () => void
   onCapture: (capture: AirDrawingCapture) => void
   onError?: (message: string) => void
@@ -124,8 +126,12 @@ function drawCenteredStageSquare(
   outputSize: number,
   mirrored: boolean,
   zoom: number,
+  safeTop: number,
+  safeBottom: number,
 ) {
-  const stageScale = outputSize / Math.min(stageWidth, stageHeight)
+  const usableHeight = Math.max(1, stageHeight - safeTop - safeBottom)
+  const squareSize = Math.min(stageWidth, usableHeight)
+  const stageScale = outputSize / squareSize
   const renderedStageWidth = Math.max(1, Math.round(stageWidth * stageScale))
   const renderedStageHeight = Math.max(1, Math.round(stageHeight * stageScale))
   const stageCanvas = document.createElement('canvas')
@@ -145,9 +151,9 @@ function drawCenteredStageSquare(
     zoom,
   )
 
-  const cropSize = Math.min(renderedStageWidth, renderedStageHeight)
-  const cropX = (renderedStageWidth - cropSize) / 2
-  const cropY = (renderedStageHeight - cropSize) / 2
+  const cropSize = squareSize * stageScale
+  const cropX = ((stageWidth - squareSize) / 2) * stageScale
+  const cropY = (safeTop + (usableHeight - squareSize) / 2) * stageScale
   context.drawImage(stageCanvas, cropX, cropY, cropSize, cropSize, 0, 0, outputSize, outputSize)
 }
 
@@ -178,6 +184,8 @@ export function AirDrawingStage({
   mode = 'post',
   outputSize,
   maxDim = 2400,
+  safeTop = 0,
+  safeBottom = 0,
   onClose,
   onCapture,
   onError,
@@ -305,6 +313,11 @@ export function AirDrawingStage({
 
     let start: { x: number; y: number } | null = null
     function handleTouchStart(event: TouchEvent) {
+      const target = event.target
+      if (target instanceof Element && target.closest('button, input, .side-drawer, .air-capture-panel')) {
+        start = null
+        return
+      }
       if (event.touches.length !== 1) {
         start = null
         return
@@ -337,6 +350,47 @@ export function AirDrawingStage({
       element.removeEventListener('touchcancel', cancelSwipe)
     }
   }, [onSwipeUpHome])
+
+  useEffect(() => {
+    const element = stageRef.current
+    if (!element || !showToolbars) return
+
+    let start: { x: number; y: number } | null = null
+    function handleTouchStart(event: TouchEvent) {
+      if (event.touches.length !== 1) {
+        start = null
+        return
+      }
+      start = { x: event.touches[0].clientX, y: event.touches[0].clientY }
+    }
+    function handleTouchEnd(event: TouchEvent) {
+      const touch = event.changedTouches[0]
+      if (!start || !touch) return
+      const deltaX = touch.clientX - start.x
+      const deltaY = touch.clientY - start.y
+      start = null
+      if (Math.abs(deltaX) < 72 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return
+      if (deltaX > 0) {
+        colorToolbarRef.current?.setOpen(true)
+        penStyleToolbarRef.current?.setOpen(false)
+      } else {
+        colorToolbarRef.current?.setOpen(false)
+        penStyleToolbarRef.current?.setOpen(true)
+      }
+    }
+    function cancelSwipe() {
+      start = null
+    }
+
+    element.addEventListener('touchstart', handleTouchStart, { passive: true })
+    element.addEventListener('touchend', handleTouchEnd, { passive: true })
+    element.addEventListener('touchcancel', cancelSwipe)
+    return () => {
+      element.removeEventListener('touchstart', handleTouchStart)
+      element.removeEventListener('touchend', handleTouchEnd)
+      element.removeEventListener('touchcancel', cancelSwipe)
+    }
+  }, [showToolbars])
 
   const handleTrackedPoint = useCallback(
     (point: Point | null, isPinching: boolean, isErasing: boolean) => {
@@ -419,7 +473,8 @@ export function AirDrawingStage({
     let height: number
     if (isSquarePostMode) {
       const dpr = Math.min(window.devicePixelRatio || 1, 3)
-      const squareSize = Math.min(maxDim, Math.round(Math.min(rect.width, rect.height) * dpr))
+      const usableHeight = Math.max(1, rect.height - safeTop - safeBottom)
+      const squareSize = Math.min(maxDim, Math.round(Math.min(rect.width, usableHeight) * dpr))
       width = squareSize
       height = squareSize
     } else if (outputSize) {
@@ -468,6 +523,8 @@ export function AirDrawingStage({
               width,
               facingMode === 'user',
               zoomValue,
+              safeTop,
+              safeBottom,
             )
           } else {
             drawCover(context, hqPhoto, hqPhoto.width, hqPhoto.height, width, height, facingMode === 'user', zoomValue)
@@ -485,6 +542,8 @@ export function AirDrawingStage({
               width,
               facingMode === 'user',
               zoomValue,
+              safeTop,
+              safeBottom,
             )
           } else {
             drawCover(context, video, video.videoWidth, video.videoHeight, width, height, facingMode === 'user', zoomValue)
@@ -494,9 +553,13 @@ export function AirDrawingStage({
       const drawing = drawingHandle.getDocument()
       let cropForStrokes: { x: number; y: number; size: number; canvasWidth: number; canvasHeight: number } | undefined
       if (isSquarePostMode) {
-        const cropSize = Math.min(drawingCanvas.width, drawingCanvas.height)
+        const canvasScale = drawingCanvas.height / rect.height
+        const canvasSafeTop = safeTop * canvasScale
+        const canvasSafeBottom = safeBottom * canvasScale
+        const usableCanvasHeight = drawingCanvas.height - canvasSafeTop - canvasSafeBottom
+        const cropSize = Math.min(drawingCanvas.width, usableCanvasHeight)
         const cropX = (drawingCanvas.width - cropSize) / 2
-        const cropY = (drawingCanvas.height - cropSize) / 2
+        const cropY = canvasSafeTop + (usableCanvasHeight - cropSize) / 2
         context.drawImage(drawingCanvas, cropX, cropY, cropSize, cropSize, 0, 0, width, height)
         cropForStrokes = {
           x: cropX,
@@ -548,7 +611,7 @@ export function AirDrawingStage({
     } finally {
       setCapturing(false)
     }
-  }, [busy, capturing, facingMode, isPaperMode, isSquarePostMode, maxDim, onCapture, onError, outputSize, stream, zoomValue])
+  }, [busy, capturing, facingMode, isPaperMode, isSquarePostMode, maxDim, onCapture, onError, outputSize, safeBottom, safeTop, stream, zoomValue])
 
   const handleSwitchCamera = useCallback(async () => {
     setPinching(false)
