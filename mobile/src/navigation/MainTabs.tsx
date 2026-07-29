@@ -41,7 +41,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
     // is computed synchronously and floors to a real clearance value even on
     // Android builds where the reported inset comes back as 0/too-small
     // despite an actual nav bar being present.
-    <View style={[styles.bar, { paddingBottom: bottomInset }]}>
+    <View style={[styles.bar, { paddingBottom: bottomInset + 8 }]}>
       <SketchyLine seed="main-tabs-top" style={{ position: 'absolute', top: 0, left: 0, right: 0 }} />
       {state.routes.slice(0, 2).map((route, i) => {
         const focused = state.index === i;
@@ -53,7 +53,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
       })}
 
       <Pressable onPress={() => parentNav?.navigate('Camera', { intent: { kind: 'post' } })} accessibilityLabel="촬영">
-        <Sketchy radius={24} color={colors.paper} seed="main-tabs-plus" style={styles.plusBtn}>
+        <Sketchy radius={999} color={colors.paper} seed="main-tabs-plus" style={styles.plusBtn}>
           <Icon name="edit-2" size={20} color={colors.paper} />
         </Sketchy>
       </Pressable>
@@ -115,8 +115,7 @@ function makeStyles(colors: import('@/theme/colors').ThemeColors) {
       backgroundColor: colors.ink,
       alignItems: 'center',
       justifyContent: 'center',
-      marginHorizontal: 4,
-      marginTop: -12
+      marginHorizontal: 4
     }
   });
 }

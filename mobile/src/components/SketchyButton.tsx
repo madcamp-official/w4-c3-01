@@ -17,9 +17,23 @@ type Props = {
   /** Override the ghost variant's default (soft) border color — e.g. mypage's
    * profile-edit/redraw-heart pair uses a bolder ink-colored border. */
   borderColor?: string;
+  /** Merged into the inner Sketchy frame's padding — e.g. to shrink a
+   * specific button (like mypage's profile-edit/redraw-heart pair) without
+   * affecting every other SketchyButton, which `style` (applied to the outer
+   * Pressable, not the padded frame) can't do. */
+  contentStyle?: StyleProp<ViewStyle>;
 };
 
-export default function SketchyButton({ children, onPress, variant = 'ghost', blobVariant = 'a', disabled, style, borderColor }: Props) {
+export default function SketchyButton({
+  children,
+  onPress,
+  variant = 'ghost',
+  blobVariant = 'a',
+  disabled,
+  style,
+  borderColor,
+  contentStyle
+}: Props) {
   const { colors } = useTheme();
   const isPrimary = variant === 'primary';
   return (
@@ -31,7 +45,7 @@ export default function SketchyButton({ children, onPress, variant = 'ghost', bl
         color={isPrimary ? 'transparent' : (borderColor ?? colors.border)}
         fill={isPrimary ? colors.accent : colors.paper}
         strokeWidth={1.4}
-        style={styles.base}
+        style={[styles.base, contentStyle]}
       >
         {children}
       </Sketchy>

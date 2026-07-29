@@ -566,6 +566,11 @@ input[type='password'].sk::before {
 .story-like .heart-icon {
   width: 18px;
   height: 18px;
+  /* The doodle is dark ink on transparent — normally only flipped light in
+     dark mode (see .heart-doodle above), but this button sits over a photo
+     here regardless of theme (like the comment icon beside it, which is
+     hardcoded white), so it needs to invert unconditionally. */
+  filter: invert(1);
 }
 .feed-swipe-hint {
   display: flex;
@@ -722,25 +727,6 @@ input[type='password'].sk::before {
   color: var(--ink-soft);
   font-size: 10.5px;
 }
-.burst {
-  position: absolute;
-  pointer-events: none;
-  font-size: 13px;
-  left: 10px;
-  top: -4px;
-  animation: burstFloat 0.6s ease forwards;
-}
-@keyframes burstFloat {
-  from {
-    transform: translate(0, 0) scale(1);
-    opacity: 1;
-  }
-  to {
-    transform: translate(var(--bx, 0px), -28px) scale(1.3);
-    opacity: 0;
-  }
-}
-
 /* ---------- search ---------- */
 .search-box {
   margin: 0 12px 12px 0;
@@ -1026,16 +1012,27 @@ input[type='password'].sk::before {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 4px 14px 10px 0;
+  padding: 10px 14px 16px 0;
   flex-shrink: 0;
 }
+.thread-header-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: 'Noto Sans KR';
+  color: var(--ink);
+}
 .thread-header .avatar {
-  width: 30px;
-  height: 30px;
-  font-size: 12px;
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
 }
 .thread-header b {
-  font-size: 13.5px;
+  font-size: 16px;
 }
 .thread-body {
   flex: 1;
@@ -1234,10 +1231,10 @@ input[type='password'].sk::before {
 }
 .profile-stats b {
   display: block;
-  font-size: 16px;
+  font-size: 18px;
 }
 .profile-stats span {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-soft);
 }
 .profile-actions {
@@ -1249,6 +1246,10 @@ input[type='password'].sk::before {
 .profile-actions .btn.ghost::before {
   border-color: var(--ink);
 }
+.profile-actions .btn {
+  padding: 8px 18px;
+  font-size: 12.5px;
+}
 .tabbar {
   display: flex;
   flex-shrink: 0;
@@ -1258,7 +1259,7 @@ input[type='password'].sk::before {
   flex: 1;
   background: none;
   border: none;
-  padding: 10px;
+  padding: 10px 10px 16px;
   color: var(--ink-soft);
   font-size: 12px;
   font-weight: 800;
@@ -1593,7 +1594,7 @@ input[type='password'].sk::before {
   align-items: center;
   justify-content: space-around;
   min-height: 66px;
-  padding: 11px 14px calc(16px + env(safe-area-inset-bottom, 0px)) 14px;
+  padding: 11px 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px;
   background: var(--paper);
   position: absolute;
   left: 0;

@@ -1,8 +1,12 @@
-// Ported from frontend/src/pages/AirwritePage.tsx — keep in sync.
+// Ported from frontend/src/pages/AirwritePage.tsx — keep in sync. The
+// preview step mirrors PreviewScreen.tsx's exact layout (full-bleed image
+// card, back-chevron overlay, single bottom button) instead of its own
+// bespoke minimal preview, so it reads the same as the post camera's.
 import { useState } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AirDrawingWebView, { type AirDrawingCapture } from '@/components/AirDrawingWebView';
+import Icon from '@/components/Icon';
 import SketchyButton from '@/components/SketchyButton';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useBottomInset } from '@/lib/useBottomInset';
@@ -39,18 +43,34 @@ export default function AirwriteScreen({ navigation, route }: Props) {
 
   if (preview) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.ink }} edges={['top']}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <View style={{ width: 220, height: 220, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 }}>
-            <Image source={{ uri: preview.image }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.paper }} edges={['top']}>
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          {/* Air-write captures are always square (outputSize) — see
+              PreviewScreen.tsx's identical note on why this is sized to
+              match instead of stretched to fill the flex:1 area. */}
+          <View style={{ width: '100%', aspectRatio: 1, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 }}>
+            <Image source={{ uri: preview.image }} style={{ flex: 1 }} resizeMode="cover" />
+            <Pressable
+              style={{
+                position: 'absolute',
+                top: 14,
+                left: 14,
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              onPress={() => setPreview(null)}
+            >
+              <Icon name="chevron-left" size={22} color="#fff" />
+            </Pressable>
           </View>
         </View>
-        <View style={{ padding: 20, paddingBottom: 20 + bottomInset, gap: 10 }}>
-          <SketchyButton variant="primary" blobVariant="a" disabled={sending} onPress={handleSend}>
+        <View style={{ paddingHorizontal: 16, paddingBottom: 8 + bottomInset }}>
+          <SketchyButton variant="primary" disabled={sending} onPress={handleSend}>
             <Text style={common.btnPrimaryText}>{sending ? '보내는 중...' : '이 메시지 보내기'}</Text>
-          </SketchyButton>
-          <SketchyButton variant="ghost" blobVariant="b" disabled={sending} onPress={() => setPreview(null)}>
-            <Text style={common.btnGhostText}>다시 그리기</Text>
           </SketchyButton>
         </View>
       </SafeAreaView>

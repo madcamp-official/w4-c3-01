@@ -1,4 +1,5 @@
 // Replaces frontend/src/types-nav.ts (location.state -> React Navigation route params).
+import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { AirDrawingDocument } from '@/air-drawing-types';
 import type { StrokePoint } from '@/types';
 
@@ -18,7 +19,7 @@ export type TabParamList = {
 };
 
 export type AppStackParamList = {
-  MainTabs: undefined;
+  MainTabs: NavigatorScreenParams<TabParamList> | undefined;
   Camera: { intent?: CaptureIntent; source?: 'widget' } | undefined;
   Preview: { image: string; strokes: StrokePoint[]; drawing?: AirDrawingDocument; intent: CaptureIntent };
   ChatList: undefined;

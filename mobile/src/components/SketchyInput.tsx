@@ -13,14 +13,26 @@ import Sketchy from '@/components/Sketchy';
 import { useTheme } from '@/state/ThemeContext';
 import type { BlobVariant } from '@/lib/sketchyPath';
 
-type Props = TextInputProps & { blobVariant?: BlobVariant };
+type Props = TextInputProps & {
+  blobVariant?: BlobVariant;
+  /** 'round' with an explicit `radius` gives a normal rounded-rect frame
+   * instead of the default pill — for taller multiline fields (e.g. a bio
+   * textarea), where the pill's corner radius scales up to half the field's
+   * height and ends up looking like a stretched capsule. */
+  shape?: 'round' | 'blob';
+  radius?: number;
+};
 
-const SketchyInput = forwardRef<TextInput, Props>(function SketchyInput({ style, blobVariant = 'a', ...props }, ref) {
+const SketchyInput = forwardRef<TextInput, Props>(function SketchyInput(
+  { style, blobVariant = 'a', shape = 'blob', radius, ...props },
+  ref
+) {
   const { colors } = useTheme();
   return (
     <Sketchy
-      shape="blob"
+      shape={shape}
       variant={blobVariant}
+      radius={radius}
       color={colors.border}
       fill={colors.paper}
       strokeWidth={1.4}

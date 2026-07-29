@@ -6,19 +6,20 @@ import { useOverlay } from '@/state/OverlayContext';
 import type { Post } from '@/types';
 
 /** Compact list-mode card — see FeedPage.tsx for the swipeable story-card mode (a separate renderer). */
-export default function PostCard({ post }: { post: Post }) {
+export default function PostCard({ post, isLast }: { post: Post; isLast?: boolean }) {
   const navigate = useNavigate();
   const { openComments, openShare } = useOverlay();
+  const openProfile = () => navigate(post.mine ? '/mypage' : `/users/${post.authorId}`);
 
   return (
-    <article className="post post-vertical sk-hr-b">
-      <div className="post-head">
+    <article className={'post post-vertical' + (isLast ? '' : ' sk-hr-b')}>
+      <button className="post-head" style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer' }} onClick={openProfile}>
         <Avatar nickname={post.username} color={post.avatarColor} size={32} fontSize={13} avatarUrl={post.avatarUrl} />
         <div className="who">
           <b>{post.username}</b>
           <small>{post.time}</small>
         </div>
-      </div>
+      </button>
       <div className="post-media" onClick={() => navigate(`/posts/${post.id}`)}>
         <img src={post.image} alt="" />
       </div>

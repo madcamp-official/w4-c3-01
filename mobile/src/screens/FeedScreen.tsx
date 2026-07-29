@@ -10,7 +10,7 @@
 // This is a single custom Gesture.Pan() driving dragX/dragY/rotate shared
 // values on the card itself (not a horizontal strip of all posts) — only the
 // current + next post are ever mounted, matching the prototype's DOM shape.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Dimensions, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -29,7 +29,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Avatar from '@/components/Avatar';
 import LikeButton from '@/components/LikeButton';
 import PostCard from '@/components/PostCard';
-import type { AppStackParamList } from '@/navigation/types';
+import TopBar from '@/components/TopBar';
+import type { AppStackParamList, TabParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
@@ -41,11 +42,10 @@ const SWIPE_THRESHOLD = 70;
 const EXIT_MS = 260;
 
 export default function FeedScreen() {
-  const { posts, chats, loadFeed, loadChats, startConversationWith, sendText } = useAppState();
-  const hasUnreadChats = useMemo(() => chats.some((c) => c.unread), [chats]);
-  const { colors, isDark, toggleTheme } = useTheme();
+  const { posts, loadFeed, loadChats, startConversationWith, sendText } = useAppState();
+  const { colors } = useTheme();
   const { showToast } = useToast();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<TabParamList>>();
   const [mode, setMode] = useState<'card' | 'list'>('card');
   const [activeIndex, setActiveIndex] = useState(0);
   const [messageDraft, setMessageDraft] = useState('');
@@ -181,21 +181,7 @@ export default function FeedScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View style={styles.header}>
-        <View style={styles.logoRow}>
-          <View style={styles.dot} />
-          <Text style={styles.logo}>ALine</Text>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <Pressable style={styles.iconBtn} onPress={toggleTheme}>
-            <Icon name={isDark ? 'sun' : 'moon'} size={19} color={colors.ink} />
-          </Pressable>
-          <Pressable style={styles.iconBtn} onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('ChatList')}>
-            <Icon name="send" size={20} color={colors.ink} />
-            {hasUnreadChats ? <View style={styles.unreadDot} /> : null}
-          </Pressable>
-        </View>
-      </View>
+      <TopBar />
 
       {mode === 'card' ? (
         <>
@@ -235,15 +221,22 @@ export default function FeedScreen() {
                       >
                         <Image source={{ uri: currentPost.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
                       </Pressable>
-                      <View style={styles.storyTopbar}>
+                      <Pressable
+                        style={styles.storyTopbar}
+                        onPress={() =>
+                          currentPost.mine
+                            ? navigation.navigate('My')
+                            : navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('UserProfile', { userId: currentPost.authorId })
+                        }
+                      >
                         <Avatar nickname={currentPost.username} color={currentPost.avatarColor} size={30} fontSize={12} avatarUrl={currentPost.avatarUrl} />
                         <Text style={styles.storyTopbarText}>
                           {currentPost.username} · {currentPost.time}
                         </Text>
-                      </View>
+                      </Pressable>
                       <View style={styles.storyStats}>
                         <View style={styles.storyStat}>
-                          <LikeButton post={currentPost} size={18} />
+                          <LikeButton post={currentPost} size={18} light />
                           <Text style={styles.storyStatText}>{currentPost.likes}</Text>
                         </View>
                         <Pressable
@@ -293,7 +286,7 @@ export default function FeedScreen() {
           <FlatList
             data={posts}
             keyExtractor={(p) => p.id}
-            renderItem={({ item }) => <PostCard post={item} />}
+            renderItem={({ item, index }) => <PostCard post={item} isLast={index === posts.length - 1} />}
             contentContainerStyle={{ paddingBottom: 20 }}
           />
         </View>
@@ -306,22 +299,6 @@ export default function FeedScreen() {
 function makeStyles(colors: import('@/theme/colors').ThemeColors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.paper },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-    logoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    dot: { width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.accent },
-    logo: { fontSize: 19, fontWeight: '800', color: colors.ink },
-    iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-    unreadDot: {
-      position: 'absolute',
-      top: 3,
-      right: 4,
-      width: 11,
-      height: 11,
-      borderRadius: 5.5,
-      backgroundColor: colors.accent,
-      borderWidth: 2,
-      borderColor: colors.paper
-    },
     dotsRow: { flexDirection: 'row', gap: 5, justifyContent: 'center', paddingTop: 4, paddingBottom: 12 },
     dotInactive: { width: 5, height: 4, borderRadius: 2, backgroundColor: colors.border },
     dotActive: { width: 14, height: 4, borderRadius: 2, backgroundColor: colors.ink },

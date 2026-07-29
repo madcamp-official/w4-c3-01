@@ -6,31 +6,35 @@ import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import Icon from '@/components/Icon';
 import Avatar from '@/components/Avatar';
 import LikeButton from '@/components/LikeButton';
-import type { AppStackParamList } from '@/navigation/types';
+import type { AppStackParamList, TabParamList } from '@/navigation/types';
 import { useOverlay } from '@/state/OverlayContext';
 import { useTheme } from '@/state/ThemeContext';
 import { radius as radiusTokens } from '@/theme/colors';
 import type { Post } from '@/types';
 
-export default function PostCard({ post }: { post: Post }) {
+export default function PostCard({ post, isLast }: { post: Post; isLast?: boolean }) {
   const { openShare } = useOverlay();
   const { colors } = useTheme();
   const styles = makeStyles(colors);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<TabParamList>>();
   const openComments = (postId: string) =>
     navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('Comment', { postId });
   const openPostDetail = (postId: string) =>
     navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('PostDetail', { postId });
+  const openProfile = () =>
+    post.mine
+      ? navigation.navigate('My')
+      : navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('UserProfile', { userId: post.authorId });
 
   return (
-    <View style={styles.card}>
-      <View style={styles.head}>
+    <View style={[styles.card, isLast && styles.cardLast]}>
+      <Pressable style={styles.head} onPress={openProfile}>
         <Avatar nickname={post.username} color={post.avatarColor} size={32} fontSize={13} avatarUrl={post.avatarUrl} />
         <View style={{ marginLeft: 8 }}>
           <Text style={styles.username}>{post.username}</Text>
           <Text style={styles.time}>{post.time}</Text>
         </View>
-      </View>
+      </Pressable>
       <Pressable style={[styles.mediaWrap, styles.mediaWrapRounded]} onPress={() => openPostDetail(post.id)}>
         <Image source={{ uri: post.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
       </Pressable>
@@ -62,6 +66,7 @@ export default function PostCard({ post }: { post: Post }) {
 function makeStyles(colors: import('@/theme/colors').ThemeColors) {
   return StyleSheet.create({
     card: { paddingBottom: 18, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: colors.border },
+    cardLast: { borderBottomWidth: 0 },
     head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 34, paddingVertical: 12 },
     username: { fontWeight: '700', color: colors.ink, fontSize: 13.5 },
     time: { fontSize: 11, color: colors.inkSoft },

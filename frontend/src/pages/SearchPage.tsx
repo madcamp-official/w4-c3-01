@@ -2,17 +2,22 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
 import Icon from '@/components/Icon';
+import TopBar from '@/components/TopBar';
 import * as userApi from '@/api/userApi';
 import { useAppState } from '@/state/AppStateContext';
 import type { UserSummary } from '@/types';
 
 export default function SearchPage() {
   const navigate = useNavigate();
-  const { posts, session } = useAppState();
+  const { posts, session, loadChats } = useAppState();
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<UserSummary[]>([]);
 
   const q = query.trim().toLowerCase();
+
+  useEffect(() => {
+    void loadChats(); // keeps TopBar's unread-chat dot fresh
+  }, [loadChats]);
 
   useEffect(() => {
     if (!session || !q) {
@@ -35,9 +40,7 @@ export default function SearchPage() {
 
   return (
     <section className="screen active" id="screen-search">
-      <div className="logo" style={{ fontSize: 26, padding: '0 12px 14px 0' }}>
-        검색
-      </div>
+      <TopBar />
       <div className="search-box">
         <div className="search-input-wrap">
           <input

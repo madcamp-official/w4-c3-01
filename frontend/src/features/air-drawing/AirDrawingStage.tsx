@@ -200,6 +200,12 @@ export function AirDrawingStage({
   // 게시물/라운지는 카메라 프레임을 그대로 합성합니다.
   const isPaperMode = mode === 'heart'
   const isSquarePostMode = mode === 'post'
+  // message mode also captures a square photo (via outputSize, see
+  // handleCapture below) — it just doesn't lock the photo/drawing crop to
+  // this exact fixed on-screen region the way post mode does. Showing the
+  // same framing guide there is still a close, useful approximation of
+  // what'll end up in frame, and keeps the two camera screens looking alike.
+  const showSquareGuide = mode === 'post' || mode === 'message'
   const showToolbars = mode !== 'heart'
   const zoomEnabled = mode !== 'heart'
 
@@ -645,7 +651,7 @@ export function AirDrawingStage({
         lineSize={lineSize}
       />
 
-      {isSquarePostMode ? <div className="square-capture-guide" aria-hidden="true" /> : null}
+      {showSquareGuide ? <div className="square-capture-guide" aria-hidden="true" /> : null}
 
       <div ref={cursorRef} className="finger-cursor" style={{ opacity: 0 }} aria-hidden="true" />
 

@@ -122,7 +122,7 @@ export default function CommentScreen({ navigation, route }: Props) {
               onSubmitEditing={handleSend}
             />
             <Pressable onPress={handleSend}>
-              <Sketchy radius={19} color={colors.paper} seed="comment-send" style={[styles.sendBtn, { borderWidth: 0 }]}>
+              <Sketchy radius={19} strokeWidth={0} seed="comment-send" style={styles.sendBtn}>
                 <Icon name="send" size={18} color={colors.paper} />
               </Sketchy>
             </Pressable>

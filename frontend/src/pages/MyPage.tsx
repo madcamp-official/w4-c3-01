@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
+import TopBar from '@/components/TopBar';
 import * as followApi from '@/api/followApi';
 import type { FollowCounts } from '@/api/followApi';
 import { useAppState } from '@/state/AppStateContext';
 
 export default function MyPage() {
   const navigate = useNavigate();
-  const { session, posts } = useAppState();
+  const { session, posts, loadChats } = useAppState();
   const [tab, setTab] = useState<'posts' | 'likes'>('posts');
   const [counts, setCounts] = useState<FollowCounts | null>(null);
 
@@ -21,17 +22,19 @@ export default function MyPage() {
     followApi.fetchFollowCounts(session.id).then((result) => {
       if (!cancelled) setCounts(result);
     });
+    void loadChats(); // keeps TopBar's unread-chat dot fresh
     return () => {
       cancelled = true;
     };
-  }, [session]);
+  }, [session, loadChats]);
 
   if (!session) return null;
 
   return (
     <section className="screen active" id="screen-mypage">
-      <div className="profile-card" style={{ marginTop: 26 }}>
-        <Avatar nickname={session.nickname} color={session.avatarColor} size={61} fontSize={20} avatarUrl={session.avatarUrl} outline />
+      <TopBar />
+      <div className="profile-card">
+        <Avatar nickname={session.nickname} color={session.avatarColor} size={61} fontSize={20} avatarUrl={session.avatarUrl} />
         <div className="profile-names">
           <b>{session.nickname}</b>
           <span>{session.username ? '@' + session.username : 'ALine에서 손글씨로 이야기해요'}</span>
@@ -59,7 +62,7 @@ export default function MyPage() {
           하트 다시 그리기
         </button>
       </div>
-      <div className="tabbar sk-hr-b">
+      <div className="tabbar">
         <button className={tab === 'posts' ? 'active' : ''} onClick={() => setTab('posts')}>
           내 게시물
         </button>

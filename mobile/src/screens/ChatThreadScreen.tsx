@@ -197,12 +197,17 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
   return (
     <SafeAreaView style={common.screen} edges={['top']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={8}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
           <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
             <Icon name="chevron-left" size={24} color={colors.ink} />
           </Pressable>
-          <Avatar nickname={chat.name} color={chat.color} size={34} fontSize={12} avatarUrl={chat.avatarUrl} />
-          <Text style={{ fontWeight: '800', color: colors.ink, fontSize: 15 }}>{chat.name}</Text>
+          <Pressable
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}
+            onPress={() => navigation.navigate('UserProfile', { userId: chat.otherUserId })}
+          >
+            <Avatar nickname={chat.name} color={chat.color} size={42} fontSize={15} avatarUrl={chat.avatarUrl} />
+            <Text style={{ fontWeight: '800', color: colors.ink, fontSize: 17 }}>{chat.name}</Text>
+          </Pressable>
         </View>
         <SketchyLine seed="chat-thread-header" />
 
@@ -231,7 +236,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 10, paddingBottom: 10 + (keyboardHeight > 0 ? 0 : bottomInset) }}>
           <Pressable onPress={() => navigation.navigate('Airwrite', { chatId })} accessibilityLabel="에어라이팅 메시지">
-            <Sketchy radius={20} color={colors.line} strokeWidth={2} seed="chat-round-edit" style={[roundIconStyle, { backgroundColor: colors.paper }]}>
+            <Sketchy radius={20} color={colors.line} strokeWidth={1.4} seed="chat-round-edit" style={[roundIconStyle, { backgroundColor: colors.paper }]}>
               <Icon name="edit-2" size={18} color={colors.ink} />
             </Sketchy>
           </Pressable>
@@ -243,7 +248,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
             onSubmitEditing={handleSend}
           />
           <Pressable onPress={handleSend} accessibilityLabel="전송">
-            <Sketchy radius={20} color={colors.paper} seed="chat-round-send" style={[roundIconStyle, { backgroundColor: colors.ink, borderWidth: 0 }]}>
+            <Sketchy radius={20} strokeWidth={0} seed="chat-round-send" style={[roundIconStyle, { backgroundColor: colors.ink }]}>
               <Icon name="send" size={20} color={colors.paper} />
             </Sketchy>
           </Pressable>

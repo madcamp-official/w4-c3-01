@@ -1,12 +1,12 @@
 // Ported from frontend/src/pages/MyPage.tsx — keep in sync.
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import Avatar from '@/components/Avatar';
 import SketchyButton from '@/components/SketchyButton';
-import SketchyLine from '@/components/SketchyLine';
+import TopBar from '@/components/TopBar';
 import * as followApi from '@/api/followApi';
 import type { FollowCounts } from '@/api/followApi';
 import type { AppStackParamList } from '@/navigation/types';
@@ -18,10 +18,17 @@ import type { Post } from '@/types';
 
 const GRID_GAP = 2;
 const AVATAR_SIZE = 61;
+// FlatList's numColumns grid sizes each cell with `flex: 1/3` relative to
+// its own row — fine for a full row of 3, but a partial last row (e.g. 1 or
+// 2 leftover items) then has each of those items stretch to fill the row,
+// making them visibly bigger than every other cell. An explicit fixed width
+// avoids that regardless of how many items land in the last row.
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CELL_SIZE = (SCREEN_WIDTH - 40 - GRID_GAP * 2 * 3) / 3;
 
 export default function MyScreen() {
   const navigation = useNavigation();
-  const { session, posts } = useAppState();
+  const { session, posts, loadChats } = useAppState();
   const { colors } = useTheme();
   const common = buildCommon(colors);
   const styles = makeStyles(colors);
@@ -44,10 +51,11 @@ export default function MyScreen() {
       followApi.fetchFollowCounts(session.id).then((result) => {
         if (!cancelled) setCounts(result);
       });
+      void loadChats(); // keeps TopBar's unread-chat dot fresh
       return () => {
         cancelled = true;
       };
-    }, [session])
+    }, [session, loadChats])
   );
 
   if (!session) return null;
@@ -65,8 +73,11 @@ export default function MyScreen() {
 
   return (
     <SafeAreaView style={common.screen} edges={['top']}>
-      <View style={[styles.profileCard, { marginTop: 28 }]}>
-        <Avatar nickname={session.nickname} color={session.avatarColor} size={AVATAR_SIZE} fontSize={20} avatarUrl={session.avatarUrl} outline />
+      <View style={{ marginHorizontal: -20 }}>
+        <TopBar />
+      </View>
+      <View style={styles.profileCard}>
+        <Avatar nickname={session.nickname} color={session.avatarColor} size={AVATAR_SIZE} fontSize={20} avatarUrl={session.avatarUrl} />
         <View style={{ marginLeft: 12 }}>
           <Text style={styles.name}>{session.nickname}</Text>
           <Text style={styles.handle}>{session.username ? '@' + session.username : 'ALine에서 손글씨로 이야기해요'}</Text>
@@ -103,18 +114,20 @@ export default function MyScreen() {
           blobVariant="a"
           borderColor={colors.ink}
           style={{ flex: 1 }}
+          contentStyle={{ paddingVertical: 9 }}
           onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('EditProfile')}
         >
-          <Text style={common.btnGhostText}>프로필 수정</Text>
+          <Text style={[common.btnGhostText, { fontSize: 13 }]}>프로필 수정</Text>
         </SketchyButton>
         <SketchyButton
           variant="ghost"
           blobVariant="b"
           borderColor={colors.ink}
           style={{ flex: 1 }}
+          contentStyle={{ paddingVertical: 9 }}
           onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('EditHeart')}
         >
-          <Text style={common.btnGhostText}>하트 다시 그리기</Text>
+          <Text style={[common.btnGhostText, { fontSize: 13 }]}>하트 다시 그리기</Text>
         </SketchyButton>
       </View>
       <View style={[styles.tabbar, { borderBottomWidth: 0 }]}>
@@ -127,7 +140,6 @@ export default function MyScreen() {
           <View style={[styles.tabIndicator, tab === 'likes' && styles.tabIndicatorActive]} />
         </Pressable>
       </View>
-      <SketchyLine seed="my-tabbar" style={{ marginBottom: 2 }} />
       {items.length === 0 ? (
         <Text style={styles.emptyNote}>
           {tab === 'posts' ? '아직 올린 게시물이 없어요. + 버튼으로 첫 손글씨를 남겨보세요.' : '좋아요를 누른 게시물이 여기 모여요.'}
@@ -146,19 +158,19 @@ function makeStyles(colors: import('@/theme/colors').ThemeColors) {
     handle: { fontSize: 12, color: colors.inkSoft, marginTop: 2 },
     stats: { flexDirection: 'row', gap: 16, marginLeft: 'auto', alignItems: 'center' },
     statItem: { alignItems: 'center' },
-    statNum: { fontSize: 16, fontWeight: '800', color: colors.ink },
-    statLabel: { fontSize: 11, color: colors.inkSoft, marginTop: 2 },
-    bioBlock: { minHeight: 38, justifyContent: 'center', marginBottom: 22, paddingHorizontal: 2 },
+    statNum: { fontSize: 18, fontWeight: '800', color: colors.ink },
+    statLabel: { fontSize: 12.5, color: colors.inkSoft, marginTop: 2 },
+    bioBlock: { minHeight: 38, justifyContent: 'center', marginBottom: 12, paddingHorizontal: 2 },
     bio: { fontSize: 13, lineHeight: 19, color: colors.ink },
     bioPlaceholder: { color: colors.inkSoft },
-    actionsRow: { flexDirection: 'row', gap: 8, marginBottom: 26 },
+    actionsRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
     tabbar: { flexDirection: 'row', marginBottom: 8 },
     tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 10 },
     tabText: { fontSize: 13, color: colors.muted, fontWeight: '700' },
     tabTextActive: { color: colors.accent },
-    tabIndicator: { marginTop: 4, height: 2, width: '60%', borderRadius: 1, backgroundColor: 'transparent' },
+    tabIndicator: { marginTop: 9, height: 2, width: '60%', borderRadius: 1, backgroundColor: 'transparent' },
     tabIndicatorActive: { backgroundColor: colors.accent },
     emptyNote: { textAlign: 'center', color: colors.inkSoft, fontSize: 13, marginTop: 30, paddingHorizontal: 20 },
-    cell: { flex: 1 / 3, aspectRatio: 1, margin: GRID_GAP, backgroundColor: colors.paper2, borderRadius: radius.md, overflow: 'hidden' }
+    cell: { width: CELL_SIZE, aspectRatio: 1, margin: GRID_GAP, backgroundColor: colors.paper2, borderRadius: radius.md, overflow: 'hidden' }
   });
 }

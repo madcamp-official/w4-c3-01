@@ -18,11 +18,16 @@ import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 import { useTheme } from '@/state/ThemeContext';
-import { radius } from '@/theme/colors';
 import { buildCommon } from '@/theme/common';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const MEDIA_SIZE = SCREEN_WIDTH - 40;
+// Matches PostCard.tsx's own 34px side inset exactly (that card manages its
+// own horizontal spacing rather than relying on a padded screen container,
+// since it's used inside FeedScreen's unpadded list) — this screen used to
+// rely on common.screen's 20px instead, so its spacing didn't match the
+// feed's post cards it's meant to look like an isolated instance of.
+const SIDE_INSET = 34;
+const MEDIA_SIZE = SCREEN_WIDTH - SIDE_INSET * 2;
 
 type Props = NativeStackScreenProps<AppStackParamList, 'PostDetail'>;
 
@@ -90,7 +95,7 @@ export default function PostDetailScreen({ navigation, route }: Props) {
   }
 
   return (
-    <SafeAreaView style={common.screen} edges={['top']}>
+    <SafeAreaView style={styles.screen} edges={['top']}>
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Icon name="chevron-left" size={24} color={colors.ink} />
@@ -102,13 +107,20 @@ export default function PostDetailScreen({ navigation, route }: Props) {
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 24 + bottomInset }}>
-          <View style={styles.authorRow}>
+          <Pressable
+            style={styles.authorRow}
+            onPress={() =>
+              post.mine
+                ? navigation.navigate('MainTabs', { screen: 'My' })
+                : navigation.navigate('UserProfile', { userId: post.authorId })
+            }
+          >
             <Avatar nickname={post.username} color={post.avatarColor} size={34} fontSize={13} avatarUrl={post.avatarUrl} />
             <View style={{ marginLeft: 8 }}>
               <Text style={styles.username}>{post.username}</Text>
               <Text style={styles.time}>{post.time}</Text>
             </View>
-          </View>
+          </Pressable>
           <Pressable
             style={styles.media}
             onPress={post.strokes.length ? handleReplay : undefined}
@@ -165,16 +177,20 @@ export default function PostDetailScreen({ navigation, route }: Props) {
 
 function makeStyles(colors: import('@/theme/colors').ThemeColors) {
   return StyleSheet.create({
-    header: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
+    screen: { flex: 1, backgroundColor: colors.paper },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 6 },
     backBtn: { width: 36, height: 36, justifyContent: 'center', marginLeft: -8 },
-    centerFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    authorRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+    centerFill: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
+    // Everything below matches PostCard.tsx's own spacing exactly (head/
+    // mediaWrapRounded/actions/meta) so this reads as an isolated instance
+    // of the same card, not a differently-proportioned screen.
+    authorRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SIDE_INSET, paddingVertical: 12 },
     username: { fontWeight: '700', color: colors.ink, fontSize: 13.5 },
     time: { fontSize: 11, color: colors.inkSoft },
-    media: { width: MEDIA_SIZE, height: MEDIA_SIZE, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 },
-    actions: { flexDirection: 'row', gap: 16, paddingTop: 10, paddingBottom: 2 },
+    media: { width: MEDIA_SIZE, height: MEDIA_SIZE, marginHorizontal: SIDE_INSET, borderRadius: 22, overflow: 'hidden', backgroundColor: colors.paper2 },
+    actions: { flexDirection: 'row', gap: 16, paddingHorizontal: SIDE_INSET, paddingTop: 11, paddingBottom: 2 },
     actionBtn: { padding: 2 },
-    meta: { paddingTop: 4, gap: 2, paddingBottom: 4 },
+    meta: { paddingHorizontal: SIDE_INSET, paddingTop: 4, gap: 2, paddingBottom: 4 },
     likes: { fontWeight: '700', fontSize: 13, color: colors.ink },
     caption: { fontSize: 13, color: colors.ink }
   });

@@ -1,23 +1,28 @@
-// Border overlay — RN equivalent of the web's `.sk`/`.sk2` classes
-// (global.css). Draws a plain outline (see src/lib/sketchyPath.ts — the v2
-// design dropped the hand-drawn wobble, so those helpers now emit plain
-// shapes) on top of the wrapped content; never affects layout, only paints.
+// Border/fill overlay — RN equivalent of the web's `.sk`/`.sk2` classes
+// (global.css). Draws a plain outline+background on top of the wrapped
+// content; never affects layout beyond the border's own (tiny) width.
 //
 // Two shapes:
 //   - "round": a plain circle/rounded-rect (radius prop) — used for circular
 //     icon buttons, where border-radius would just be 50%.
 //   - "blob": now a plain pill (was an asymmetric shape in the earlier
-//     design) — used for buttons/inputs/chat bubbles. Pass `fill` to also
-//     paint the shape's own background via the same SVG path, since RN Views
-//     can only clip to circular per-corner radii and would show square
-//     corners poking out past the tight corners otherwise.
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+//     design) — used for buttons/inputs/chat bubbles.
+//
+// This used to hand-draw the border (and, with `fill`, the background too)
+// as a custom SVG path sized/positioned from a manual onLayout measurement —
+// several rounds of real-device reports kept finding new edges of things
+// clipped by a hair (border stroke, then fill, then children), each fix
+// papering over one symptom of the same root problem: a hand-built
+// approximation of what a plain native border already does correctly. Since
+// blobCornerRadii (sketchyPath.ts) already always produces a *circular* (not
+// truly elliptical) per-corner radius today — the design dropped the old
+// asymmetric wobble — a real `borderRadius`/`borderWidth`/`backgroundColor`
+// reproduces the exact same shape pixel-for-pixel, with none of the custom
+// path's edge cases.
+import { useCallback, useState, type ReactNode } from 'react';
 import { View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
-import Svg, { G, Path } from 'react-native-svg';
 import { colors } from '@/theme/colors';
-import { blobCornerRadiiForNative, sketchyBlobRect, sketchyRoundedRect, type BlobVariant } from '@/lib/sketchyPath';
-
-const PAD = 4;
+import { blobCornerRadiiForNative, type BlobVariant } from '@/lib/sketchyPath';
 
 type Props = {
   children?: ReactNode;
@@ -40,8 +45,7 @@ export default function Sketchy({
   color = colors.ink,
   fill,
   strokeWidth = 1.6,
-  style,
-  seed = 'sk'
+  style
 }: Props) {
   const [size, setSize] = useState({ w: 0, h: 0 });
 
@@ -51,36 +55,21 @@ export default function Sketchy({
   }, []);
 
   const ready = size.w > 0 && size.h > 0;
-  const nativeRadius = shape === 'blob' && ready ? blobCornerRadiiForNative(size.w, size.h, variant) : undefined;
-
-  const pathD = useMemo(() => {
-    if (!ready) return ''
-    return shape === 'blob'
-      ? sketchyBlobRect(size.w, size.h, variant, seed)
-      : sketchyRoundedRect(size.w, size.h, radius, `${seed}-${variant}`)
-  }, [ready, shape, size.w, size.h, variant, seed, radius])
+  const cornerStyle =
+    shape === 'blob' && ready
+      ? blobCornerRadiiForNative(size.w, size.h, variant)
+      : { borderRadius: ready ? Math.max(0, Math.min(radius, size.w / 2, size.h / 2)) : radius };
 
   return (
-    <View style={[style, nativeRadius, fill ? { backgroundColor: 'transparent' } : null]} onLayout={onLayout}>
-      {ready ? (
-        <Svg
-          width={size.w + PAD * 2}
-          height={size.h + PAD * 2}
-          style={{ position: 'absolute', top: -PAD, left: -PAD }}
-          pointerEvents="none"
-        >
-          <G transform={`translate(${PAD} ${PAD})`}>
-            <Path
-              d={pathD}
-              stroke={color}
-              strokeWidth={strokeWidth}
-              fill={fill ?? 'none'}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </G>
-        </Svg>
-      ) : null}
+    <View
+      // `fill` (when passed) always wins, same as before — but when it's
+      // *not* passed, the background must be left alone rather than forced
+      // to transparent, or a caller relying on their own `style`'s
+      // backgroundColor (e.g. the tab bar's solid-ink plus button, the
+      // avatar-edit badge's paper circle) goes invisible.
+      style={[style, cornerStyle, { borderWidth: strokeWidth, borderColor: color }, fill ? { backgroundColor: fill } : null]}
+      onLayout={onLayout}
+    >
       {children}
     </View>
   );

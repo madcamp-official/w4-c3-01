@@ -9,7 +9,20 @@ import type { Post } from '@/types';
 /** Shared like button (hand-drawn heart doodle + pop animation) — used by
  * both the compact list card (PostCard) and the swipeable story card
  * (FeedScreen). */
-export default function LikeButton({ post, size = 22, style }: { post: Post; size?: number; style?: StyleProp<ViewStyle> }) {
+export default function LikeButton({
+  post,
+  size = 22,
+  style,
+  light
+}: {
+  post: Post;
+  size?: number;
+  style?: StyleProp<ViewStyle>;
+  /** Forces the heart to render white regardless of theme — for placements
+   * (the feed's story-card overlay) that sit on top of a photo rather than
+   * the page background, matching the comment icon beside it there. */
+  light?: boolean;
+}) {
   const { session, likePost } = useAppState();
   const { colors, isDark } = useTheme();
 
@@ -43,14 +56,15 @@ export default function LikeButton({ post, size = 22, style }: { post: Post; siz
       <Animated.View style={heartStyle}>
         {session?.heartUrl ? (
           // The doodle is always drawn in dark ink on a transparent background —
-          // invisible on a dark background, so tint it white in dark mode.
+          // invisible on a dark background, so tint it white in dark mode (or
+          // always, in a `light` placement like the feed's story-card overlay).
           <Image
             source={{ uri: session.heartUrl }}
-            style={{ width: size, height: size, tintColor: isDark ? '#fff' : undefined }}
+            style={{ width: size, height: size, tintColor: light || isDark ? '#fff' : undefined }}
             resizeMode="contain"
           />
         ) : (
-          <Icon name="heart" size={size} color={colors.ink} />
+          <Icon name="heart" size={size} color={light ? '#fff' : colors.ink} />
         )}
       </Animated.View>
     </Pressable>

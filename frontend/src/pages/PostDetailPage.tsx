@@ -73,13 +73,17 @@ export default function PostDetailPage() {
         <div className="empty-note">{loading ? '불러오는 중...' : '게시물을 찾을 수 없어요'}</div>
       ) : (
         <article className="post">
-          <div className="post-head">
+          <button
+            className="post-head"
+            style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer' }}
+            onClick={() => navigate(post.mine ? '/mypage' : `/users/${post.authorId}`)}
+          >
             <Avatar nickname={post.username} color={post.avatarColor} size={32} fontSize={13} avatarUrl={post.avatarUrl} />
             <div className="who">
               <b>{post.username}</b>
               <small>{post.time}</small>
             </div>
-          </div>
+          </button>
           <div className="post-media">
             <img ref={imgRef} src={post.image} alt="" />
             <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />

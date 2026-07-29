@@ -32,7 +32,7 @@ export default function AvatarPicker({ dataUrl, nickname, color, size = 96, onCh
     <View style={{ width: size, height: size }}>
       <Avatar nickname={nickname} color={color} size={size} fontSize={size * 0.36} avatarUrl={dataUrl} />
       <Pressable style={styles.editBtnWrap} onPress={handlePress}>
-        <Sketchy radius={15} color={colors.ink} seed="avatar-edit" style={styles.editBtn}>
+        <Sketchy radius={15} color={colors.ink} seed="avatar-edit" style={[styles.editBtn, { backgroundColor: colors.paper }]}>
           <Icon name="edit-2" size={14} color={colors.ink} />
         </Sketchy>
       </Pressable>
@@ -46,7 +46,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center'
   }

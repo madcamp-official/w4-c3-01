@@ -48,14 +48,29 @@ export default function PreviewScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.paper }} edges={['top']}>
-      <View style={{ flex: 1, borderRadius: radius.lg, overflow: 'hidden', margin: 16, backgroundColor: '#000' }}>
-        <Image source={{ uri: image }} style={{ flex: 1 }} resizeMode="cover" />
-        <Pressable
-          style={{ position: 'absolute', top: 14, left: 14, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}
-          onPress={() => navigation.goBack()}
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <View
+          style={
+            // Post captures are always square (the camera crops to a square
+            // before this screen ever sees it) — sizing the card to that
+            // same aspect ratio, instead of stretching it to fill the whole
+            // flex:1 area, means the image fills it exactly with nothing to
+            // crop ("cover") or letterbox ("contain"): what's shown here is
+            // pixel-for-pixel what gets uploaded. Lounge captures aren't
+            // square, so they keep the old fill-the-space + letterbox framing.
+            intent.kind === 'post'
+              ? { width: '100%', aspectRatio: 1, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 }
+              : { flex: 1, alignSelf: 'stretch', margin: 16, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 }
+          }
         >
-          <Icon name="chevron-left" size={22} color="#fff" />
-        </Pressable>
+          <Image source={{ uri: image }} style={{ flex: 1 }} resizeMode={intent.kind === 'post' ? 'cover' : 'contain'} />
+          <Pressable
+            style={{ position: 'absolute', top: 14, left: 14, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="chevron-left" size={22} color="#fff" />
+          </Pressable>
+        </View>
       </View>
       <View style={{ paddingHorizontal: 16, paddingBottom: 8 + bottomInset }}>
         {intent.kind === 'post' ? (

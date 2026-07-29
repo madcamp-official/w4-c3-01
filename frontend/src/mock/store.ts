@@ -46,6 +46,7 @@ function buildSeedChats(): Chat[] {
       name: SEED_USERS[0].nickname,
       color: SEED_USERS[0].color,
       avatarUrl: null,
+      otherUserId: 'seed-0',
       otherReadAt: null,
       unread: false,
       messages: [
@@ -58,6 +59,7 @@ function buildSeedChats(): Chat[] {
       name: SEED_USERS[2].nickname,
       color: SEED_USERS[2].color,
       avatarUrl: null,
+      otherUserId: 'seed-2',
       otherReadAt: null,
       unread: false,
       messages: [

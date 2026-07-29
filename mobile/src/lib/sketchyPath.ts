@@ -23,36 +23,7 @@ function seededRandom(seed: string) {
   };
 }
 
-/** A rounded-rect outline — `wobble` defaults to 0 (plain, no hand-drawn jitter) since the v2 design dropped the sketchy look; kept as a param so callers/signatures don't need to change.
- * Corners are drawn with real SVG elliptical arcs (not a quadratic-Bezier
- * approximation), so a full-circle icon button (radius === width/2 === height/2,
- * e.g. the post/search/chat round buttons) traces an actual circle instead of
- * a visibly squarish/blobby approximation. */
-export function sketchyRoundedRect(width: number, height: number, radius: number, seed: string, wobble = 0): string {
-  if (width <= 0 || height <= 0) return ''
-  const rand = seededRandom(seed)
-  const jitter = () => (rand() - 0.5) * 2 * wobble
-  const r = Math.max(0, Math.min(radius, width / 2, height / 2))
-
-  if (r <= 0) {
-    return `M ${jitter()} ${jitter()} L ${width + jitter()} ${jitter()} L ${width + jitter()} ${height + jitter()} L ${jitter()} ${height + jitter()} Z`
-  }
-
-  return [
-    `M ${r + jitter()} ${jitter()}`,
-    `L ${width - r + jitter()} ${jitter()}`,
-    `A ${r} ${r} 0 0 1 ${width + jitter()} ${r + jitter()}`,
-    `L ${width + jitter()} ${height - r + jitter()}`,
-    `A ${r} ${r} 0 0 1 ${width - r + jitter()} ${height + jitter()}`,
-    `L ${r + jitter()} ${height + jitter()}`,
-    `A ${r} ${r} 0 0 1 ${jitter()} ${height - r + jitter()}`,
-    `L ${jitter()} ${r + jitter()}`,
-    `A ${r} ${r} 0 0 1 ${r + jitter()} ${jitter()}`,
-    'Z'
-  ].join(' ')
-}
-
-/** A single horizontal divider line — plain (wobble defaults to 0, see sketchyRoundedRect). */
+/** A single horizontal divider line — plain (wobble defaults to 0, see below). */
 export function sketchyHLine(width: number, seed: string, wobble = 0): string {
   if (width <= 0) return ''
   const rand = seededRandom(seed)
@@ -110,7 +81,10 @@ function blobCornerRadii(width: number, height: number, _variant: BlobVariant): 
   }
 }
 
-/** Approximate per-corner circular radius (RN's native View border only supports circular corners) for the wrapped View's own clipping/background — the precise elliptical shape is what actually gets painted, via the SVG path from sketchyBlobRect. */
+/** Per-corner radius for the blob shape — always circular (rx === ry) given
+ * blobCornerRadii's current inputs, so this is the *exact* shape, not an
+ * approximation, and Sketchy.tsx paints it with a real native
+ * border/background instead of a hand-built SVG path. */
 export function blobCornerRadiiForNative(width: number, height: number, variant: BlobVariant) {
   const { tl, tr, br, bl } = blobCornerRadii(width, height, variant)
   return {
@@ -119,28 +93,4 @@ export function blobCornerRadiiForNative(width: number, height: number, variant:
     borderBottomRightRadius: (br.rx + br.ry) / 2,
     borderBottomLeftRadius: (bl.rx + bl.ry) / 2
   }
-}
-
-/** The outline of the blob (now plain pill) shape above — real SVG elliptical
- * arcs per corner (wobble defaults to 0, see sketchyRoundedRect), not the
- * dense polyline this used to be. The old version sampled each corner's
- * curve into straight-line segments every ~7px, which looked visibly
- * faceted/angular on larger elements (chat bubbles, search box, buttons) —
- * an `A` arc traces the exact ellipse at any size. */
-export function sketchyBlobRect(width: number, height: number, variant: BlobVariant, _seed: string, _wobble = 0): string {
-  if (width <= 0 || height <= 0) return ''
-  const { tl, tr, br, bl } = blobCornerRadii(width, height, variant)
-
-  return [
-    `M ${tl.rx} 0`,
-    `L ${width - tr.rx} 0`,
-    `A ${tr.rx} ${tr.ry} 0 0 1 ${width} ${tr.ry}`,
-    `L ${width} ${height - br.ry}`,
-    `A ${br.rx} ${br.ry} 0 0 1 ${width - br.rx} ${height}`,
-    `L ${bl.rx} ${height}`,
-    `A ${bl.rx} ${bl.ry} 0 0 1 0 ${height - bl.ry}`,
-    `L 0 ${tl.ry}`,
-    `A ${tl.rx} ${tl.ry} 0 0 1 ${tl.rx} 0`,
-    'Z'
-  ].join(' ')
 }

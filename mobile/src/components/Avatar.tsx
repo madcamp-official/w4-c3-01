@@ -14,28 +14,20 @@ interface AvatarProps {
   size: number;
   fontSize: number;
   avatarUrl?: string | null;
-  /** Plain outline circle with no color fill (matches week4_1's mypage avatar) instead of the usual colored-fill identity avatar. */
-  outline?: boolean;
 }
 
-export default function Avatar({ nickname, size, fontSize, avatarUrl, outline }: AvatarProps) {
+export default function Avatar({ nickname, size, fontSize, avatarUrl }: AvatarProps) {
   const { colors } = useTheme();
   const shape = { width: size, height: size, borderRadius: size / 2 };
-  const base = {
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    borderWidth: outline ? 2 : 1,
-    borderColor: outline ? colors.ink : colors.border
-  };
   if (avatarUrl) {
     return (
-      <View style={[base, shape, { overflow: 'hidden' as const }]}>
+      <View style={[shape, { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' as const }]}>
         <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
       </View>
     );
   }
   return (
-    <View style={[base, shape, { backgroundColor: outline ? 'transparent' : colors.paper2 }]}>
+    <View style={[shape, { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, backgroundColor: colors.paper2 }]}>
       {/* Flat theme-gray fill (matches grid cells elsewhere in the UI)
           instead of the old per-user pastel avatarColor, so the text can
           just use the normal theme ink color in both variants. */}

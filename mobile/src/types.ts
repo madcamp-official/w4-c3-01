@@ -54,6 +54,8 @@ export interface Chat {
   name: string;
   color: string;
   avatarUrl: string | null;
+  /** The other participant's user id — for jumping to their profile from the thread header. */
+  otherUserId: string;
   messages: ChatMessage[];
   /** 상대방이 마지막으로 읽은 시각(ISO). 이 시각 이전에 내가 보낸 메시지는 "읽음"으로 표시합니다. */
   otherReadAt: string | null;

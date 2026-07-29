@@ -142,7 +142,10 @@
 
 .zoom-badge {
   position: absolute;
-  bottom: calc(max(26px, calc(var(--native-safe-bottom) + 16px)) + 76px);
+  /* Clears .air-capture-panel's own height (68px shutter + 9px*2 padding +
+     1px*2 border = 88px) plus a visual gap — 76px used to land inside that
+     range and get partly covered by the shutter button. */
+  bottom: calc(max(26px, calc(var(--native-safe-bottom) + 16px)) + 108px);
   left: 50%;
   z-index: 12;
   padding: 5px 12px;

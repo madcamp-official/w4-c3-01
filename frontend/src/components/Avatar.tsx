@@ -20,10 +20,8 @@ export default function Avatar({
   outline?: boolean;
 }) {
   if (avatarUrl) {
-    // .sk's ::before border overlay doesn't render on <img> (a replaced element),
-    // so the photo goes inside a plain wrapper that carries the sketchy border instead.
     return (
-      <div className={outline ? 'avatar sk avatar-outline' : 'avatar sk'} style={{ width: size, height: size, overflow: 'hidden' }}>
+      <div className="avatar" style={{ width: size, height: size, overflow: 'hidden' }}>
         <img src={avatarUrl} alt={nickname} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       </div>
     );

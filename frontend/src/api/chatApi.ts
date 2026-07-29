@@ -99,6 +99,7 @@ export async function fetchConversations(currentUserId: string): Promise<Chat[]>
       name: profile?.nickname ?? '알 수 없음',
       color: profile?.avatar_color ?? '#EAE2C9',
       avatarUrl: profile?.avatar_url ?? null,
+      otherUserId: otherId,
       messages: [mapMessage(latest, currentUserId)],
       otherReadAt: null, // 목록에서는 안 씀 — 스레드를 열면 fetchThread가 채워줍니다.
       unread
@@ -142,6 +143,7 @@ export async function fetchThread(chatId: string, currentUserId: string): Promis
     name: profile?.nickname ?? '알 수 없음',
     color: profile?.avatar_color ?? '#EAE2C9',
     avatarUrl: profile?.avatar_url ?? null,
+    otherUserId: otherId,
     messages: (msgRows ?? []).map((row) => mapMessage(row as MessageRow, currentUserId)),
     otherReadAt: readRow?.last_read_at ?? null,
     unread: false // 스레드를 여는 것 자체가 읽는 행위라 항상 false — markThreadRead가 뒤이어 호출됩니다.

@@ -99,8 +99,10 @@ export default function ChatThreadPage() {
         <button className="icon-btn sk" onClick={() => navigate('/chats')}>
           <Icon name="chevron-left" size={24} strokeWidth={2.3} />
         </button>
-        <Avatar nickname={chat.name} color={chat.color} size={30} fontSize={12} avatarUrl={chat.avatarUrl} />
-        <b>{chat.name}</b>
+        <button className="thread-header-user" onClick={() => navigate(`/users/${chat.otherUserId}`)}>
+          <Avatar nickname={chat.name} color={chat.color} size={30} fontSize={12} avatarUrl={chat.avatarUrl} />
+          <b>{chat.name}</b>
+        </button>
       </div>
       {threadReady ? (
         <div className="thread-body" ref={bodyRef}>

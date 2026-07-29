@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
 import Icon from '@/components/Icon';
 import LikeButton from '@/components/LikeButton';
 import PostCard from '@/components/PostCard';
+import TopBar from '@/components/TopBar';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
-import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
 
 const SWIPE_THRESHOLD = 70;
@@ -21,10 +21,8 @@ const EXIT_MS = 260;
  * list — removed by request. */
 export default function FeedPage() {
   const navigate = useNavigate();
-  const { posts, chats, loadFeed, loadChats, startConversationWith, sendText } = useAppState();
-  const hasUnreadChats = useMemo(() => chats.some((c) => c.unread), [chats]);
+  const { posts, loadFeed, loadChats, startConversationWith, sendText } = useAppState();
   const { openComments } = useOverlay();
-  const { isDark, toggleTheme } = useTheme();
   const { showToast } = useToast();
   const [mode, setMode] = useState<'card' | 'list'>('card');
   const [idx, setIdx] = useState(0);
@@ -141,21 +139,7 @@ export default function FeedPage() {
 
   return (
     <section className="screen active" id="screen-feed">
-      <div className="statusbar" style={{ padding: '0 14px 8px 0' }}>
-        <div className="logo">
-          <span className="dot" />
-          ALine
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button className="icon-btn" onClick={toggleTheme} aria-label="테마 전환">
-            <Icon name={isDark ? 'sun' : 'moon'} size={19} className="" />
-          </button>
-          <button className="icon-btn sk" onClick={() => navigate('/chats')}>
-            <Icon name="send" size={20} />
-            {hasUnreadChats ? <span className="unread-dot" /> : null}
-          </button>
-        </div>
-      </div>
+      <TopBar />
       {mode === 'card' ? (
         <>
           {/* Pointer handlers live on this wrapper (dots + stage + hint), not
@@ -194,7 +178,15 @@ export default function FeedPage() {
                     }}
                   >
                     <img className="story-card-img" src={currentPost.image} alt="" />
-                    <div className="story-card-topbar">
+                    <div
+                      className="story-card-topbar"
+                      style={{ cursor: 'pointer' }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(currentPost.mine ? '/mypage' : `/users/${currentPost.authorId}`);
+                      }}
+                    >
                       <Avatar nickname={currentPost.username} color={currentPost.avatarColor} size={30} fontSize={12} avatarUrl={currentPost.avatarUrl} />
                       <span>
                         {currentPost.username} · {currentPost.time}
@@ -251,8 +243,8 @@ export default function FeedPage() {
         </>
       ) : (
         <div className="feed-list">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
+          {posts.map((post, i) => (
+            <PostCard key={post.id} post={post} isLast={i === posts.length - 1} />
           ))}
         </div>
       )}

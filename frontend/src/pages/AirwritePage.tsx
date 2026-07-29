@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react';
+// Now shares the same real-camera + hand-tracking capture flow as the post
+// camera (CameraPage.tsx) instead of the old finger-trail canvas, and the
+// preview step reuses PreviewPage.tsx's exact layout (full-bleed image card,
+// back-chevron overlay, single bottom button) — kept in sync with
+// mobile/src/screens/AirwriteScreen.tsx, which already worked this way.
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import WeightPicker from '@/components/WeightPicker';
-import { drawStrokesStatic } from '@/lib/canvas';
-import { useTrailCanvas } from '@/hooks/useTrailCanvas';
+import Icon from '@/components/Icon';
+import { AirDrawingStage, type AirDrawingCapture } from '@/features/air-drawing/AirDrawingStage';
 import { useAppState } from '@/state/AppStateContext';
 import { useToast } from '@/state/ToastContext';
 
@@ -11,31 +15,8 @@ export default function AirwritePage() {
   const { chatId = '' } = useParams();
   const { sendAir } = useAppState();
   const { showToast } = useToast();
-  const trail = useTrailCanvas();
+  const [preview, setPreview] = useState<AirDrawingCapture | null>(null);
   const [sending, setSending] = useState(false);
-  const [preview, setPreview] = useState<{ image: string; strokes: ReturnType<typeof trail.getStrokes> } | null>(null);
-
-  useEffect(() => {
-    trail.resize();
-    trail.clear();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function handleCapture() {
-    const strokes = trail.getStrokes();
-    if (!strokes.length) {
-      showToast('먼저 허공에 무언가를 그려주세요');
-      return;
-    }
-    const out = document.createElement('canvas');
-    out.width = 260;
-    out.height = 260;
-    const octx = out.getContext('2d')!;
-    octx.fillStyle = '#F2ECDA';
-    octx.fillRect(0, 0, 260, 260);
-    drawStrokesStatic(octx, strokes, 260, 260, 6);
-    setPreview({ image: out.toDataURL('image/png'), strokes });
-  }
 
   async function handleSend() {
     if (!preview) return;
@@ -52,22 +33,16 @@ export default function AirwritePage() {
 
   if (preview) {
     return (
-      <section
-        className="screen active"
-        id="screen-airwrite-preview"
-        style={{ background: 'var(--ink)', padding: 0, paddingTop: 'env(safe-area-inset-top, 0px)' }}
-      >
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 220, height: 220, borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: 'var(--paper-2)' }}>
-            <img src={preview.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          </div>
+      <section className="screen active" id="screen-airwrite-preview">
+        <div className="prev-media sk2">
+          <img src={preview.image} alt="허공에 쓴 손글씨" />
+          <button className="icon-btn prev-top sk" onClick={() => setPreview(null)}>
+            <Icon name="chevron-left" size={24} strokeWidth={2.3} className="" />
+          </button>
         </div>
-        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="prev-bottom">
           <button className="btn primary sk block" disabled={sending} onClick={handleSend}>
             {sending ? '보내는 중...' : '이 메시지 보내기'}
-          </button>
-          <button className="btn ghost sk block blob-b" disabled={sending} onClick={() => setPreview(null)}>
-            다시 그리기
           </button>
         </div>
       </section>
@@ -76,29 +51,16 @@ export default function AirwritePage() {
 
   return (
     <section className="screen active" id="screen-airwrite">
-      <div className="cam-frame sk2" style={{ margin: '0 14px' }}>
-        <canvas className="trail-canvas" ref={trail.canvasRef} style={{ background: 'var(--paper-2)' }} />
-        <div className="cam-topbar">
-          <button className="icon-btn sk" onClick={() => navigate(`/chats/${chatId}`)}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
-          </button>
-          <WeightPicker onChange={trail.setWeight} />
-        </div>
-        <div className="cam-hint sk">허공에 쓰듯 손가락으로 그어보세요</div>
-        <div className="cam-botbar">
-          <button className="side-btn sk" onClick={() => trail.clear()}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
-            </svg>
-          </button>
-          <button className="btn primary sk" style={{ padding: '14px 30px' }} onClick={handleCapture}>
-            다음
-          </button>
-          <div style={{ width: 40 }} />
-        </div>
-      </div>
+      <AirDrawingStage
+        mode="message"
+        // 260px는 채팅 말풍선(160px)엔 충분하지만 상세 뷰어(화면 너비, 고DPR
+        // 기기에선 900px+)에선 크게 확대돼 흐릿해 보였다 — 게시물 캡처만큼
+        // 여유 있게 키워 업스케일 흐림을 없앤다.
+        outputSize={960}
+        onClose={() => navigate(`/chats/${chatId}`)}
+        onCapture={(capture) => setPreview(capture)}
+        onError={showToast}
+      />
     </section>
   );
 }

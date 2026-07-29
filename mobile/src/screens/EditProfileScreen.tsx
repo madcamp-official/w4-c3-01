@@ -13,6 +13,7 @@ import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
+import { radius } from '@/theme/colors';
 import { buildCommon } from '@/theme/common';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'EditProfile'>;
@@ -84,7 +85,8 @@ export default function EditProfileScreen({ navigation }: Props) {
         <View style={[common.field, { marginBottom: 32 }]}>
           <Text style={common.label}>자기소개</Text>
           <SketchyInput
-            blobVariant="a"
+            shape="round"
+            radius={radius.md}
             maxLength={160}
             multiline
             numberOfLines={3}

@@ -159,6 +159,33 @@ export async function fetchFeed(currentUserId: string): Promise<Post[]> {
   return assemblePosts(postRows as PostRow[], profiles, likesByPost, commentsByPost, currentUserId);
 }
 
+/** All of one author's posts, regardless of whether the current user follows
+ * them — `posts` RLS is public read, so this is used for viewing someone
+ * else's profile grid (which the follow-scoped feed wouldn't include them in). */
+export async function fetchPostsByAuthor(authorId: string, currentUserId: string): Promise<Post[]> {
+  if (!supabase) {
+    mockStore.ensureSeeded();
+    return mockStore.posts.filter((p) => p.authorId === authorId);
+  }
+
+  const { data: postRows, error } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('author_id', authorId)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  if (!postRows || postRows.length === 0) return [];
+
+  const postIds = postRows.map((p) => p.id);
+  const { likesByPost, commentsByPost } = await fetchLikesAndComments(postIds);
+
+  const authorIds = new Set<string>([authorId]);
+  commentsByPost.forEach((rows) => rows.forEach((c) => authorIds.add(c.author_id)));
+  const profiles = await fetchProfilesByIds([...authorIds]);
+
+  return assemblePosts(postRows as PostRow[], profiles, likesByPost, commentsByPost, currentUserId);
+}
+
 export interface CreatePostPayload {
   authorId: string;
   username: string;
