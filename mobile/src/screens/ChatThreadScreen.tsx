@@ -9,6 +9,7 @@ import Sketchy from '@/components/Sketchy';
 import SketchyInput from '@/components/SketchyInput';
 import SketchyLine from '@/components/SketchyLine';
 import { useBottomInset } from '@/lib/useBottomInset';
+import { useKeyboardHeight } from '@/lib/useKeyboardHeight';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
@@ -37,6 +38,11 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
   const common = buildCommon(colors);
   const bottomInset = useBottomInset();
+  // KeyboardAvoidingView already shifts this whole screen above the keyboard
+  // — the extra bottomInset padding below is only needed to clear the
+  // system nav bar, which the keyboard already covers once it's up, so
+  // stacking both left a visible gap between the input row and the keyboard.
+  const keyboardHeight = useKeyboardHeight();
   const { showToast } = useToast();
   const [text, setText] = useState('');
   const listRef = useRef<FlatList<ChatMessage>>(null);
@@ -164,7 +170,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={common.screen} edges={['top']}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={8}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={8}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 }}>
           <Pressable style={{ width: 36, height: 36, justifyContent: 'center' }} onPress={() => navigation.goBack()}>
             <Icon name="chevron-left" size={24} color={colors.ink} />
@@ -180,7 +186,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
             data={chat.messages}
             keyExtractor={(m) => String(m.id)}
             renderItem={renderItem}
-            contentContainerStyle={{ paddingVertical: 10 }}
+            contentContainerStyle={{ paddingVertical: 0 }}
             // FlatList only renders/measures the first `initialNumToRender`
             // items (default 10) on mount — for a thread with more messages
             // than that, onContentSizeChange's first fire reflected only
@@ -197,7 +203,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
           </View>
         )}
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 10, paddingBottom: 10 + bottomInset }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 10, paddingBottom: 10 + (keyboardHeight > 0 ? 0 : bottomInset) }}>
           <Pressable onPress={() => navigation.navigate('Airwrite', { chatId })} accessibilityLabel="에어라이팅 메시지">
             <Sketchy radius={20} color={colors.line} strokeWidth={2} seed="chat-round-edit" style={[roundIconStyle, { backgroundColor: colors.paper }]}>
               <Icon name="edit-2" size={18} color={colors.ink} />

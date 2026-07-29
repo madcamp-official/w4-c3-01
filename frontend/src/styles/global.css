@@ -246,6 +246,16 @@ h2.section-h {
 .icon-btn:active {
   transform: scale(0.92);
 }
+.unread-dot {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--paper);
+}
 
 .avatar {
   border-radius: 50%;
@@ -1455,6 +1465,16 @@ input[type='password'].sk::before {
 }
 .comment-item b {
   margin-right: 5px;
+}
+.comment-delete {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  align-self: flex-start;
 }
 .comment-input-row {
   display: flex;

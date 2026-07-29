@@ -10,8 +10,8 @@
 // This is a single custom Gesture.Pan() driving dragX/dragY/rotate shared
 // values on the card itself (not a horizontal strip of all posts) — only the
 // current + next post are ever mounted, matching the prototype's DOM shape.
-import { useCallback, useEffect, useState } from 'react';
-import { Dimensions, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Dimensions, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -25,13 +25,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import Icon from '@/components/Icon';
 import type { NavigationProp } from '@react-navigation/native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Avatar from '@/components/Avatar';
 import LikeButton from '@/components/LikeButton';
 import PostCard from '@/components/PostCard';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
-import { useOverlay } from '@/state/OverlayContext';
 import { useTheme } from '@/state/ThemeContext';
 import { useToast } from '@/state/ToastContext';
 import { radius } from '@/theme/colors';
@@ -42,8 +41,8 @@ const SWIPE_THRESHOLD = 70;
 const EXIT_MS = 260;
 
 export default function FeedScreen() {
-  const { posts, loadFeed, startConversationWith, sendText } = useAppState();
-  const { openComments } = useOverlay();
+  const { posts, chats, loadFeed, loadChats, startConversationWith, sendText } = useAppState();
+  const hasUnreadChats = useMemo(() => chats.some((c) => c.unread), [chats]);
   const { colors, isDark, toggleTheme } = useTheme();
   const { showToast } = useToast();
   const navigation = useNavigation();
@@ -56,10 +55,18 @@ export default function FeedScreen() {
   const peekPost = activeIndex + 1 < posts.length ? posts[activeIndex + 1] : null;
   const postsLength = posts.length;
 
-  useEffect(() => {
-    void loadFeed();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // A plain mount-only effect only re-fetched once — the tab stays mounted
+  // underneath UserProfile/other screens, so following someone there and
+  // coming back never refreshed the (now-stale) followed-users feed filter
+  // until the app fully remounted. useFocusEffect re-fetches every time this
+  // tab is shown again, not just on first mount.
+  useFocusEffect(
+    useCallback(() => {
+      void loadFeed();
+      void loadChats();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+  );
 
   // Reset to the first post whenever the feed is (re)entered fresh in card mode.
   useEffect(() => {
@@ -173,6 +180,7 @@ export default function FeedScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.header}>
         <View style={styles.logoRow}>
           <View style={styles.dot} />
@@ -184,6 +192,7 @@ export default function FeedScreen() {
           </Pressable>
           <Pressable style={styles.iconBtn} onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('ChatList')}>
             <Icon name="send" size={20} color={colors.ink} />
+            {hasUnreadChats ? <View style={styles.unreadDot} /> : null}
           </Pressable>
         </View>
       </View>
@@ -226,7 +235,10 @@ export default function FeedScreen() {
                           <LikeButton post={currentPost} size={18} />
                           <Text style={styles.storyStatText}>{currentPost.likes}</Text>
                         </View>
-                        <Pressable style={styles.storyStat} onPress={() => openComments(currentPost.id)}>
+                        <Pressable
+                          style={styles.storyStat}
+                          onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('Comment', { postId: currentPost.id })}
+                        >
                           <Icon name="message-circle" size={16} color="#fff" sketchy={false} />
                           <Text style={styles.storyStatText}>{currentPost.comments.length}</Text>
                         </Pressable>
@@ -275,6 +287,7 @@ export default function FeedScreen() {
           />
         </View>
       )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -287,6 +300,17 @@ function makeStyles(colors: import('@/theme/colors').ThemeColors) {
     dot: { width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.accent },
     logo: { fontSize: 19, fontWeight: '800', color: colors.ink },
     iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+    unreadDot: {
+      position: 'absolute',
+      top: 3,
+      right: 4,
+      width: 11,
+      height: 11,
+      borderRadius: 5.5,
+      backgroundColor: colors.accent,
+      borderWidth: 2,
+      borderColor: colors.paper
+    },
     dotsRow: { flexDirection: 'row', gap: 5, justifyContent: 'center', paddingTop: 4, paddingBottom: 12 },
     dotInactive: { width: 5, height: 4, borderRadius: 2, backgroundColor: colors.border },
     dotActive: { width: 14, height: 4, borderRadius: 2, backgroundColor: colors.ink },

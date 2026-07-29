@@ -8,6 +8,8 @@ export interface StrokePoint {
 }
 
 export interface Comment {
+  id: number;
+  authorId: string;
   user: string;
   text: string;
   avatarColor?: string;
@@ -53,6 +55,8 @@ export interface Chat {
   messages: ChatMessage[];
   /** 상대방이 마지막으로 읽은 시각(ISO). 이 시각 이전에 내가 보낸 메시지는 "읽음"으로 표시합니다. */
   otherReadAt: string | null;
+  /** 마지막 메시지가 상대방이 보낸 것이고 아직 내가 안 읽었으면 true. */
+  unread: boolean;
 }
 
 export interface LoungeItem {

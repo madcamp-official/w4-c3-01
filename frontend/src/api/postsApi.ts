@@ -102,6 +102,8 @@ function assemblePosts(
       liked: likes.some((l) => l.user_id === currentUserId),
       likes: likes.length,
       comments: comments.map((c) => ({
+        id: c.id,
+        authorId: c.author_id,
         user: profiles.get(c.author_id)?.nickname ?? '알 수 없음',
         text: c.text,
         avatarColor: profiles.get(c.author_id)?.avatar_color ?? '#EAE2C9',
@@ -239,6 +241,18 @@ export async function addComment(postId: string, currentUserId: string, comment:
     return mockStore.addComment(postId, comment);
   }
   const { error } = await supabase.from('post_comments').insert({ post_id: postId, author_id: currentUserId, text: comment.text });
+  if (error) throw new Error(error.message);
+  return fetchSinglePost(postId, currentUserId);
+}
+
+export async function deleteComment(postId: string, commentId: number, currentUserId: string): Promise<Post | undefined> {
+  if (!supabase) {
+    // TODO(backend): Supabase 미설정 상태의 목업 폴백
+    return mockStore.deleteComment(postId, commentId);
+  }
+  // RLS restricts this to the comment's own author regardless, but scoping
+  // it here too avoids a confusing silent no-op if that check ever changes.
+  const { error } = await supabase.from('post_comments').delete().eq('id', commentId).eq('author_id', currentUserId);
   if (error) throw new Error(error.message);
   return fetchSinglePost(postId, currentUserId);
 }

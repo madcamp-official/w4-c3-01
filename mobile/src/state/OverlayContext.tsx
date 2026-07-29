@@ -16,10 +16,6 @@ interface OverlayValue {
   openViewerForMessage: (msg: Pick<ChatMessage, 'image' | 'strokes'>) => void;
   closeViewer: () => void;
 
-  commentPostId: string | null;
-  openComments: (postId: string) => void;
-  closeComments: () => void;
-
   sharePostId: string | null;
   openShare: (postId: string) => void;
   closeShare: () => void;
@@ -33,7 +29,6 @@ const OverlayContext = createContext<OverlayValue | null>(null);
 
 export function OverlayProvider({ children }: { children: ReactNode }) {
   const [viewer, setViewer] = useState<ViewerPayload | null>(null);
-  const [commentPostId, setCommentPostId] = useState<string | null>(null);
   const [sharePostId, setSharePostId] = useState<string | null>(null);
   const [logoutOpen, setLogoutOpen] = useState(false);
 
@@ -45,10 +40,6 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
         setViewer({ image: msg.image ?? '', caption: '허공에 쓴 손글씨 메시지', strokes: msg.strokes }),
       closeViewer: () => setViewer(null),
 
-      commentPostId,
-      openComments: (postId) => setCommentPostId(postId),
-      closeComments: () => setCommentPostId(null),
-
       sharePostId,
       openShare: (postId) => setSharePostId(postId),
       closeShare: () => setSharePostId(null),
@@ -57,7 +48,7 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
       openLogout: () => setLogoutOpen(true),
       closeLogout: () => setLogoutOpen(false)
     }),
-    [viewer, commentPostId, sharePostId, logoutOpen]
+    [viewer, sharePostId, logoutOpen]
   );
 
   return <OverlayContext.Provider value={value}>{children}</OverlayContext.Provider>;

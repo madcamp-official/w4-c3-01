@@ -36,7 +36,7 @@ export default function ShareSheet() {
         <Text style={styles.optionText}>링크 복사</Text>
       </Pressable>
       <Pressable style={styles.option} onPress={() => handleOption('chat')}>
-        <Icon name="message-square" size={20} color={colors.ink} />
+        <Icon name="send" size={20} color={colors.ink} />
         <Text style={styles.optionText}>채팅으로 보내기</Text>
       </Pressable>
     </BottomSheetModal>

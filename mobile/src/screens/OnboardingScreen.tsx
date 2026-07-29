@@ -30,7 +30,7 @@ function passwordHint(password: string, colors: ThemeColors): { text: string; co
 
 export default function OnboardingScreen({ navigation }: Props) {
   const { signupUser, loginWithGoogle } = useAppState();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const common = buildCommon(colors);
   const bottomInset = useBottomInset();
   const { showToast } = useToast();
@@ -109,7 +109,11 @@ export default function OnboardingScreen({ navigation }: Props) {
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.ink }} edges={['top']}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <View style={{ width: 220, height: 220, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.paper2 }}>
-            <Image source={{ uri: heartPreview }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+            <Image
+              source={{ uri: heartPreview }}
+              style={{ width: '100%', height: '100%', tintColor: isDark ? '#fff' : undefined }}
+              resizeMode="contain"
+            />
           </View>
         </View>
         <View style={{ padding: 20, paddingBottom: 20 + bottomInset, gap: 10 }}>

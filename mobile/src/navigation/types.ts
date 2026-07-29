@@ -29,6 +29,7 @@ export type AppStackParamList = {
   UserProfile: { userId: string };
   FollowList: { userId: string; mode: 'followers' | 'following' };
   LoungeView: { loungeId: string };
+  Comment: { postId: string };
 };
 
 export type RootStackParamList = {

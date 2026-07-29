@@ -3,10 +3,12 @@ import Avatar from '@/components/Avatar';
 import Icon from '@/components/Icon';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
+import { useToast } from '@/state/ToastContext';
 
 export default function CommentSheet() {
   const { commentPostId, closeComments } = useOverlay();
-  const { posts, commentOnPost } = useAppState();
+  const { session, posts, commentOnPost, deleteComment } = useAppState();
+  const { showToast } = useToast();
   const [text, setText] = useState('');
 
   const post = commentPostId ? posts.find((p) => p.id === commentPostId) : undefined;
@@ -14,8 +16,21 @@ export default function CommentSheet() {
 
   async function handleSend() {
     if (!post || !text.trim()) return;
-    await commentOnPost(post.id, text.trim());
-    setText('');
+    try {
+      await commentOnPost(post.id, text.trim());
+      setText('');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '댓글을 등록하지 못했어요');
+    }
+  }
+
+  async function handleDelete(commentId: number) {
+    if (!post) return;
+    try {
+      await deleteComment(post.id, commentId);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '댓글을 삭제하지 못했어요');
+    }
   }
 
   return (
@@ -28,13 +43,18 @@ export default function CommentSheet() {
           {post && post.comments.length === 0 ? (
             <div className="empty-note">아직 댓글이 없어요. 첫 댓글을 남겨보세요!</div>
           ) : (
-            post?.comments.map((c, i) => (
-              <div className="comment-item" key={i}>
+            post?.comments.map((c) => (
+              <div className="comment-item" key={c.id}>
                 <Avatar nickname={c.user} color={c.avatarColor ?? '#E3D9BB'} avatarUrl={c.avatarUrl} size={26} fontSize={10} />
                 <div>
                   <b>{c.user}</b>
                   {c.text}
                 </div>
+                {session?.id === c.authorId ? (
+                  <button className="comment-delete" onClick={() => handleDelete(c.id)} aria-label="댓글 삭제">
+                    <Icon name="x" size={13} />
+                  </button>
+                ) : null}
               </div>
             ))
           )}

@@ -2,18 +2,23 @@
 // list-mode card — see FeedScreen.tsx for the swipeable story-card mode (a
 // separate renderer), both keep the post image 1:1 square.
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import Icon from '@/components/Icon';
 import Avatar from '@/components/Avatar';
 import LikeButton from '@/components/LikeButton';
+import type { AppStackParamList } from '@/navigation/types';
 import { useOverlay } from '@/state/OverlayContext';
 import { useTheme } from '@/state/ThemeContext';
 import { radius as radiusTokens } from '@/theme/colors';
 import type { Post } from '@/types';
 
 export default function PostCard({ post }: { post: Post }) {
-  const { openViewer, openComments, openShare } = useOverlay();
+  const { openViewer, openShare } = useOverlay();
   const { colors } = useTheme();
   const styles = makeStyles(colors);
+  const navigation = useNavigation();
+  const openComments = (postId: string) =>
+    navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('Comment', { postId });
 
   return (
     <View style={styles.card}>
