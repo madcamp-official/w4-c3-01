@@ -25,6 +25,7 @@ interface PaintedStroke {
   color: string
   tool: PenTool
   lineWidth: number
+  renderedLength: number
 }
 
 const TOOL_STYLES: Record<
@@ -181,6 +182,7 @@ function splitStrokeOutsideCircle(
         color: paintedStroke.color,
         tool: paintedStroke.tool,
         lineWidth: paintedStroke.lineWidth,
+        renderedLength: 0,
       })
     }
     currentFragment = null
@@ -267,6 +269,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
       context.strokeStyle = strokeColor
       context.lineWidth = strokeWidth
       context.setLineDash(style.dash)
+      context.lineDashOffset = 0
       context.shadowColor = style.glow ? strokeColor : 'rgba(0, 0, 0, 0.35)'
       context.shadowBlur = style.shadowBlur
     }, [])
@@ -303,6 +306,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
         }
 
         prepareContext(context, stroke.color, stroke.tool, stroke.lineWidth)
+        context.lineDashOffset = 0
         context.beginPath()
         context.moveTo(stroke.points[0].x * width, stroke.points[0].y * height)
         for (let index = 1; index < stroke.points.length; index += 1) {
@@ -362,6 +366,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
               color,
               tool,
               lineWidth: getToolLineWidth(tool, lineSize),
+              renderedLength: 0,
             }
             currentStrokeRef.current = stroke
             strokesRef.current.push(stroke)
@@ -370,39 +375,42 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
 
           const previous = stroke.points[stroke.points.length - 1]
           stroke.points.push(normalized)
+          const previousPoint = {
+            x: previous.x * canvas.clientWidth,
+            y: previous.y * canvas.clientHeight,
+          }
+          const nextPoint = {
+            x: normalized.x * canvas.clientWidth,
+            y: normalized.y * canvas.clientHeight,
+          }
+          const segmentLength = Math.hypot(
+            nextPoint.x - previousPoint.x,
+            nextPoint.y - previousPoint.y,
+          )
 
           if (stroke.tool === 'spray') {
             drawSpraySegment(
               context,
               stroke.color,
-              {
-                x: previous.x * canvas.clientWidth,
-                y: previous.y * canvas.clientHeight,
-              },
-              {
-                x: normalized.x * canvas.clientWidth,
-                y: normalized.y * canvas.clientHeight,
-              },
+              previousPoint,
+              nextPoint,
               stroke.points.length - 1,
               stroke.lineWidth,
             )
+            stroke.renderedLength += segmentLength
             return
           }
 
-          // A single incremental stroke() (drawing just the new segment) is
-          // cheaper, but on Android WebView it was rendering non-default pen
-          // styles (shadowBlur/dash/opacity) as a plain line — the shadow's
-          // paint region is wider than the segment's own bounds, and the
-          // WebView's hardware-accelerated canvas wasn't reliably
-          // invalidating/compositing that extra area on a partial redraw.
-          // eraseAt()'s full clearRect()+redraw was the only thing that
-          // forced a real repaint, which is why styles "fixed themselves"
-          // only after using the eraser. A full redraw() every point is
-          // more expensive but guarantees what's on screen actually matches
-          // the stored stroke data — for spray we keep the incremental path
-          // since spray has no shadow and redrawing every particle every
-          // point would be far more expensive.
-          redraw()
+          // Draw only the newly received segment. Repainting every previous
+          // stroke for every landmark made drawing cost grow quadratically and
+          // caused the line to fall farther behind the hand over time.
+          prepareContext(context, stroke.color, stroke.tool, stroke.lineWidth)
+          context.lineDashOffset = -stroke.renderedLength
+          context.beginPath()
+          context.moveTo(previousPoint.x, previousPoint.y)
+          context.lineTo(nextPoint.x, nextPoint.y)
+          context.stroke()
+          stroke.renderedLength += segmentLength
         },
         eraseAt(point: Point, radius: number) {
           const canvas = canvasRef.current

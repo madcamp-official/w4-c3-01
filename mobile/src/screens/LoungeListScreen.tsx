@@ -13,7 +13,6 @@ import {
   addSpatialContent,
   deleteMySpatialContents,
   fetchSpatialContents,
-  fetchSpatialLounge,
   subscribeToLoungePresence,
   subscribeToSpatialContents,
 } from '@/api/spatialLoungeApi';
@@ -21,11 +20,8 @@ import {
   QrSpatialLoungeScene,
   type QrSpatialSceneAppProps,
 } from '@/features/lounge/QrSpatialLoungeScene';
-import type {
-  SpatialLounge,
-  SpatialLoungeContent,
-  SpatialStrokePoint,
-} from '@/features/lounge/spatialTypes';
+import LineWidthSlider from '@/components/LineWidthSlider';
+import type { SpatialLoungeContent, SpatialStrokePoint } from '@/features/lounge/spatialTypes';
 import { useAppState } from '@/state/AppStateContext';
 // Deliberately static, not useTheme() — this is a fullscreen AR camera
 // passthrough (like AirDrawingWebView.tsx): the dark screen backdrop and the
@@ -39,7 +35,6 @@ const DRAWING_COLORS = [colors.ink, colors.accent, colors.line, '#FFFFFF'] as co
 
 export default function LoungeListScreen() {
   const { session } = useAppState();
-  const [lounge, setLounge] = useState<SpatialLounge | null>(null);
   const [contents, setContents] = useState<SpatialLoungeContent[]>([]);
   const [alignRevision, setAlignRevision] = useState(0);
   const [aligned, setAligned] = useState(false);
@@ -69,10 +64,9 @@ export default function LoungeListScreen() {
     }
     let active = true;
     setLoading(true);
-    Promise.all([fetchSpatialLounge(LOUNGE_ID), fetchSpatialContents(LOUNGE_ID)])
-      .then(([nextLounge, nextContents]) => {
+    fetchSpatialContents(LOUNGE_ID)
+      .then((nextContents) => {
         if (!active) return;
-        setLounge(nextLounge);
         setContents(nextContents);
         setError(null);
       })
@@ -125,6 +119,11 @@ export default function LoungeListScreen() {
         created_at: createdAt,
       };
 
+      setContents((current) => [
+        content,
+        ...current.filter((item) => item.content_id !== content.content_id),
+      ]);
+
       try {
         setSaving(true);
         const saved = await addSpatialContent(content, session.id);
@@ -133,6 +132,9 @@ export default function LoungeListScreen() {
           ...current.filter((item) => item.content_id !== saved.content_id),
         ]);
       } catch (saveError) {
+        setContents((current) =>
+          current.filter((item) => item.content_id !== content.content_id),
+        );
         Alert.alert(
           '낙서를 저장하지 못했어요',
           saveError instanceof Error ? saveError.message : '네트워크 연결을 확인해 주세요.',
@@ -237,9 +239,8 @@ export default function LoungeListScreen() {
       <SafeAreaView pointerEvents="box-none" edges={['top']} style={styles.overlay}>
         <View style={styles.header}>
           <View style={styles.headerCopy}>
-            <Text style={styles.eyebrow}>ALINE · LIVE AR LOUNGE</Text>
-            <Text numberOfLines={1} style={styles.loungeName}>
-              {lounge?.name ?? '성수 카페 라운지'}
+            <Text numberOfLines={1} style={styles.loungeId}>
+              {LOUNGE_ID}
             </Text>
             <Text style={styles.online}>● {onlineCount}명 접속 중</Text>
           </View>
@@ -321,19 +322,7 @@ export default function LoungeListScreen() {
                     />
                   ))}
                 </View>
-                <View style={styles.widthControl}>
-                  <Pressable
-                    onPress={() => setWidth((value) => Math.max(4, value - 2))}
-                    style={styles.widthButton}>
-                    <Text style={styles.widthButtonText}>−</Text>
-                  </Pressable>
-                  <Text style={styles.widthText}>{width}</Text>
-                  <Pressable
-                    onPress={() => setWidth((value) => Math.min(20, value + 2))}
-                    style={styles.widthButton}>
-                    <Text style={styles.widthButtonText}>＋</Text>
-                  </Pressable>
-                </View>
+                <LineWidthSlider value={width} onValueChange={setWidth} />
               </View>
 
               <Pressable
@@ -388,13 +377,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   headerCopy: { flex: 1 },
-  eyebrow: {
-    color: colors.accent,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1.5,
+  loungeId: {
+    color: colors.inkSoft,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.6,
   },
-  loungeName: { color: colors.ink, fontSize: 21, fontWeight: '900', marginTop: 2 },
   online: { color: colors.inkSoft, fontSize: 11, fontWeight: '700', marginTop: 3 },
   deleteButton: {
     borderRadius: 999,
@@ -522,23 +510,6 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
   selectedColor: { borderWidth: 3, borderColor: colors.accent },
-  widthControl: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  widthButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.paper2,
-  },
-  widthButtonText: { color: colors.ink, fontSize: 19, fontWeight: '700' },
-  widthText: {
-    color: colors.ink,
-    fontSize: 12,
-    fontWeight: '900',
-    minWidth: 18,
-    textAlign: 'center',
-  },
   drawButton: {
     height: 66,
     alignItems: 'center',

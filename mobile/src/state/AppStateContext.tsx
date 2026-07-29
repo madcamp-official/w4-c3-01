@@ -6,6 +6,7 @@ import * as chatApi from '@/api/chatApi';
 import * as loungeApi from '@/api/loungeApi';
 import * as userApi from '@/api/userApi';
 import type { AirDrawingDocument } from '@/air-drawing-types';
+import { clearLatestPostWidget, updateLatestPostWidget } from '@/lib/androidWidget';
 import type {
   Chat,
   ChatMessage,
@@ -98,6 +99,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const logoutUser = useCallback(() => {
     void authApi.logout();
+    void clearLatestPostWidget();
     setSession(null);
     setPosts([]);
     setChats([]);
@@ -133,7 +135,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const loadFeed = useCallback(async () => {
     if (!session) return;
-    setPosts(await postsApi.fetchFeed(session.id));
+    const nextPosts = await postsApi.fetchFeed(session.id);
+    setPosts(nextPosts);
+    void updateLatestPostWidget(nextPosts[0]);
   }, [session]);
 
   const sharePost = useCallback(
@@ -150,6 +154,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         caption: input.caption
       });
       setPosts((prev) => [post, ...prev]);
+      void updateLatestPostWidget(post);
       return post;
     },
     [session]
@@ -177,10 +182,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [session]
   );
 
-  const deletePost = useCallback(async (postId: string) => {
-    await postsApi.deletePost(postId);
-    setPosts((prev) => prev.filter((p) => p.id !== postId));
-  }, []);
+  const deletePost = useCallback(
+    async (postId: string) => {
+      await postsApi.deletePost(postId);
+      const nextPosts = posts.filter((post) => post.id !== postId);
+      setPosts(nextPosts);
+      void updateLatestPostWidget(nextPosts[0]);
+    },
+    [posts]
+  );
 
   const loadChats = useCallback(async () => {
     if (!session) return;

@@ -147,10 +147,10 @@ export function AirDrawingStage({
   const drawingCanvasRef = useRef<DrawingCanvasHandle | null>(null)
   const colorToolbarRef = useRef<ColorToolbarHandle | null>(null)
   const penStyleToolbarRef = useRef<PenStyleToolbarHandle | null>(null)
+  const cursorRef = useRef<HTMLDivElement | null>(null)
   const cameraStartRequestedRef = useRef(false)
   const [pinching, setPinching] = useState(false)
   const [erasing, setErasing] = useState(false)
-  const [cursorPoint, setCursorPoint] = useState<Point | null>(null)
   const [penColor, setPenColor] = useState(isPaperMode ? INK_COLOR : DEFAULT_PEN_COLOR)
   const [penTool, setPenTool] = useState<PenTool>(DEFAULT_PEN_TOOL)
   const [lineSize, setLineSize] = useState(DEFAULT_LINE_SIZE)
@@ -251,9 +251,15 @@ export function AirDrawingStage({
 
   const handleTrackedPoint = useCallback(
     (point: Point | null, isPinching: boolean, isErasing: boolean) => {
-      setCursorPoint(point)
       setPinching(isPinching)
       setErasing(isErasing)
+
+      const cursor = cursorRef.current
+      if (cursor) {
+        cursor.style.opacity = point ? '1' : '0'
+        if (point) cursor.style.transform = `translate3d(${point.x}px, ${point.y}px, 0)`
+        cursor.className = `finger-cursor ${isErasing ? 'erasing' : isPinching ? 'drawing' : ''}`
+      }
 
       const overColorToolbar = colorToolbarRef.current?.handleAirInput(point, isPinching) ?? false
       const overPenStyleToolbar =
@@ -407,7 +413,7 @@ export function AirDrawingStage({
   const handleSwitchCamera = useCallback(async () => {
     setPinching(false)
     setErasing(false)
-    setCursorPoint(null)
+    if (cursorRef.current) cursorRef.current.style.opacity = '0'
     drawingCanvasRef.current?.endStroke()
     await switchCamera()
   }, [switchCamera])
@@ -431,13 +437,7 @@ export function AirDrawingStage({
         lineSize={lineSize}
       />
 
-      {cursorPoint && (
-        <div
-          className={`finger-cursor ${erasing ? 'erasing' : pinching ? 'drawing' : ''}`}
-          style={{ transform: `translate3d(${cursorPoint.x}px, ${cursorPoint.y}px, 0)` }}
-          aria-hidden="true"
-        />
-      )}
+      <div ref={cursorRef} className="finger-cursor" style={{ opacity: 0 }} aria-hidden="true" />
 
       <StatusIndicator status={status} error={cameraError ?? modelError} />
 

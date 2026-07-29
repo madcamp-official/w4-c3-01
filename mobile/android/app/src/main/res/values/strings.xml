@@ -1,0 +1,7 @@
+<resources>
+  <string name="app_name">ALine</string>
+  <string name="aline_widget_description">최신 포스트를 보고 바로 그리기</string>
+  <string name="aline_widget_latest_post">가장 최근 포스트</string>
+  <string name="aline_widget_open_camera">카메라 열기</string>
+  <string name="aline_widget_empty">눌러서 첫 포스트를 그려보세요</string>
+</resources>
