@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AvatarPicker from '@/components/AvatarPicker';
 import HeartAirwriteStage, { type HeartAirwriteHandle } from '@/components/HeartAirwriteStage';
 import { useUsernameCheck, usernameStatusMessage, type UsernameStatus } from '@/hooks/useUsernameCheck';
+import { uploadAvatarImage } from '@/lib/uploadImage';
 import { defaultHeartUrl } from '@/mock/store';
 import { useAppState } from '@/state/AppStateContext';
 import { useToast } from '@/state/ToastContext';
@@ -43,7 +44,10 @@ export default function CompleteProfilePage() {
   async function finishProfile(heartUrl: string) {
     setSaving(true);
     try {
-      if (dataUrl && dataUrl !== session!.avatarUrl) await setAvatar(dataUrl);
+      if (dataUrl && dataUrl !== session!.avatarUrl) {
+        const uploadedUrl = dataUrl.startsWith('data:') ? await uploadAvatarImage(session!.id, dataUrl) : dataUrl;
+        await setAvatar(uploadedUrl);
+      }
       await setHeart(heartUrl);
       await updateProfile({ username: username.trim(), nickname: nickname.trim(), onboarded: true });
       showToast(`ALine에 오신 걸 환영해요, ${nickname.trim()}님 🎉`);

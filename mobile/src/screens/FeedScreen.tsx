@@ -29,6 +29,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Avatar from '@/components/Avatar';
 import LikeButton from '@/components/LikeButton';
 import PostCard from '@/components/PostCard';
+import StrokeReplay from '@/components/StrokeReplay';
 import TopBar from '@/components/TopBar';
 import type { AppStackParamList, TabParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
@@ -50,6 +51,9 @@ export default function FeedScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [messageDraft, setMessageDraft] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [replaying, setReplaying] = useState(false);
+  const [replayKey, setReplayKey] = useState(0);
+  const [sourceAspect, setSourceAspect] = useState(1);
   const styles = makeStyles(colors);
   const currentPost = posts[activeIndex];
   const peekPost = activeIndex + 1 < posts.length ? posts[activeIndex + 1] : null;
@@ -76,7 +80,26 @@ export default function FeedScreen() {
 
   useEffect(() => {
     setMessageDraft('');
+    setReplaying(false);
   }, [activeIndex]);
+
+  useEffect(() => {
+    if (!currentPost) return;
+    // Strokes are normalized against the original (often non-square) capture
+    // canvas, but the photo displays cropped to a square via resizeMode="cover" —
+    // fetch the real image dimensions so the replay path can apply the same crop.
+    Image.getSize(
+      currentPost.image,
+      (w, h) => setSourceAspect(w / h),
+      () => setSourceAspect(1)
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPost?.image]);
+
+  function handleReplay() {
+    setReplaying(true);
+    setReplayKey((k) => k + 1);
+  }
 
   const toList = useCallback(() => setMode('list'), []);
 
@@ -218,9 +241,20 @@ export default function FeedScreen() {
                           Pressable untouched. */}
                       <Pressable
                         style={StyleSheet.absoluteFill}
-                        onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('PostDetail', { postId: currentPost.id })}
+                        onPress={currentPost.strokes.length ? handleReplay : undefined}
+                        disabled={currentPost.strokes.length === 0}
                       >
                         <Image source={{ uri: currentPost.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                        {replaying && currentPost.strokes.length ? (
+                          <StrokeReplay
+                            key={replayKey}
+                            strokes={currentPost.strokes}
+                            width={CARD_SIZE}
+                            height={CARD_SIZE}
+                            sourceAspect={sourceAspect}
+                            onDone={() => setReplaying(false)}
+                          />
+                        ) : null}
                       </Pressable>
                       <Pressable
                         style={styles.storyTopbar}

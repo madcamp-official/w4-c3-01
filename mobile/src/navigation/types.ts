@@ -21,7 +21,17 @@ export type TabParamList = {
 export type AppStackParamList = {
   MainTabs: NavigatorScreenParams<TabParamList> | undefined;
   Camera: { intent?: CaptureIntent; source?: 'widget' } | undefined;
-  Preview: { image: string; strokes: StrokePoint[]; drawing?: AirDrawingDocument; intent: CaptureIntent };
+  Preview: {
+    image: string;
+    strokes: StrokePoint[];
+    drawing?: AirDrawingDocument;
+    intent: CaptureIntent;
+    /** Set when reached from a post's "수정하기" menu item instead of a fresh
+     * capture — the screen reuses the same layout, but saves a caption edit
+     * to the existing post instead of creating a new one. */
+    editPostId?: string;
+    caption?: string;
+  };
   ChatList: undefined;
   ChatThread: { chatId: string };
   Airwrite: { chatId: string };

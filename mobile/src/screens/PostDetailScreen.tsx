@@ -5,13 +5,13 @@
 // isolated PostCard (author, actions, caption) plus ViewerOverlay's old
 // replay/delete behavior, now living here since only a real post needs them.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Avatar from '@/components/Avatar';
 import Icon from '@/components/Icon';
 import LikeButton from '@/components/LikeButton';
-import SketchyButton from '@/components/SketchyButton';
+import PostMenu from '@/components/PostMenu';
 import StrokeReplay from '@/components/StrokeReplay';
 import { useBottomInset } from '@/lib/useBottomInset';
 import type { AppStackParamList } from '@/navigation/types';
@@ -33,7 +33,7 @@ type Props = NativeStackScreenProps<AppStackParamList, 'PostDetail'>;
 
 export default function PostDetailScreen({ navigation, route }: Props) {
   const { postId } = route.params;
-  const { posts, loadPost, deletePost } = useAppState();
+  const { posts, loadPost } = useAppState();
   const { openShare } = useOverlay();
   const { colors } = useTheme();
   const common = buildCommon(colors);
@@ -79,34 +79,20 @@ export default function PostDetailScreen({ navigation, route }: Props) {
     setReplayKey((k) => k + 1);
   }
 
-  function handleDelete() {
-    if (!post) return;
-    Alert.alert('이 게시물을 삭제할까요?', undefined, [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: async () => {
-          await deletePost(post.id);
-          navigation.goBack();
-        }
-      }
-    ]);
-  }
-
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Icon name="chevron-left" size={24} color={colors.ink} />
         </Pressable>
+        {post ? <PostMenu post={post} triggerStyle={styles.menuBtn} onDeleted={() => navigation.goBack()} /> : null}
       </View>
       {!post ? (
         <View style={styles.centerFill}>
           {loading ? <ActivityIndicator color={colors.muted} /> : <Text style={common.subtitle}>게시물을 찾을 수 없어요</Text>}
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ paddingBottom: 24 + bottomInset }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingBottom: 24 + bottomInset }}>
           <Pressable
             style={styles.authorRow}
             onPress={() =>
@@ -158,16 +144,6 @@ export default function PostDetailScreen({ navigation, route }: Props) {
                 <Text style={styles.time}>댓글 {post.comments.length}개 모두 보기</Text>
               </Pressable>
             ) : null}
-            {post.strokes.length ? (
-              <SketchyButton variant="ghost" style={{ marginTop: 12 }} onPress={handleReplay}>
-                <Text style={common.btnGhostText}>다시 쓰는 순간 보기</Text>
-              </SketchyButton>
-            ) : null}
-            {post.mine ? (
-              <SketchyButton variant="ghost" style={{ marginTop: 8 }} onPress={handleDelete}>
-                <Text style={[common.btnGhostText, { color: colors.danger }]}>삭제하기</Text>
-              </SketchyButton>
-            ) : null}
           </View>
         </ScrollView>
       )}
@@ -178,8 +154,9 @@ export default function PostDetailScreen({ navigation, route }: Props) {
 function makeStyles(colors: import('@/theme/colors').ThemeColors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.paper },
-    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 6 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 6 },
     backBtn: { width: 36, height: 36, justifyContent: 'center', marginLeft: -8 },
+    menuBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', marginRight: -8 },
     centerFill: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
     // Everything below matches PostCard.tsx's own spacing exactly (head/
     // mediaWrapRounded/actions/meta) so this reads as an isolated instance

@@ -23,11 +23,15 @@ export type IconName =
   | 'chevron-left'
   | 'sun'
   | 'moon'
-  | 'bell';
+  | 'bell'
+  | 'more-vertical';
 
 type Def = {
   paths?: string[];
   circles?: { cx: number; cy: number; r: number }[];
+  /** Solid (filled, no stroke) dots — for icons like the kebab menu where
+   * outlined circles would read as tiny rings instead of dots. */
+  fillCircles?: { cx: number; cy: number; r: number }[];
   rects?: { x: number; y: number; width: number; height: number; rx?: number }[];
 };
 
@@ -78,6 +82,13 @@ const ICONS: Record<IconName, Def> = {
   moon: { paths: ['M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z'] },
   bell: {
     paths: ['M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9', 'M13.73 21a2 2 0 0 1-3.46 0']
+  },
+  'more-vertical': {
+    fillCircles: [
+      { cx: 12, cy: 5, r: 1.6 },
+      { cx: 12, cy: 12, r: 1.6 },
+      { cx: 12, cy: 19, r: 1.6 }
+    ]
   }
 };
 
@@ -130,6 +141,9 @@ export default function Icon({
                 strokeWidth={strokeWidth}
                 fill="none"
               />
+            ))}
+            {def.fillCircles?.map((c, i) => (
+              <Circle key={i} cx={c.cx} cy={c.cy} r={c.r} fill={color} />
             ))}
             {def.rects?.map((r, i) => (
               <Rect

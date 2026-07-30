@@ -30,9 +30,9 @@ export default function AvatarPicker({ dataUrl, nickname, color, size = 96, onCh
 
   return (
     <View style={{ width: size, height: size }}>
-      <Avatar nickname={nickname} color={color} size={size} fontSize={size * 0.36} avatarUrl={dataUrl} />
+      <Avatar nickname={nickname} color={color} size={size} fontSize={size * 0.36} avatarUrl={dataUrl} allowDataUrl />
       <Pressable style={styles.editBtnWrap} onPress={handlePress}>
-        <Sketchy radius={15} color={colors.ink} seed="avatar-edit" style={[styles.editBtn, { backgroundColor: colors.paper }]}>
+        <Sketchy radius={15} color={colors.border} seed="avatar-edit" style={[styles.editBtn, { backgroundColor: colors.paper }]}>
           <Icon name="edit-2" size={14} color={colors.ink} />
         </Sketchy>
       </Pressable>

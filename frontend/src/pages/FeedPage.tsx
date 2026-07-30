@@ -5,6 +5,7 @@ import Icon from '@/components/Icon';
 import LikeButton from '@/components/LikeButton';
 import PostCard from '@/components/PostCard';
 import TopBar from '@/components/TopBar';
+import { replayStrokes, setupHiDPI } from '@/lib/canvas';
 import { useAppState } from '@/state/AppStateContext';
 import { useOverlay } from '@/state/OverlayContext';
 import { useToast } from '@/state/ToastContext';
@@ -34,10 +35,13 @@ export default function FeedPage() {
   const [messageDraft, setMessageDraft] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const start = useRef<{ x: number; y: number } | null>(null);
-  // Distinguishes a tap (navigate to the post) from a drag (swipe) — click
+  // Distinguishes a tap (replay the stroke path) from a drag (swipe) — click
   // events still fire on pointerup after a drag, so onClick alone can't tell
   // them apart.
   const movedRef = useRef(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     void loadFeed();
@@ -53,6 +57,24 @@ export default function FeedPage() {
   useEffect(() => {
     setMessageDraft('');
   }, [idx]);
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const raf = requestAnimationFrame(() => {
+      if (canvasRef.current) ctxRef.current = setupHiDPI(canvasRef.current);
+    });
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx]);
+
+  function handleReplay() {
+    const canvas = canvasRef.current;
+    if (!canvas || !ctxRef.current || !currentPost?.strokes.length) return;
+    const rect = canvas.getBoundingClientRect();
+    const img = imgRef.current;
+    const sourceAspect = img?.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : rect.width / rect.height;
+    replayStrokes(currentPost.strokes, ctxRef.current, rect.width, rect.height, 5, 1400, sourceAspect);
+  }
 
   // After advancing to the next post, the reset-to-center transform lands in
   // the SAME render as the new post's content, but the transition below is
@@ -175,10 +197,11 @@ export default function FeedPage() {
                     style={{ ...cardStyle, cursor: 'pointer' }}
                     onClick={() => {
                       if (movedRef.current || exiting) return;
-                      navigate(`/posts/${currentPost.id}`);
+                      handleReplay();
                     }}
                   >
-                    <img className="story-card-img" src={currentPost.image} alt="" />
+                    <img ref={imgRef} className="story-card-img" src={currentPost.image} alt="" />
+                    <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
                     <div
                       className="story-card-topbar"
                       style={{ cursor: 'pointer' }}

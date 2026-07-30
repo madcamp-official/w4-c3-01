@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AvatarPicker from '@/components/AvatarPicker';
 import Icon from '@/components/Icon';
 import { useUsernameCheck, usernameStatusMessage, type UsernameStatus } from '@/hooks/useUsernameCheck';
+import { uploadAvatarImage } from '@/lib/uploadImage';
 import { useAppState } from '@/state/AppStateContext';
 import { useToast } from '@/state/ToastContext';
 
@@ -34,7 +35,10 @@ export default function EditProfilePage() {
     }
     setSaving(true);
     try {
-      if (dataUrl && dataUrl !== session!.avatarUrl) await setAvatar(dataUrl);
+      if (dataUrl && dataUrl !== session!.avatarUrl) {
+        const uploadedUrl = dataUrl.startsWith('data:') ? await uploadAvatarImage(session!.id, dataUrl) : dataUrl;
+        await setAvatar(uploadedUrl);
+      }
       await updateProfile({ username: username.trim(), nickname: nickname.trim() });
       showToast('프로필을 저장했어요');
       navigate('/mypage', { replace: true });

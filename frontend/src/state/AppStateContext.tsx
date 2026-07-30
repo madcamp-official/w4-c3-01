@@ -52,6 +52,7 @@ interface AppStateValue {
   commentOnPost: (postId: string, text: string) => Promise<void>;
   deleteComment: (postId: string, commentId: number) => Promise<void>;
   deletePost: (postId: string) => Promise<void>;
+  editPost: (postId: string, caption: string) => Promise<void>;
 
   loadChats: () => Promise<void>;
   loadThread: (chatId: string) => Promise<void>;
@@ -223,6 +224,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setPosts((prev) => prev.filter((p) => p.id !== postId));
   }, []);
 
+  const editPost = useCallback(async (postId: string, caption: string) => {
+    await postsApi.updatePostCaption(postId, caption);
+    setPosts((prev) => prev.map((post) => (post.id === postId ? { ...post, caption } : post)));
+  }, []);
+
   const loadChats = useCallback(async () => {
     if (!session) return;
     setChats(await chatApi.fetchConversations(session.id));
@@ -374,6 +380,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       commentOnPost,
       deleteComment,
       deletePost,
+      editPost,
       loadChats,
       loadThread,
       getChat,
@@ -409,6 +416,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       commentOnPost,
       deleteComment,
       deletePost,
+      editPost,
       loadChats,
       loadThread,
       getChat,

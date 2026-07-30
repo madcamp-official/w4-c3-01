@@ -298,3 +298,13 @@ export async function deletePost(postId: string): Promise<void> {
   const { error } = await supabase.from('posts').delete().eq('id', postId);
   if (error) throw new Error(error.message);
 }
+
+export async function updatePostCaption(postId: string, caption: string): Promise<void> {
+  if (!supabase) {
+    // TODO(backend): Supabase 미설정 상태의 목업 폴백
+    mockStore.updatePostCaption(postId, caption);
+    return;
+  }
+  const { error } = await supabase.from('posts').update({ caption }).eq('id', postId);
+  if (error) throw new Error(error.message);
+}

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
-import Icon from '@/components/Icon';
 import TopBar from '@/components/TopBar';
 import * as userApi from '@/api/userApi';
 import { useAppState } from '@/state/AppStateContext';
@@ -52,9 +51,6 @@ export default function SearchPage() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <button className="icon-btn sk" id="search-submit-btn" aria-label="검색" onClick={() => setQuery((v) => v)}>
-          <Icon name="search" className="" />
-        </button>
       </div>
       {q ? (
         <div className="search-body">

@@ -160,6 +160,12 @@ class MockStore {
     this.posts = this.posts.filter((p) => p.id !== postId);
   }
 
+  updatePostCaption(postId: string, caption: string) {
+    this.ensureSeeded();
+    const post = this.posts.find((p) => p.id === postId);
+    if (post) post.caption = caption;
+  }
+
   sendMessage(chatId: string, message: ChatMessage): Chat | undefined {
     this.ensureSeeded();
     const chat = this.chats.find((c) => c.id === chatId);

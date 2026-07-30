@@ -31,3 +31,7 @@ export function uploadChatImage(userId: string, dataUrl: string): Promise<string
 export function uploadPostImage(userId: string, dataUrl: string): Promise<string> {
   return uploadImageToBucket('post-images', userId, dataUrl);
 }
+
+export function uploadAvatarImage(userId: string, dataUrl: string): Promise<string> {
+  return uploadImageToBucket('avatars', userId, dataUrl);
+}

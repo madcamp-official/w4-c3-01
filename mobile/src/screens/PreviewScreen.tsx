@@ -18,17 +18,31 @@ import { buildCommon } from '@/theme/common';
 type Props = NativeStackScreenProps<AppStackParamList, 'Preview'>;
 
 export default function PreviewScreen({ navigation, route }: Props) {
-  const { image, strokes, drawing, intent } = route.params;
-  const { sharePost } = useAppState();
+  const { image, strokes, drawing, intent, editPostId, caption: initialCaption } = route.params;
+  const isEditing = !!editPostId;
+  const { sharePost, editPost } = useAppState();
   const { startPlacing } = usePlacement();
   const { colors } = useTheme();
   const common = buildCommon(colors);
   const bottomInset = useBottomInset();
   const { showToast } = useToast();
-  const [caption, setCaption] = useState('');
+  const [caption, setCaption] = useState(initialCaption ?? '');
   const [sharing, setSharing] = useState(false);
 
   async function handleShare() {
+    if (isEditing) {
+      setSharing(true);
+      try {
+        await editPost(editPostId, caption.trim());
+        showToast('게시물을 수정했어요');
+        navigation.goBack();
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : '게시물을 수정하지 못했어요');
+      } finally {
+        setSharing(false);
+      }
+      return;
+    }
     if (intent.kind === 'lounge') {
       startPlacing(image, strokes);
       navigation.navigate('LoungeView', { loungeId: intent.loungeId });
@@ -83,7 +97,17 @@ export default function PreviewScreen({ navigation, route }: Props) {
           />
         ) : null}
         <SketchyButton variant="primary" disabled={sharing} onPress={handleShare}>
-          <Text style={common.btnPrimaryText}>{intent.kind === 'lounge' ? '이 자리에 배치하기' : sharing ? '공유하는 중...' : '공유하기'}</Text>
+          <Text style={common.btnPrimaryText}>
+            {isEditing
+              ? sharing
+                ? '수정하는 중...'
+                : '수정하기'
+              : intent.kind === 'lounge'
+                ? '이 자리에 배치하기'
+                : sharing
+                  ? '공유하는 중...'
+                  : '공유하기'}
+          </Text>
         </SketchyButton>
       </View>
     </SafeAreaView>

@@ -113,7 +113,6 @@ export default function MyScreen() {
         <SketchyButton
           variant="ghost"
           blobVariant="a"
-          borderColor={colors.ink}
           style={{ flex: 1 }}
           contentStyle={{ paddingVertical: 9 }}
           onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('EditProfile')}
@@ -123,7 +122,6 @@ export default function MyScreen() {
         <SketchyButton
           variant="ghost"
           blobVariant="b"
-          borderColor={colors.ink}
           style={{ flex: 1 }}
           contentStyle={{ paddingVertical: 9 }}
           onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('EditHeart')}

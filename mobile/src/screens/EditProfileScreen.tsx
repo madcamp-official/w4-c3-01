@@ -9,6 +9,7 @@ import SketchyButton from '@/components/SketchyButton';
 import SketchyInput from '@/components/SketchyInput';
 import { useUsernameCheck, usernameStatusMessage, type UsernameStatus } from '@/hooks/useUsernameCheck';
 import { useBottomInset } from '@/lib/useBottomInset';
+import { uploadAvatarImage } from '@/lib/uploadImage';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAppState } from '@/state/AppStateContext';
 import { useTheme } from '@/state/ThemeContext';
@@ -49,7 +50,10 @@ export default function EditProfileScreen({ navigation }: Props) {
     }
     setSaving(true);
     try {
-      if (dataUrl && dataUrl !== session!.avatarUrl) await setAvatar(dataUrl);
+      if (dataUrl && dataUrl !== session!.avatarUrl) {
+        const uploadedUrl = dataUrl.startsWith('data:') ? await uploadAvatarImage(session!.id, dataUrl) : dataUrl;
+        await setAvatar(uploadedUrl);
+      }
       await updateProfile({ username: username.trim(), nickname: nickname.trim(), bio: bio.trim() });
       showToast('프로필을 저장했어요');
       navigation.goBack();

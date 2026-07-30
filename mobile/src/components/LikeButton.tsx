@@ -58,13 +58,14 @@ export default function LikeButton({
           // The doodle is always drawn in dark ink on a transparent background —
           // invisible on a dark background, so tint it white in dark mode (or
           // always, in a `light` placement like the feed's story-card overlay).
+          // Liked posts override all of that with the app's red accent color.
           <Image
             source={{ uri: session.heartUrl }}
-            style={{ width: size, height: size, tintColor: light || isDark ? '#fff' : undefined }}
+            style={{ width: size, height: size, tintColor: post.liked ? colors.accent : light || isDark ? '#fff' : undefined }}
             resizeMode="contain"
           />
         ) : (
-          <Icon name="heart" size={size} color={light ? '#fff' : colors.ink} />
+          <Icon name="heart" size={size} color={post.liked ? colors.accent : light ? '#fff' : colors.ink} />
         )}
       </Animated.View>
     </Pressable>

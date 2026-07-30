@@ -1,6 +1,6 @@
 // Ported from frontend/src/pages/SearchPage.tsx — keep in sync.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Dimensions, FlatList, Image, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Dimensions, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@/components/Icon';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -80,11 +80,6 @@ export default function SearchScreen() {
             autoCapitalize="none"
           />
         </Sketchy>
-        <Pressable onPress={() => Keyboard.dismiss()} accessibilityLabel="검색">
-          <Sketchy shape="round" radius={18} color={colors.line} strokeWidth={2} seed="search-submit" style={styles.searchSubmitBtn}>
-            <Icon name="search" size={16} color={colors.ink} />
-          </Sketchy>
-        </Pressable>
       </View>
       {q ? (
         <FlatList
@@ -135,7 +130,6 @@ function makeStyles(colors: import('@/theme/colors').ThemeColors) {
     searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
     searchBox: { flex: 1, height: 48, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16 },
     searchInput: { flex: 1, paddingVertical: 10, fontSize: 14, color: colors.ink },
-    searchSubmitBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
     sectionH: { fontSize: 13, fontWeight: '700', color: colors.inkSoft, marginBottom: 10 },
     userRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
     userName: { fontSize: 14, fontWeight: '600', color: colors.ink },

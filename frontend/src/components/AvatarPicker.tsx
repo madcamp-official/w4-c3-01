@@ -31,7 +31,7 @@ export default function AvatarPicker({ dataUrl, nickname, color, size = 96, onCh
 
   return (
     <div style={{ position: 'relative', width: size, height: size }}>
-      <Avatar nickname={nickname} color={color} size={size} fontSize={size * 0.36} avatarUrl={dataUrl} outline={outline} />
+      <Avatar nickname={nickname} color={color} size={size} fontSize={size * 0.36} avatarUrl={dataUrl} outline={outline} allowDataUrl />
       <button
         type="button"
         className="icon-btn"

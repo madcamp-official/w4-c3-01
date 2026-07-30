@@ -12,4 +12,9 @@ export interface PreviewNavState {
   strokes: StrokePoint[];
   drawing?: AirDrawingDocument;
   intent: CaptureIntent;
+  /** Set when reached from a post's "수정하기" menu item instead of a fresh
+   * capture — the screen reuses the same layout, but saves a caption edit to
+   * the existing post instead of creating a new one. */
+  editPostId?: string;
+  caption?: string;
 }

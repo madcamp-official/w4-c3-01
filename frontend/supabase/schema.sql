@@ -277,8 +277,14 @@ create policy "Users can delete their own posts"
   on public.posts for delete
   using (auth.uid() = author_id);
 
+drop policy if exists "Users can update their own posts" on public.posts;
+create policy "Users can update their own posts"
+  on public.posts for update
+  using (auth.uid() = author_id)
+  with check (auth.uid() = author_id);
+
 grant select on public.posts to anon, authenticated;
-grant insert, delete on public.posts to authenticated;
+grant insert, delete, update on public.posts to authenticated;
 
 create table if not exists public.post_likes (
   post_id uuid not null references public.posts (id) on delete cascade,
@@ -350,6 +356,27 @@ create policy "Users can upload their own post images"
   on storage.objects for insert
   with check (
     bucket_id = 'post-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- 프로필 사진을 담을 Storage 버킷. post-images와 동일한 패턴. 예전엔 프로필 사진을
+-- Storage에 업로드하지 않고 base64 데이터 URL을 통째로 profiles.avatar_url에
+-- 저장하는 버그가 있었습니다 — 수백 KB짜리 문자열이 프로필을 조회할 때마다
+-- 통째로 딸려오고, 특히 모바일에서는 아예 이미지가 안 뜨는 문제로 이어졌습니다.
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
+
+drop policy if exists "Anyone can view avatars" on storage.objects;
+create policy "Anyone can view avatars"
+  on storage.objects for select
+  using (bucket_id = 'avatars');
+
+drop policy if exists "Users can upload their own avatar" on storage.objects;
+create policy "Users can upload their own avatar"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'avatars'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 
@@ -533,6 +560,29 @@ grant select, insert, update on public.push_tokens to authenticated;
 -- 테이블 GRANT는 별도로 필요해서 이걸 빠뜨리면 "42501: insufficient_privilege"로
 -- 조용히 조회가 실패합니다(성공/실패 둘 다 200을 반환하는 함수라 겉으로는 티가 안 남).
 grant select on public.push_tokens to service_role;
+
+-- 같은 기기(같은 Expo 푸시 토큰)에서 로그아웃 후 다른 계정으로 로그인하면,
+-- 새 계정이 로그인 시 이 토큰을 자기 user_id로 등록합니다 — 이때 예전 계정이
+-- 여전히 같은 토큰을 들고 있으면(로그아웃해도 행이 남아있으므로) 두 계정 모두
+-- 같은 토큰 소유자가 되어, 예전 계정 알림도 이 기기에 계속 푸시됩니다. 토큰을
+-- insert/update할 때마다 같은 토큰을 가진 "다른" 사용자 행을 먼저 지워서, 한
+-- 토큰(=한 기기)은 항상 최근에 로그인한 계정만 소유하도록 강제합니다.
+create or replace function public.enforce_push_token_uniqueness()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from public.push_tokens where token = new.token and user_id <> new.user_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists before_push_token_upsert on public.push_tokens;
+create trigger before_push_token_upsert
+  before insert or update on public.push_tokens
+  for each row execute function public.enforce_push_token_uniqueness();
 grant select on public.profiles to service_role;
 
 -- 알림 insert 시 send-notification-push Edge Function 호출은 Supabase 대시보드의
