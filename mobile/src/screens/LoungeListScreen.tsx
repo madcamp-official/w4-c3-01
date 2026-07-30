@@ -4,7 +4,7 @@ import {
   useCameraPermissions,
   type BarcodeScanningResult,
 } from 'expo-camera';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   addSpatialContent,
   deleteMySpatialContents,
+  ensureSpatialLounge,
   fetchSpatialContents,
   subscribeToLoungePresence,
   subscribeToSpatialContents,
@@ -38,11 +39,20 @@ import { useAppState } from '@/state/AppStateContext';
 // light/dark toggle.
 import { colors } from '@/theme/colors';
 
-const LOUNGE_QR_PATTERN = /^aline:\/\/lounge\/([a-z0-9][a-z0-9-]{2,63})$/i;
-const TEST_LOUNGE_ID = 'lounge-cafe-01';
+const LOUNGE_QR_PATTERN = /^ALine-([0-9]+)$/;
+const MAX_LOUNGE_NUMBER_LENGTH = 58;
 
-function loungeIdFromQr(data: string): string | null {
-  return data.trim().match(LOUNGE_QR_PATTERN)?.[1]?.toLowerCase() ?? null;
+function loungeFromQr(data: string): { id: string; name: string } | null {
+  const digits = data.trim().match(LOUNGE_QR_PATTERN)?.[1];
+  if (!digits) return null;
+
+  const normalizedNumber = digits.replace(/^0+(?=\d)/, '');
+  if (normalizedNumber.length > MAX_LOUNGE_NUMBER_LENGTH) return null;
+
+  return {
+    id: `aline-${normalizedNumber}`,
+    name: `ALine-${normalizedNumber}`,
+  };
 }
 
 export default function LoungeListScreen() {
@@ -63,13 +73,7 @@ export default function LoungeListScreen() {
   const [onlineCount, setOnlineCount] = useState(1);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-
-  const enterTestLounge = useCallback(() => {
-    setScanError(null);
-    setContents([]);
-    setOnlineCount(1);
-    setLoungeId(TEST_LOUNGE_ID);
-  }, []);
+  const scanInFlightRef = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!loungeId) return;
@@ -228,16 +232,32 @@ export default function LoungeListScreen() {
     setAlignRevision((revision) => revision + 1);
   };
 
-  const handleQrScanned = ({ data }: BarcodeScanningResult) => {
-    const scannedLoungeId = loungeIdFromQr(data);
-    if (!scannedLoungeId) {
-      setScanError('ALine 라운지 QR이 아니에요.');
+  const handleQrScanned = async ({ data }: BarcodeScanningResult) => {
+    if (!session || scanInFlightRef.current) return;
+
+    const scannedLounge = loungeFromQr(data);
+    if (!scannedLounge) {
+      setScanError('ALine-숫자 형식의 QR만 사용할 수 있어요.');
       return;
     }
-    setScanError(null);
-    setContents([]);
-    setOnlineCount(1);
-    setLoungeId(scannedLoungeId);
+
+    scanInFlightRef.current = true;
+    setScanError('라운지를 확인하는 중…');
+    try {
+      await ensureSpatialLounge(scannedLounge.id, scannedLounge.name, session.id);
+      setScanError(null);
+      setContents([]);
+      setOnlineCount(1);
+      setLoungeId(scannedLounge.id);
+    } catch (scanFailure) {
+      setScanError(
+        scanFailure instanceof Error
+          ? scanFailure.message
+          : '라운지를 열지 못했어요. 다시 시도해 주세요.',
+      );
+    } finally {
+      scanInFlightRef.current = false;
+    }
   };
 
   const scanAnotherQr = () => {
@@ -246,6 +266,8 @@ export default function LoungeListScreen() {
     setAligned(false);
     setContents([]);
     setError(null);
+    setScanError(null);
+    scanInFlightRef.current = false;
     setLoungeId(null);
   };
 
@@ -272,13 +294,10 @@ export default function LoungeListScreen() {
           <Icon name="qr-code" size={34} color="#101114" />
           <Text style={styles.permissionTitle}>라운지 QR을 스캔해 주세요</Text>
           <Text style={styles.permissionDescription}>
-            QR마다 서로 다른 라운지로 연결돼요.
+            ALine-숫자 형식의 QR만 라운지로 연결돼요.
           </Text>
           <Pressable onPress={() => void requestCameraPermission()} style={styles.permissionButton}>
             <Text style={styles.permissionButtonText}>카메라 권한 허용</Text>
-          </Pressable>
-          <Pressable onPress={enterTestLounge} style={styles.permissionTestButton}>
-            <Text style={styles.permissionTestButtonText}>QR 없이 테스트 입장</Text>
           </Pressable>
         </View>
       );
@@ -303,16 +322,10 @@ export default function LoungeListScreen() {
             <View style={[styles.corner, styles.bottomLeft]} />
             <View style={[styles.corner, styles.bottomRight]} />
           </View>
-          <Text style={styles.scanError}>{scanError ?? 'QR마다 독립된 라운지가 열려요'}</Text>
+          <Text style={styles.scanError}>
+            {scanError ?? 'ALine-숫자가 같은 QR은 같은 라운지로 연결돼요'}
+          </Text>
         </View>
-        <SafeAreaView pointerEvents="box-none" edges={['bottom']} style={styles.testEntryDock}>
-          <Pressable
-            accessibilityLabel="QR 없이 테스트 라운지 입장"
-            onPress={enterTestLounge}
-            style={({ pressed }) => [styles.testEntryButton, pressed && styles.pressedButton]}>
-            <Text style={styles.testEntryText}>QR 없이 테스트 입장</Text>
-          </Pressable>
-        </SafeAreaView>
       </View>
     );
   }
@@ -339,7 +352,7 @@ export default function LoungeListScreen() {
         <View style={styles.header}>
           <View style={styles.headerCopy}>
             <Text numberOfLines={1} style={styles.loungeId}>
-              {loungeId}
+              {loungeId.replace(/^aline-/, 'ALine-')}
             </Text>
             <Text style={styles.online}>● {onlineCount}명 접속 중</Text>
           </View>
@@ -601,18 +614,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#101114',
   },
   permissionButtonText: { color: '#FFF7EF', fontSize: 14, fontWeight: '900' },
-  permissionTestButton: {
-    minWidth: 210,
-    height: 46,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(16,17,20,0.18)',
-    backgroundColor: 'transparent',
-  },
-  permissionTestButtonText: { color: '#101114', fontSize: 13, fontWeight: '800' },
   scannerScreen: { flex: 1, backgroundColor: '#050608' },
   scannerShade: {
     position: 'absolute',
@@ -657,25 +658,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
-  testEntryDock: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    left: 0,
-    alignItems: 'center',
-    paddingBottom: 18,
-  },
-  testEntryButton: {
-    minWidth: 190,
-    height: 46,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
-    backgroundColor: 'rgba(10,11,14,0.82)',
-  },
-  testEntryText: { color: '#FFF7EF', fontSize: 13, fontWeight: '900' },
   overlay: {
     position: 'absolute',
     top: 0,

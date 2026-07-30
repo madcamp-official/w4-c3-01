@@ -49,6 +49,32 @@ export async function fetchSpatialLounge(loungeId: string): Promise<SpatialLoung
   return data as SpatialLounge;
 }
 
+export async function ensureSpatialLounge(
+  loungeId: string,
+  displayName: string,
+  createdBy: string,
+): Promise<void> {
+  const { error } = await requireSupabase()
+    .from('lounges')
+    .upsert(
+      {
+        id: loungeId,
+        name: displayName,
+        location: '',
+        description: `${displayName} QR 라운지`,
+        accent: '#78E0C2',
+        is_public: true,
+        created_by: createdBy,
+      },
+      {
+        onConflict: 'id',
+        ignoreDuplicates: true,
+      },
+    );
+
+  if (error) throw new Error(error.message);
+}
+
 export async function fetchSpatialContents(loungeId: string): Promise<SpatialLoungeContent[]> {
   const { data, error } = await requireSupabase()
     .from('lounge_contents')
