@@ -1,6 +1,12 @@
-// Replaces frontend/src/mock/store.ts's canvas-rendered defaultHeartUrl() —
-// RN has no <canvas>, so this is a static placeholder used only when a user
-// skips drawing a heart during onboarding (real heart drawings come from the
-// air-drawing WebView going forward, see Phase 4).
+// A real transparent PNG matching the app's ink-outline heart. The previous
+// value was a 1x1 transparent placeholder, so choosing "default heart" saved
+// an invisible image.
 export const DEFAULT_HEART_URL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAPPSURBVHhe7ZohcNwwEEUDy9qZjnSNdD4XFhYWFhYWFhYGBhaWBRYGBgYeDCw8GFhYGHjwYDtfspPTt+yzZMuxM3ozmuk0e5J2tVrtyjo7y2QymUwmk8lkginL12/WavWt0OLnccP/4W8sP4SyLF+t1+ILj1Uo8b0sxTuWTwYUK7S83Cj5e6Plv65WKLGDbHn+9gP304dytXpfKHmx0WJbKHHg/p2xtLyHQZIao9TyU6HkAw/er4lt38nByBslr5p9nG6Fknt4IPc5mEKLHzxYaMMqoh+4M/dfY7ZUtJGPm7juGieIrtUotPyDv9d70v5b3rMc/wbedDwG3P3Utiq0+AvFKAbsWO6xKXl3PEYUpRIfGx3bzq8waZavqfdv2wThDQhqj7JGOZ+cfDgVR+q45IsTCJIsHwQrYPZYNfG+WEPIvWdyBzNxj/JGGRg5wI2xWMYjyYAhfThgP/LE1ufyK8v1wQQ2LW+4P29T8q5rxbuwnkeeoMQvlusFJuJOTmxZJhQTJ1hht93wb0LhmAUPY5lecDSGi7FMDPZsbyg+ivIALs9eEJyYVS77ZEUlDiwzBASnFMrX8ElU6tVnlukEx5RjAC3vWWYo2OcmdQ4Mqn3YaHFL879kmU6aKyRuWWbOcOIGQ7NMJ54TYFQXTY2pV4YYAHvGMcAYWdWE8GkDj2CZTtgA0UfJM9GIAaEZIZ8CaF2p79zgzDP4FAB8lCQpMxNgCit39Q9R6TAqL9cLhmeCU8D7H1Umy/TCVwkuYRtwBhu8/4/hbRBdWEwEijVXebmPcv8aTogGlZcTgG066oLZwoJcKjStnAik1o7yYxVwsGLTrfpdcE5J8/JG7FgmCu8lw8xqA0590UYtsri4GH2AAUy2QHwizCUg8m2ynVeCLWouHZuWftbkyOuZKTPWRpaFNvSoicRTsqevWs2xyMmRdbsLlk2J/UzneiMq1iSuz2AQvss3BUdMxRVB9dHFqfbM+GOc+X3xxQOTHySeRNtXpNjvFYPAMcgTSWmENuWDb3vGxJeApDBCm/KzuKv0nQxjGmHWyte0GmFgYFyE8jV+I4hDbGJiA633scT8lK/xGcEYIjBQwXP4qJu98jW+wGibuGZZH/aZDKfcC1G+BjdJXiXw7b+jgPLl9tXvrlh29ph3fR4j4KKCP1fDKG0PKKZOs0elCmSNvWweSlU3zNWzuMYDqSEBdFbYo8x9u1Ot7IMJdv7ias8vyRZN2yr7mqnqFvD9IZiuff608s348OLgR0yP7cQJ8aLw5ArLOePHwtzqJHojlMlkMpnMaf4DCQYyUahI2U4AAAAASUVORK5CYII=';
+
+export const LEGACY_TRANSPARENT_HEART_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
+export function normalizeHeartUrl(heartUrl: string | null | undefined): string | null {
+  return heartUrl === LEGACY_TRANSPARENT_HEART_URL ? DEFAULT_HEART_URL : heartUrl ?? null;
+}

@@ -239,6 +239,7 @@ export function AirDrawingStage({
     isStarting,
     error: cameraError,
     startCamera,
+    stopCamera,
     switchCamera,
   } = useAirCamera('environment')
 
@@ -483,7 +484,7 @@ export function AirDrawingStage({
     const drawingHandle = drawingCanvasRef.current
     const drawingCanvas = drawingHandle?.getCanvas()
     if (!stage || !video || !drawingHandle || !drawingCanvas || !stream || capturing || busy) return
-    if (!drawingHandle.hasDrawing()) {
+    if (mode !== 'post' && !drawingHandle.hasDrawing()) {
       onError?.('먼저 허공에 무언가를 그려주세요')
       return
     }
@@ -623,6 +624,7 @@ export function AirDrawingStage({
       } else {
         context.drawImage(drawingCanvas, 0, 0, drawingCanvas.width, drawingCanvas.height, 0, 0, width, height)
       }
+      stopCamera()
       onCapture({
         image: isPaperMode ? output.toDataURL('image/png') : output.toDataURL('image/jpeg', 0.92),
         strokes: flattenDrawing(drawing, cropForStrokes),
@@ -631,7 +633,7 @@ export function AirDrawingStage({
     } finally {
       setCapturing(false)
     }
-  }, [busy, capturing, facingMode, isPaperMode, isSquarePostMode, maxDim, onCapture, onError, outputSize, safeBottom, safeTop, stream, zoomValue])
+  }, [busy, capturing, facingMode, isPaperMode, isSquarePostMode, maxDim, mode, onCapture, onError, outputSize, safeBottom, safeTop, stopCamera, stream, zoomValue])
 
   const stopVideoRecording = useCallback(() => {
     const recorder = mediaRecorderRef.current
@@ -644,7 +646,7 @@ export function AirDrawingStage({
     const drawingHandle = drawingCanvasRef.current
     const drawingCanvas = drawingHandle?.getCanvas()
     if (!stage || !video || !drawingHandle || !drawingCanvas || !stream || capturing || busy) return
-    if (!drawingHandle.hasDrawing()) {
+    if (mode !== 'post' && !drawingHandle.hasDrawing()) {
       onError?.('먼저 허공에 무언가를 그려주세요')
       return
     }
@@ -747,6 +749,7 @@ export function AirDrawingStage({
         const reader = new FileReader()
         reader.onloadend = () => {
           if (typeof reader.result !== 'string') return
+          stopCamera()
           onCapture({
             image: output.toDataURL('image/jpeg', 0.9),
             video: reader.result,
@@ -764,7 +767,7 @@ export function AirDrawingStage({
       setRecording(false)
       onError?.('영상 녹화를 시작하지 못했어요')
     }
-  }, [busy, capturing, facingMode, isSquarePostMode, onCapture, onError, safeBottom, safeTop, stream, zoomValue])
+  }, [busy, capturing, facingMode, isSquarePostMode, mode, onCapture, onError, safeBottom, safeTop, stopCamera, stream, zoomValue])
 
   const handleShutterPointerDown = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -816,6 +819,11 @@ export function AirDrawingStage({
     await switchCamera()
   }, [switchCamera])
 
+  const handleClose = useCallback(() => {
+    stopCamera()
+    onClose()
+  }, [onClose, stopCamera])
+
   return (
     <div ref={stageRef} className="air-drawing-stage">
       <video
@@ -842,7 +850,7 @@ export function AirDrawingStage({
       <StatusIndicator status={status} error={cameraError ?? modelError} />
 
       <div className="air-drawing-topbar">
-        <button className="icon-btn sk" onClick={onClose} aria-label="닫기">
+        <button className="icon-btn sk" onClick={handleClose} aria-label="닫기">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
             <path d="M18 6 6 18M6 6l12 12" />
           </svg>

@@ -3,6 +3,7 @@
 import { isUsernameAvailable } from '@/api/userApi';
 import { supabase } from '@/lib/supabaseClient';
 import { signInWithGoogle as signInWithGoogleDeepLink } from '@/lib/oauth';
+import { normalizeHeartUrl } from '@/lib/defaultHeart';
 import { AVATAR_TONES } from '@/mock/store';
 import type { LoginPayload, Session, SignupPayload } from '@/types';
 
@@ -25,7 +26,7 @@ function toSession(userId: string, profile: ProfileRow): Session {
     nickname: profile.nickname,
     bio: profile.bio ?? '',
     avatarColor: profile.avatar_color,
-    heartUrl: profile.heart_url,
+    heartUrl: normalizeHeartUrl(profile.heart_url),
     avatarUrl: profile.avatar_url,
     onboarded: profile.onboarded
   };

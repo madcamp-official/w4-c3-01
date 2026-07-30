@@ -36,11 +36,18 @@ export function useAirCamera(initialFacingMode: FacingMode = 'user'): UseCameraR
   const [isStarting, setIsStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const requestIdRef = useRef(0)
+  const mountedRef = useRef(true)
 
   const stopCamera = useCallback(() => {
+    // Invalidate an in-flight getUserMedia request as well as stopping the
+    // current stream. Android WebView can resolve that request after this
+    // screen has already unmounted; without the generation check below its
+    // newly-created track remains alive and locks the camera on re-entry.
+    requestIdRef.current += 1
     streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
-    setStream(null)
+    if (mountedRef.current) setStream(null)
   }, [])
 
   const startCamera = useCallback(
@@ -50,9 +57,12 @@ export function useAirCamera(initialFacingMode: FacingMode = 'user'): UseCameraR
         return
       }
 
-      setIsStarting(true)
-      setError(null)
       stopCamera()
+      const requestId = requestIdRef.current
+      if (mountedRef.current) {
+        setIsStarting(true)
+        setError(null)
+      }
 
       try {
         const nextStream = await navigator.mediaDevices.getUserMedia({
@@ -75,13 +85,21 @@ export function useAirCamera(initialFacingMode: FacingMode = 'user'): UseCameraR
           },
         })
 
+        if (!mountedRef.current || requestId !== requestIdRef.current) {
+          nextStream.getTracks().forEach((track) => track.stop())
+          return
+        }
         streamRef.current = nextStream
         setStream(nextStream)
         setFacingMode(nextFacingMode)
       } catch (cameraError) {
-        setError(toReadableCameraError(cameraError))
+        if (mountedRef.current && requestId === requestIdRef.current) {
+          setError(toReadableCameraError(cameraError))
+        }
       } finally {
-        setIsStarting(false)
+        if (mountedRef.current && requestId === requestIdRef.current) {
+          setIsStarting(false)
+        }
       }
     },
     [facingMode, stopCamera],
@@ -92,7 +110,15 @@ export function useAirCamera(initialFacingMode: FacingMode = 'user'): UseCameraR
     await startCamera(nextFacingMode)
   }, [facingMode, startCamera])
 
-  useEffect(() => stopCamera, [stopCamera])
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      requestIdRef.current += 1
+      streamRef.current?.getTracks().forEach((track) => track.stop())
+      streamRef.current = null
+    }
+  }, [])
 
   return {
     stream,
