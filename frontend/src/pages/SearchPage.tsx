@@ -9,7 +9,7 @@ import type { UserSummary } from '@/types';
 
 export default function SearchPage() {
   const navigate = useNavigate();
-  const { posts, session, loadChats } = useAppState();
+  const { posts, session, loadChats, loadNotifications } = useAppState();
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<UserSummary[]>([]);
 
@@ -17,7 +17,8 @@ export default function SearchPage() {
 
   useEffect(() => {
     void loadChats(); // keeps TopBar's unread-chat dot fresh
-  }, [loadChats]);
+    void loadNotifications(); // keeps TopBar's unread-notification dot fresh
+  }, [loadChats, loadNotifications]);
 
   useEffect(() => {
     if (!session || !q) {

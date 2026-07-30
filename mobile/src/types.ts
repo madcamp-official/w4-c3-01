@@ -63,6 +63,20 @@ export interface Chat {
   unread: boolean;
 }
 
+export interface Notification {
+  id: number;
+  actorId: string;
+  actorName: string;
+  actorAvatarColor: string;
+  actorAvatarUrl: string | null;
+  type: 'like' | 'follow';
+  /** type: 'like'일 때만 — 원본 게시물 id (게시물이 삭제됐으면 null이 됩니다). */
+  postId?: string | null;
+  read: boolean;
+  time: string;
+  createdAt: string;
+}
+
 export interface LoungeItem {
   image: string;
   strokes: StrokePoint[];

@@ -42,7 +42,7 @@ const SWIPE_THRESHOLD = 70;
 const EXIT_MS = 260;
 
 export default function FeedScreen() {
-  const { posts, loadFeed, loadChats, startConversationWith, sendText } = useAppState();
+  const { posts, loadFeed, loadChats, loadNotifications, startConversationWith, sendText } = useAppState();
   const { colors } = useTheme();
   const { showToast } = useToast();
   const navigation = useNavigation<NavigationProp<TabParamList>>();
@@ -64,6 +64,7 @@ export default function FeedScreen() {
     useCallback(() => {
       void loadFeed();
       void loadChats();
+      void loadNotifications();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
   );

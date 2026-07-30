@@ -424,3 +424,118 @@ drop policy if exists "Anyone can update the air-drawing-webview bundle" on stor
 create policy "Anyone can update the air-drawing-webview bundle"
   on storage.objects for update
   using (bucket_id = 'air-drawing-webview');
+
+-- 10) 알림 (좋아요/팔로우) + 푸시 -------------------------------------------
+--     클라이언트는 이 테이블에 직접 insert하지 않습니다 — 아래 트리거가
+--     post_likes/follows에 새 행이 생길 때마다 대신 만들어줍니다(가짜 알림
+--     생성을 막기 위해 클라이언트에는 insert 권한을 주지 않습니다).
+create table if not exists public.notifications (
+  id bigint generated always as identity primary key,
+  recipient_id uuid not null references public.profiles (id) on delete cascade,
+  actor_id uuid not null references public.profiles (id) on delete cascade,
+  type text not null check (type in ('like', 'follow')),
+  post_id uuid references public.posts (id) on delete cascade,
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.notifications enable row level security;
+
+drop policy if exists "Users can view their own notifications" on public.notifications;
+create policy "Users can view their own notifications"
+  on public.notifications for select
+  using (auth.uid() = recipient_id);
+
+drop policy if exists "Users can mark their own notifications read" on public.notifications;
+create policy "Users can mark their own notifications read"
+  on public.notifications for update
+  using (auth.uid() = recipient_id);
+
+grant select, update on public.notifications to authenticated;
+
+-- 실시간으로 안읽음 빨간 점을 갱신하기 위해 등록.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'notifications'
+  ) then
+    alter publication supabase_realtime add table public.notifications;
+  end if;
+end $$;
+
+-- 게시물 좋아요 → 작성자에게 알림 (자기 글에 자기가 좋아요 누른 경우는 제외).
+create or replace function public.notify_on_like()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_author_id uuid;
+begin
+  select author_id into v_author_id from public.posts where id = new.post_id;
+  if v_author_id is not null and v_author_id <> new.user_id then
+    insert into public.notifications (recipient_id, actor_id, type, post_id)
+    values (v_author_id, new.user_id, 'like', new.post_id);
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_post_like_notify on public.post_likes;
+create trigger on_post_like_notify
+  after insert on public.post_likes
+  for each row execute function public.notify_on_like();
+
+-- 팔로우 → 팔로우 당한 사람에게 알림 (follows_not_self 제약이 이미 자기
+-- 팔로우를 막아주므로 여기선 따로 걸러낼 필요가 없습니다).
+create or replace function public.notify_on_follow()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.notifications (recipient_id, actor_id, type)
+  values (new.following_id, new.follower_id, 'follow');
+  return new;
+end;
+$$;
+
+drop trigger if exists on_follow_notify on public.follows;
+create trigger on_follow_notify
+  after insert on public.follows
+  for each row execute function public.notify_on_follow();
+
+-- 기기별 Expo 푸시 토큰. profiles와 달리 "전체 공개" 정책을 두지 않습니다 —
+-- 다른 사용자가 남의 푸시 토큰을 읽어서 마음대로 알림을 보낼 수 없도록,
+-- 본인만 자기 토큰을 읽고 쓸 수 있게 제한합니다. send-notification-push
+-- Edge Function은 서비스 롤 키로 이 RLS를 우회해서 조회합니다.
+create table if not exists public.push_tokens (
+  user_id uuid primary key references public.profiles (id) on delete cascade,
+  token text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.push_tokens enable row level security;
+
+drop policy if exists "Users can manage their own push token" on public.push_tokens;
+create policy "Users can manage their own push token"
+  on public.push_tokens for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+grant select, insert, update on public.push_tokens to authenticated;
+
+-- send-notification-push Edge Function이 서비스 롤 키로 push_tokens/profiles를
+-- 조회할 때 필요합니다. service_role은 RLS는 우회하지만, 그 이전 단계인
+-- 테이블 GRANT는 별도로 필요해서 이걸 빠뜨리면 "42501: insufficient_privilege"로
+-- 조용히 조회가 실패합니다(성공/실패 둘 다 200을 반환하는 함수라 겉으로는 티가 안 남).
+grant select on public.push_tokens to service_role;
+grant select on public.profiles to service_role;
+
+-- 알림 insert 시 send-notification-push Edge Function 호출은 Supabase 대시보드의
+-- Database Webhooks(Integrations > Webhooks, public.notifications 테이블 INSERT
+-- 이벤트)로 배선합니다 — 대시보드에서 직접 설정하는 항목이라 여기 SQL로는
+-- 표현되지 않습니다.

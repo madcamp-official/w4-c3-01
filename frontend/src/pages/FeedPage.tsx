@@ -21,7 +21,7 @@ const EXIT_MS = 260;
  * list — removed by request. */
 export default function FeedPage() {
   const navigate = useNavigate();
-  const { posts, loadFeed, loadChats, startConversationWith, sendText } = useAppState();
+  const { posts, loadFeed, loadChats, loadNotifications, startConversationWith, sendText } = useAppState();
   const { openComments } = useOverlay();
   const { showToast } = useToast();
   const [mode, setMode] = useState<'card' | 'list'>('card');
@@ -42,6 +42,7 @@ export default function FeedPage() {
   useEffect(() => {
     void loadFeed();
     void loadChats();
+    void loadNotifications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -33,6 +33,7 @@ export type AppStackParamList = {
   Comment: { postId: string };
   SendToChat: { postId: string };
   PostDetail: { postId: string };
+  Notifications: undefined;
 };
 
 export type RootStackParamList = {

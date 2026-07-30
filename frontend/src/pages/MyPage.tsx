@@ -8,7 +8,7 @@ import { useAppState } from '@/state/AppStateContext';
 
 export default function MyPage() {
   const navigate = useNavigate();
-  const { session, posts, loadChats } = useAppState();
+  const { session, posts, loadChats, loadNotifications } = useAppState();
   const [tab, setTab] = useState<'posts' | 'likes'>('posts');
   const [counts, setCounts] = useState<FollowCounts | null>(null);
 
@@ -23,10 +23,11 @@ export default function MyPage() {
       if (!cancelled) setCounts(result);
     });
     void loadChats(); // keeps TopBar's unread-chat dot fresh
+    void loadNotifications(); // keeps TopBar's unread-notification dot fresh
     return () => {
       cancelled = true;
     };
-  }, [session, loadChats]);
+  }, [session, loadChats, loadNotifications]);
 
   if (!session) return null;
 

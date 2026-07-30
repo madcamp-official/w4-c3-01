@@ -12,6 +12,7 @@
     },
     "android": {
       "package": "com.sonkkeut.app",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "CAMERA",
         "HIGH_SAMPLING_RATE_SENSORS",
@@ -51,6 +52,13 @@
               "AR"
             ]
           }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#FFF7EF"
         }
       ]
     ],

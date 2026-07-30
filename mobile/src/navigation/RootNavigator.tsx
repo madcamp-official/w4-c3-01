@@ -9,7 +9,7 @@ import { useAppState } from '@/state/AppStateContext';
 import { useTheme } from '@/state/ThemeContext';
 
 export default function RootNavigator() {
-  const { session, sessionLoading, loadFeed, loadChats, loadLounges } = useAppState();
+  const { session, sessionLoading, loadFeed, loadChats, loadLounges, loadNotifications } = useAppState();
   const { colors } = useTheme();
   const bootstrapped = useRef(false);
 
@@ -19,7 +19,8 @@ export default function RootNavigator() {
     void loadFeed();
     void loadChats();
     void loadLounges();
-  }, [session, loadFeed, loadChats, loadLounges]);
+    void loadNotifications();
+  }, [session, loadFeed, loadChats, loadLounges, loadNotifications]);
 
   if (sessionLoading) {
     return (

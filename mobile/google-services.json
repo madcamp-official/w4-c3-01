@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "566868391607",
+    "project_id": "aline-madcamp",
+    "storage_bucket": "aline-madcamp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:566868391607:android:eb40c6a81d7ea42c4d7f32",
+        "android_client_info": {
+          "package_name": "com.sonkkeut.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGV8TK6SAa8w4IDgGWti1MoCHn4BNgYcE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

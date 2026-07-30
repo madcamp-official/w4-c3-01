@@ -18,7 +18,7 @@ import type { UserSummary } from '@/types';
 
 export default function SearchScreen() {
   const navigation = useNavigation();
-  const { posts, session, loadChats } = useAppState();
+  const { posts, session, loadChats, loadNotifications } = useAppState();
   const { colors } = useTheme();
   const common = buildCommon(colors);
   const styles = makeStyles(colors);
@@ -27,11 +27,12 @@ export default function SearchScreen() {
 
   const q = query.trim().toLowerCase();
 
-  // Keeps TopBar's unread-chat dot fresh whenever this tab is shown.
+  // Keeps TopBar's unread-chat/notification dots fresh whenever this tab is shown.
   useFocusEffect(
     useCallback(() => {
       void loadChats();
-    }, [loadChats])
+      void loadNotifications();
+    }, [loadChats, loadNotifications])
   );
 
   useEffect(() => {

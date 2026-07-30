@@ -9,6 +9,7 @@ import EditHeartScreen from '@/screens/EditHeartScreen';
 import EditProfileScreen from '@/screens/EditProfileScreen';
 import FollowListScreen from '@/screens/FollowListScreen';
 import LoungeViewScreen from '@/screens/LoungeViewScreen';
+import NotificationsScreen from '@/screens/NotificationsScreen';
 import PostDetailScreen from '@/screens/PostDetailScreen';
 import PreviewScreen from '@/screens/PreviewScreen';
 import SendToChatScreen from '@/screens/SendToChatScreen';
@@ -31,6 +32,7 @@ export default function AppStack() {
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
       <Stack.Screen name="FollowList" component={FollowListScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen
         name="SendToChat"
         component={SendToChatScreen}

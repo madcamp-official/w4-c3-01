@@ -11,8 +11,9 @@ import { useTheme } from '@/state/ThemeContext';
 
 export default function TopBar() {
   const navigation = useNavigation();
-  const { chats } = useAppState();
+  const { chats, notifications } = useAppState();
   const hasUnreadChats = useMemo(() => chats.some((c) => c.unread), [chats]);
+  const hasUnreadNotifications = useMemo(() => notifications.some((n) => !n.read), [notifications]);
   const { colors, isDark, toggleTheme } = useTheme();
   const styles = makeStyles(colors);
 
@@ -25,6 +26,13 @@ export default function TopBar() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         <Pressable style={styles.iconBtn} onPress={toggleTheme}>
           <Icon name={isDark ? 'sun' : 'moon'} size={19} color={colors.ink} />
+        </Pressable>
+        <Pressable
+          style={styles.iconBtn}
+          onPress={() => navigation.getParent<NavigationProp<AppStackParamList>>()?.navigate('Notifications')}
+        >
+          <Icon name="bell" size={20} color={colors.ink} />
+          {hasUnreadNotifications ? <View style={styles.unreadDot} /> : null}
         </Pressable>
         <Pressable
           style={styles.iconBtn}

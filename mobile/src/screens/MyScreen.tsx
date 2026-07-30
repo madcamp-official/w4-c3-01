@@ -28,7 +28,7 @@ const CELL_SIZE = (SCREEN_WIDTH - 40 - GRID_GAP * 2 * 3) / 3;
 
 export default function MyScreen() {
   const navigation = useNavigation();
-  const { session, posts, loadChats } = useAppState();
+  const { session, posts, loadChats, loadNotifications } = useAppState();
   const { colors } = useTheme();
   const common = buildCommon(colors);
   const styles = makeStyles(colors);
@@ -52,10 +52,11 @@ export default function MyScreen() {
         if (!cancelled) setCounts(result);
       });
       void loadChats(); // keeps TopBar's unread-chat dot fresh
+      void loadNotifications(); // keeps TopBar's unread-notification dot fresh
       return () => {
         cancelled = true;
       };
-    }, [session, loadChats])
+    }, [session, loadChats, loadNotifications])
   );
 
   if (!session) return null;

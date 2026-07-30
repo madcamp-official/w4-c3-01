@@ -4,9 +4,11 @@ import * as authApi from '@/api/authApi';
 import * as postsApi from '@/api/postsApi';
 import * as chatApi from '@/api/chatApi';
 import * as loungeApi from '@/api/loungeApi';
+import * as notificationsApi from '@/api/notificationsApi';
 import * as userApi from '@/api/userApi';
 import type { AirDrawingDocument } from '@/air-drawing-types';
 import { clearLatestPostWidget, updateLatestPostWidget } from '@/lib/androidWidget';
+import { registerForPushNotifications } from '@/lib/pushNotifications';
 import type {
   Chat,
   ChatMessage,
@@ -14,6 +16,7 @@ import type {
   Lounge,
   LoungeItem,
   LoginPayload,
+  Notification,
   Post,
   Session,
   SignupPayload,
@@ -27,6 +30,7 @@ interface AppStateValue {
   posts: Post[];
   chats: Chat[];
   lounges: Lounge[];
+  notifications: Notification[];
 
   loginUser: (payload: LoginPayload) => Promise<void>;
   signupUser: (payload: SignupPayload) => Promise<void>;
@@ -61,6 +65,10 @@ interface AppStateValue {
   loadLounges: () => Promise<void>;
   getLounge: (loungeId: string) => Lounge | undefined;
   placeInLounge: (loungeId: string, item: LoungeItem) => Promise<void>;
+
+  loadNotifications: () => Promise<void>;
+  /** 알림 화면을 열 때 호출 — 채팅방 진입 시 markThreadRead와 같은 역할. */
+  markNotificationsRead: () => Promise<void>;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -71,6 +79,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [chats, setChats] = useState<Chat[]>([]);
   const [lounges, setLounges] = useState<Lounge[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -111,6 +120,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setPosts([]);
     setChats([]);
     setLounges([]);
+    setNotifications([]);
   }, []);
 
   const setHeart = useCallback(
@@ -324,6 +334,32 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return chatApi.subscribeToNewMessages(session.id, () => void loadChats());
   }, [session, loadChats]);
 
+  const loadNotifications = useCallback(async () => {
+    if (!session) return;
+    setNotifications(await notificationsApi.fetchNotifications(session.id));
+  }, [session]);
+
+  const markNotificationsRead = useCallback(async () => {
+    if (!session) return;
+    await notificationsApi.markAllNotificationsRead(session.id);
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  }, [session]);
+
+  // Same "app-wide red dot" shape as the chat unread listener above — refetch
+  // the list (which recomputes each notification's read flag) rather than
+  // hand-patching local state per incoming row.
+  useEffect(() => {
+    if (!session) return;
+    return notificationsApi.subscribeToNewNotifications(session.id, () => void loadNotifications());
+  }, [session, loadNotifications]);
+
+  // Registers this device's Expo push token once per login so the
+  // send-notification-push Edge Function can reach it while the app is closed.
+  useEffect(() => {
+    if (!session) return;
+    void registerForPushNotifications(session.id);
+  }, [session]);
+
   const loadLounges = useCallback(async () => {
     setLounges(await loungeApi.fetchLounges());
   }, []);
@@ -343,6 +379,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       posts,
       chats,
       lounges,
+      notifications,
       loginUser,
       signupUser,
       loginWithGoogle,
@@ -368,7 +405,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       markThreadRead,
       loadLounges,
       getLounge,
-      placeInLounge
+      placeInLounge,
+      loadNotifications,
+      markNotificationsRead
     }),
     [
       session,
@@ -376,6 +415,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       posts,
       chats,
       lounges,
+      notifications,
       loginUser,
       signupUser,
       loginWithGoogle,
@@ -401,7 +441,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       markThreadRead,
       loadLounges,
       getLounge,
-      placeInLounge
+      placeInLounge,
+      loadNotifications,
+      markNotificationsRead
     ]
   );
 

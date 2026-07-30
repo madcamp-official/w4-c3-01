@@ -19,7 +19,8 @@ export type IconName =
   | 'message-square'
   | 'chevron-left'
   | 'sun'
-  | 'moon';
+  | 'moon'
+  | 'bell';
 
 interface Def {
   paths?: string[];
@@ -58,7 +59,10 @@ const ICONS: Record<IconName, Def> = {
     paths: ['M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1'],
     circles: [{ cx: 12, cy: 12, r: 5 }]
   },
-  moon: { paths: ['M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z'] }
+  moon: { paths: ['M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z'] },
+  bell: {
+    paths: ['M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9', 'M13.73 21a2 2 0 0 1-3.46 0']
+  }
 };
 
 export default function Icon({

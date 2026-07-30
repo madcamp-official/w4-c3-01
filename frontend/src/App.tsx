@@ -28,6 +28,7 @@ import LoungeListPage from '@/pages/LoungeListPage';
 import LoungeViewPage from '@/pages/LoungeViewPage';
 import ArLoungePage from '@/pages/ArLoungePage';
 import PostDetailPage from '@/pages/PostDetailPage';
+import NotificationsPage from '@/pages/NotificationsPage';
 
 export default function App() {
   return (
@@ -59,6 +60,7 @@ export default function App() {
                       <Route path="/mypage/heart" element={<EditHeartPage />} />
                       <Route path="/mypage/edit" element={<EditProfilePage />} />
                       <Route path="/posts/:postId" element={<PostDetailPage />} />
+                      <Route path="/notifications" element={<NotificationsPage />} />
                       <Route path="/users/:userId" element={<UserProfilePage />} />
                       <Route path="/users/:userId/followers" element={<FollowListPage mode="followers" />} />
                       <Route path="/users/:userId/following" element={<FollowListPage mode="following" />} />
