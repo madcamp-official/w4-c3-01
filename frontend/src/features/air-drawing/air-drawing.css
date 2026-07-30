@@ -195,6 +195,12 @@
   content: "";
 }
 
+.air-drawing-stage .shutter.recording::after {
+  inset: 15px;
+  border-radius: 8px;
+  background: #ff3b4f;
+}
+
 .air-drawing-stage .side-btn {
   width: 42px;
   height: 42px;

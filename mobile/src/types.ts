@@ -24,6 +24,7 @@ export interface Post {
   avatarUrl: string | null;
   time: string;
   image: string;
+  videoUrl?: string;
   strokes: StrokePoint[];
   drawing?: AirDrawingDocument;
   caption: string;

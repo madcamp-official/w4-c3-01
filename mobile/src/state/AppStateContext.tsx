@@ -46,7 +46,7 @@ interface AppStateValue {
    * so like/comment/delete keep working on it — used by PostDetail for posts from
    * authors the viewer doesn't follow (e.g. shared into a chat). */
   loadPost: (postId: string) => Promise<Post | undefined>;
-  sharePost: (input: { image: string; strokes: StrokePoint[]; drawing?: AirDrawingDocument; caption: string }) => Promise<Post>;
+  sharePost: (input: { image: string; video?: string; strokes: StrokePoint[]; drawing?: AirDrawingDocument; caption: string }) => Promise<Post>;
   likePost: (postId: string) => Promise<void>;
   commentOnPost: (postId: string, text: string) => Promise<void>;
   deleteComment: (postId: string, commentId: number) => Promise<void>;
@@ -171,7 +171,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   );
 
   const sharePost = useCallback(
-    async (input: { image: string; strokes: StrokePoint[]; drawing?: AirDrawingDocument; caption: string }) => {
+    async (input: { image: string; video?: string; strokes: StrokePoint[]; drawing?: AirDrawingDocument; caption: string }) => {
       if (!session) throw new Error('not authenticated');
       const post = await postsApi.createPost({
         authorId: session.id,
@@ -179,6 +179,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         avatarColor: session.avatarColor,
         avatarUrl: session.avatarUrl,
         image: input.image,
+        video: input.video,
         strokes: input.strokes,
         drawing: input.drawing,
         caption: input.caption

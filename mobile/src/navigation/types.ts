@@ -23,6 +23,7 @@ export type AppStackParamList = {
   Camera: { intent?: CaptureIntent; source?: 'widget' } | undefined;
   Preview: {
     image: string;
+    video?: string;
     strokes: StrokePoint[];
     drawing?: AirDrawingDocument;
     intent: CaptureIntent;

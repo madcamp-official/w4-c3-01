@@ -27,6 +27,7 @@ interface ColorToolbarProps {
   stageRef: React.RefObject<HTMLDivElement | null>
   selectedColor: string
   onSelectColor: (color: string) => void
+  onRequestOpen?: () => void
 }
 
 function containsPoint(rect: DOMRect, clientX: number, clientY: number) {
@@ -39,7 +40,7 @@ function containsPoint(rect: DOMRect, clientX: number, clientY: number) {
 }
 
 export const ColorToolbar = forwardRef<ColorToolbarHandle, ColorToolbarProps>(
-  function ColorToolbar({ stageRef, selectedColor, onSelectColor }, ref) {
+  function ColorToolbar({ stageRef, selectedColor, onSelectColor, onRequestOpen }, ref) {
     const toolbarRef = useRef<HTMLDivElement | null>(null)
     const toggleRef = useRef<HTMLButtonElement | null>(null)
     const previousArrowRef = useRef<HTMLButtonElement | null>(null)
@@ -129,6 +130,10 @@ export const ColorToolbar = forwardRef<ColorToolbarHandle, ColorToolbarProps>(
           }
 
           if (insideToggle) {
+            if (!open) {
+              setOpen(true)
+              onRequestOpen?.()
+            }
             airPinchingRef.current = pinching
             setAirHovered(null)
             return true
@@ -181,7 +186,7 @@ export const ColorToolbar = forwardRef<ColorToolbarHandle, ColorToolbarProps>(
           return true
         },
       }),
-      [changePage, onSelectColor, open, selectedColor, stageRef],
+      [changePage, onRequestOpen, onSelectColor, open, selectedColor, stageRef],
     )
 
     return (
@@ -190,7 +195,12 @@ export const ColorToolbar = forwardRef<ColorToolbarHandle, ColorToolbarProps>(
           ref={toggleRef}
           className="drawer-toggle drawer-toggle-left"
           type="button"
-          onClick={() => setOpen((current) => !current)}
+          onClick={() => {
+            setOpen((current) => {
+              if (!current) onRequestOpen?.()
+              return !current
+            })
+          }}
           aria-label={open ? '색상 팔레트 닫기' : '색상 팔레트 열기'}
           aria-expanded={open}
         >

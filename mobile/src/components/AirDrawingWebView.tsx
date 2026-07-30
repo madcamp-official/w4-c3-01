@@ -24,11 +24,13 @@ import Icon from '@/components/Icon';
 import type { AirDrawingDocument } from '@/air-drawing-types';
 import type { StrokePoint } from '@/types';
 import { colors } from '@/theme/colors';
+import { decode } from 'base64-arraybuffer';
 
 export type AirDrawingMode = 'post' | 'lounge' | 'heart' | 'message';
 
 export interface AirDrawingCapture {
   image: string;
+  video?: string;
   strokes: StrokePoint[];
   drawing: AirDrawingDocument;
 }
@@ -251,7 +253,16 @@ export default function AirDrawingWebView({ mode, outputSize, maxDim, busy, onCa
     );
   }
 
-  function handleMessage(event: WebViewMessageEvent) {
+  async function persistVideoDataUrl(dataUrl: string): Promise<string> {
+    const base64 = dataUrl.split(',')[1];
+    if (!base64) throw new Error('영상 데이터를 읽지 못했어요');
+    const file = new File(Paths.cache, `air-video-${Date.now()}.webm`);
+    file.create({ overwrite: true });
+    file.write(new Uint8Array(decode(base64)));
+    return file.uri;
+  }
+
+  async function handleMessage(event: WebViewMessageEvent) {
     let message: AirViewToNativeMessage;
     try {
       message = JSON.parse(event.nativeEvent.data);
@@ -263,7 +274,18 @@ export default function AirDrawingWebView({ mode, outputSize, maxDim, busy, onCa
         setWebviewLoading(false);
         break;
       case 'capture':
-        onCapture(message.payload);
+        if (message.payload.video) {
+          try {
+            onCapture({
+              ...message.payload,
+              video: await persistVideoDataUrl(message.payload.video),
+            });
+          } catch (error) {
+            onError?.(error instanceof Error ? error.message : '영상을 저장하지 못했어요');
+          }
+        } else {
+          onCapture(message.payload);
+        }
         break;
       case 'close':
         onClose();

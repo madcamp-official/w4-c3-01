@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Avatar from '@/components/Avatar';
 import Icon from '@/components/Icon';
@@ -45,6 +46,10 @@ export default function PostDetailScreen({ navigation, route }: Props) {
   const [sourceAspect, setSourceAspect] = useState(1);
 
   const post = posts.find((p) => p.id === postId);
+  const videoPlayer = useVideoPlayer(post?.videoUrl ?? null, (player) => {
+    player.loop = true;
+    if (post?.videoUrl) player.play();
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -112,7 +117,17 @@ export default function PostDetailScreen({ navigation, route }: Props) {
             onPress={post.strokes.length ? handleReplay : undefined}
             disabled={post.strokes.length === 0}
           >
-            <Image source={{ uri: post.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            {post.videoUrl ? (
+              <VideoView
+                player={videoPlayer}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+                nativeControls
+                surfaceType="textureView"
+              />
+            ) : (
+              <Image source={{ uri: post.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            )}
             {replaying && post.strokes.length ? (
               <StrokeReplay
                 key={replayKey}

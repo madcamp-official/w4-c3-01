@@ -27,9 +27,12 @@ const DEFAULT_LINE_SIZE = 6
 // simple heart icon.
 const HEART_LINE_SIZE = 12
 const INK_COLOR = '#1E1B16'
+const VIDEO_LONG_PRESS_MS = 520
+const VIDEO_OUTPUT_SIZE = 720
 
 export interface AirDrawingCapture {
   image: string
+  video?: string
   strokes: StrokePoint[]
   drawing: AirDrawingDocument
 }
@@ -217,12 +220,17 @@ export function AirDrawingStage({
   const cursorRef = useRef<HTMLDivElement | null>(null)
   const cameraStartRequestedRef = useRef(false)
   const lastErasePointRef = useRef<Point | null>(null)
+  const longPressTimerRef = useRef<number | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const recordingAnimationRef = useRef<number | null>(null)
+  const recordingRef = useRef(false)
   const [pinching, setPinching] = useState(false)
   const [erasing, setErasing] = useState(false)
   const [penColor, setPenColor] = useState(isPaperMode ? INK_COLOR : DEFAULT_PEN_COLOR)
   const [penTool, setPenTool] = useState<PenTool>(DEFAULT_PEN_TOOL)
   const [lineSize, setLineSize] = useState(isPaperMode ? HEART_LINE_SIZE : DEFAULT_LINE_SIZE)
   const [capturing, setCapturing] = useState(false)
+  const [recording, setRecording] = useState(false)
   const [zoomValue, setZoomValue] = useState(1)
 
   const {
@@ -460,13 +468,14 @@ export function AirDrawingStage({
 
   const status = useMemo<AppStatus>(() => {
     if (cameraError || modelError) return '오류 발생'
+    if (recording) return '녹화 중'
     if (!stream) return '카메라 대기'
     if (!modelReady) return '모델 불러오는 중'
     if (handDetected && erasing) return '지우는 중'
     if (handDetected && pinching) return '그리는 중'
     if (!handDetected) return '손 찾는 중'
     return '손 인식됨'
-  }, [cameraError, erasing, handDetected, modelError, modelReady, pinching, stream])
+  }, [cameraError, erasing, handDetected, modelError, modelReady, pinching, recording, stream])
 
   const handleCapture = useCallback(async () => {
     const stage = stageRef.current
@@ -624,6 +633,181 @@ export function AirDrawingStage({
     }
   }, [busy, capturing, facingMode, isPaperMode, isSquarePostMode, maxDim, onCapture, onError, outputSize, safeBottom, safeTop, stream, zoomValue])
 
+  const stopVideoRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current
+    if (recorder && recorder.state !== 'inactive') recorder.stop()
+  }, [])
+
+  const startVideoRecording = useCallback(() => {
+    const stage = stageRef.current
+    const video = videoRef.current
+    const drawingHandle = drawingCanvasRef.current
+    const drawingCanvas = drawingHandle?.getCanvas()
+    if (!stage || !video || !drawingHandle || !drawingCanvas || !stream || capturing || busy) return
+    if (!drawingHandle.hasDrawing()) {
+      onError?.('먼저 허공에 무언가를 그려주세요')
+      return
+    }
+    if (typeof MediaRecorder === 'undefined') {
+      onError?.('이 기기에서는 영상 녹화를 지원하지 않아요')
+      return
+    }
+
+    const mimeType = [
+      'video/webm;codecs=vp8',
+      'video/webm',
+    ].find((candidate) => MediaRecorder.isTypeSupported(candidate))
+    if (!mimeType) {
+      onError?.('이 기기에서는 영상 녹화를 지원하지 않아요')
+      return
+    }
+
+    const rect = stage.getBoundingClientRect()
+    const output = document.createElement('canvas')
+    const outputScale = Math.min(1, VIDEO_OUTPUT_SIZE / Math.max(rect.width, rect.height))
+    output.width = isSquarePostMode ? VIDEO_OUTPUT_SIZE : Math.max(1, Math.round(rect.width * outputScale))
+    output.height = isSquarePostMode ? VIDEO_OUTPUT_SIZE : Math.max(1, Math.round(rect.height * outputScale))
+    const context = output.getContext('2d')
+    if (!context) return
+
+    const chunks: Blob[] = []
+    const drawing = drawingHandle.getDocument()
+    let cropForStrokes: { x: number; y: number; size: number; canvasWidth: number; canvasHeight: number } | undefined
+
+    const renderFrame = () => {
+      context.clearRect(0, 0, output.width, output.height)
+      if (isSquarePostMode) {
+        drawCenteredStageSquare(
+          context,
+          video,
+          video.videoWidth,
+          video.videoHeight,
+          rect.width,
+          rect.height,
+          output.width,
+          facingMode === 'user',
+          zoomValue,
+          safeTop,
+          safeBottom,
+        )
+        const canvasScale = drawingCanvas.height / rect.height
+        const canvasSafeTop = safeTop * canvasScale
+        const canvasSafeBottom = safeBottom * canvasScale
+        const usableCanvasHeight = drawingCanvas.height - canvasSafeTop - canvasSafeBottom
+        const cropSize = Math.min(drawingCanvas.width, usableCanvasHeight)
+        const cropX = (drawingCanvas.width - cropSize) / 2
+        const cropY = canvasSafeTop + (usableCanvasHeight - cropSize) / 2
+        context.drawImage(drawingCanvas, cropX, cropY, cropSize, cropSize, 0, 0, output.width, output.height)
+        cropForStrokes = {
+          x: cropX,
+          y: cropY,
+          size: cropSize,
+          canvasWidth: drawingCanvas.width,
+          canvasHeight: drawingCanvas.height,
+        }
+      } else {
+        drawCover(
+          context,
+          video,
+          video.videoWidth,
+          video.videoHeight,
+          output.width,
+          output.height,
+          facingMode === 'user',
+          zoomValue,
+        )
+        context.drawImage(drawingCanvas, 0, 0, drawingCanvas.width, drawingCanvas.height, 0, 0, output.width, output.height)
+      }
+      recordingAnimationRef.current = requestAnimationFrame(renderFrame)
+    }
+
+    try {
+      renderFrame()
+      const recorder = new MediaRecorder(output.captureStream(30), {
+        mimeType,
+        videoBitsPerSecond: 1_500_000,
+      })
+      mediaRecorderRef.current = recorder
+      recordingRef.current = true
+      setRecording(true)
+      recorder.ondataavailable = (event) => {
+        if (event.data.size) chunks.push(event.data)
+      }
+      recorder.onerror = () => {
+        onError?.('영상 녹화 중 오류가 발생했어요')
+      }
+      recorder.onstop = () => {
+        if (recordingAnimationRef.current !== null) cancelAnimationFrame(recordingAnimationRef.current)
+        recordingAnimationRef.current = null
+        mediaRecorderRef.current = null
+        recordingRef.current = false
+        setRecording(false)
+
+        const blob = new Blob(chunks, { type: mimeType })
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          if (typeof reader.result !== 'string') return
+          onCapture({
+            image: output.toDataURL('image/jpeg', 0.9),
+            video: reader.result,
+            strokes: flattenDrawing(drawing, cropForStrokes),
+            drawing,
+          })
+        }
+        reader.readAsDataURL(blob)
+      }
+      recorder.start(250)
+    } catch {
+      if (recordingAnimationRef.current !== null) cancelAnimationFrame(recordingAnimationRef.current)
+      recordingAnimationRef.current = null
+      recordingRef.current = false
+      setRecording(false)
+      onError?.('영상 녹화를 시작하지 못했어요')
+    }
+  }, [busy, capturing, facingMode, isSquarePostMode, onCapture, onError, safeBottom, safeTop, stream, zoomValue])
+
+  const handleShutterPointerDown = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId)
+    if (mode !== 'post') return
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressTimerRef.current = null
+      startVideoRecording()
+    }, VIDEO_LONG_PRESS_MS)
+  }, [mode, startVideoRecording])
+
+  const handleShutterPointerUp = useCallback(() => {
+    if (mode !== 'post') {
+      void handleCapture()
+      return
+    }
+
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+      void handleCapture()
+      return
+    }
+    if (recordingRef.current) stopVideoRecording()
+  }, [handleCapture, mode, stopVideoRecording])
+
+  const handleShutterPointerCancel = useCallback(() => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+    if (recordingRef.current) stopVideoRecording()
+  }, [stopVideoRecording])
+
+  useEffect(() => () => {
+    if (longPressTimerRef.current !== null) window.clearTimeout(longPressTimerRef.current)
+    if (recordingAnimationRef.current !== null) cancelAnimationFrame(recordingAnimationRef.current)
+    const recorder = mediaRecorderRef.current
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.onstop = null
+      recorder.stop()
+    }
+  }, [])
+
   const handleSwitchCamera = useCallback(async () => {
     setPinching(false)
     setErasing(false)
@@ -679,10 +863,16 @@ export function AirDrawingStage({
           </svg>
         </button>
         <button
-          className="shutter sk2"
-          aria-label="촬영"
+          className={`shutter sk2 ${recording ? 'recording' : ''}`}
+          aria-label={recording ? '영상 녹화 중' : '촬영, 길게 눌러 영상 녹화'}
           disabled={capturing || busy || isStarting || !modelReady}
-          onClick={handleCapture}
+          onPointerDown={handleShutterPointerDown}
+          onPointerUp={handleShutterPointerUp}
+          onPointerCancel={handleShutterPointerCancel}
+          onContextMenu={(event) => event.preventDefault()}
+          onClick={(event) => {
+            if (event.detail === 0) void handleCapture()
+          }}
         />
         <button
           className="side-btn sk"
@@ -708,6 +898,7 @@ export function AirDrawingStage({
             drawingCanvasRef.current?.endStroke()
             setPenColor(color)
           }}
+          onRequestOpen={() => penStyleToolbarRef.current?.setOpen(false)}
         />
       ) : null}
 
@@ -722,6 +913,7 @@ export function AirDrawingStage({
           }}
           lineSize={lineSize}
           onSelectLineSize={setLineSize}
+          onRequestOpen={() => colorToolbarRef.current?.setOpen(false)}
         />
       ) : null}
     </div>

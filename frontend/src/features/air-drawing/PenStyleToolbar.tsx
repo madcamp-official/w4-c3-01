@@ -21,6 +21,7 @@ interface PenStyleToolbarProps {
   onSelectTool: (tool: PenTool) => void
   lineSize: number
   onSelectLineSize: (size: number) => void
+  onRequestOpen?: () => void
 }
 
 function containsPoint(rect: DOMRect, clientX: number, clientY: number) {
@@ -39,6 +40,7 @@ export const PenStyleToolbar = forwardRef<PenStyleToolbarHandle, PenStyleToolbar
     onSelectTool,
     lineSize,
     onSelectLineSize,
+    onRequestOpen,
   }, ref) {
     const toolbarRef = useRef<HTMLDivElement | null>(null)
     const toggleRef = useRef<HTMLButtonElement | null>(null)
@@ -116,6 +118,10 @@ export const PenStyleToolbar = forwardRef<PenStyleToolbarHandle, PenStyleToolbar
           }
 
           if (insideToggle) {
+            if (!open) {
+              setOpen(true)
+              onRequestOpen?.()
+            }
             airPinchingRef.current = pinching
             setAirHovered(null)
             return true
@@ -160,7 +166,7 @@ export const PenStyleToolbar = forwardRef<PenStyleToolbarHandle, PenStyleToolbar
           return true
         },
       }),
-      [onSelectLineSize, onSelectTool, open, selectedTool, stageRef],
+      [onRequestOpen, onSelectLineSize, onSelectTool, open, selectedTool, stageRef],
     )
 
     return (
@@ -171,7 +177,12 @@ export const PenStyleToolbar = forwardRef<PenStyleToolbarHandle, PenStyleToolbar
           ref={toggleRef}
           className="drawer-toggle drawer-toggle-right"
           type="button"
-          onClick={() => setOpen((current) => !current)}
+          onClick={() => {
+            setOpen((current) => {
+              if (!current) onRequestOpen?.()
+              return !current
+            })
+          }}
           aria-label={open ? '펜 스타일 닫기' : '펜 스타일 열기'}
           aria-expanded={open}
         >

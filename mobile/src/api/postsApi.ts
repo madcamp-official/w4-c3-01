@@ -1,7 +1,7 @@
 // Ported from frontend/src/api/postsApi.ts — keep in sync.
 import { fetchFollowingIds } from '@/api/followApi';
 import { supabase } from '@/lib/supabaseClient';
-import { uploadPostImage } from '@/lib/uploadImage';
+import { uploadPostImage, uploadPostVideo } from '@/lib/uploadImage';
 import { mockStore } from '@/mock/store';
 import type { Comment, Post, StrokePoint } from '@/types';
 
@@ -9,6 +9,7 @@ interface PostRow {
   id: string;
   author_id: string;
   image_url: string;
+  video_url: string | null;
   strokes: StrokePoint[] | null;
   drawing: Post['drawing'] | null;
   caption: string;
@@ -97,6 +98,7 @@ function assemblePosts(
       avatarUrl: profile?.avatar_url ?? null,
       time: formatPostTime(row.created_at),
       image: row.image_url,
+      videoUrl: row.video_url ?? undefined,
       strokes: row.strokes ?? [],
       drawing: row.drawing ?? undefined,
       caption: row.caption,
@@ -193,6 +195,7 @@ export interface CreatePostPayload {
   avatarColor: string;
   avatarUrl: string | null;
   image: string;
+  video?: string;
   strokes: Post['strokes'];
   drawing?: Post['drawing'];
   caption: string;
@@ -209,6 +212,7 @@ export async function createPost(payload: CreatePostPayload): Promise<Post> {
       avatarUrl: payload.avatarUrl,
       time: '방금 전',
       image: payload.image,
+      videoUrl: payload.video,
       strokes: payload.strokes,
       drawing: payload.drawing,
       caption: payload.caption,
@@ -221,11 +225,13 @@ export async function createPost(payload: CreatePostPayload): Promise<Post> {
   }
 
   const imageUrl = await uploadPostImage(payload.authorId, payload.image);
+  const videoUrl = payload.video ? await uploadPostVideo(payload.authorId, payload.video) : null;
   const { data, error } = await supabase
     .from('posts')
     .insert({
       author_id: payload.authorId,
       image_url: imageUrl,
+      video_url: videoUrl,
       strokes: payload.strokes,
       drawing: payload.drawing ?? null,
       caption: payload.caption
@@ -242,6 +248,7 @@ export async function createPost(payload: CreatePostPayload): Promise<Post> {
     avatarUrl: payload.avatarUrl,
     time: formatPostTime(data.created_at),
     image: data.image_url,
+    videoUrl: data.video_url ?? undefined,
     strokes: data.strokes ?? [],
     drawing: data.drawing ?? payload.drawing,
     caption: data.caption,

@@ -27,7 +27,7 @@ export default function CameraScreen({ navigation, route }: Props) {
   }
 
   function handleCapture(capture: AirDrawingCapture) {
-    navigation.replace('Preview', { image: capture.image, strokes: capture.strokes, drawing: capture.drawing, intent });
+    navigation.replace('Preview', { image: capture.image, video: capture.video, strokes: capture.strokes, drawing: capture.drawing, intent });
   }
 
   return (

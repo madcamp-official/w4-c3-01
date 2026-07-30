@@ -252,6 +252,7 @@ create table if not exists public.posts (
   id uuid primary key default gen_random_uuid(),
   author_id uuid not null references public.profiles (id) on delete cascade,
   image_url text not null,
+  video_url text,
   strokes jsonb,
   drawing jsonb,
   caption text not null default '',
@@ -259,6 +260,7 @@ create table if not exists public.posts (
 );
 
 alter table public.posts add column if not exists drawing jsonb;
+alter table public.posts add column if not exists video_url text;
 
 alter table public.posts enable row level security;
 
