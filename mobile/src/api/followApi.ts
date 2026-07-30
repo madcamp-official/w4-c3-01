@@ -65,6 +65,25 @@ export async function isFollowing(followerId: string, followingId: string): Prom
   return Boolean(data);
 }
 
+export async function isMutualFollowing(userId: string, otherUserId: string): Promise<boolean> {
+  if (!supabase) return false;
+  const [iFollowThem, theyFollowMe] = await Promise.all([
+    isFollowing(userId, otherUserId),
+    isFollowing(otherUserId, userId),
+  ]);
+  return iFollowThem && theyFollowMe;
+}
+
+export async function fetchMutualFollowing(userId: string): Promise<UserSummary[]> {
+  if (!supabase) return [];
+  const [following, followers] = await Promise.all([
+    fetchFollowing(userId),
+    fetchFollowers(userId),
+  ]);
+  const followerIds = new Set(followers.map((user) => user.id));
+  return following.filter((user) => followerIds.has(user.id));
+}
+
 export async function followUser(followerId: string, followingId: string): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from('follows').insert({ follower_id: followerId, following_id: followingId });

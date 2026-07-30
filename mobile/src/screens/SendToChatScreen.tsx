@@ -46,7 +46,7 @@ export default function SendToChatScreen({ navigation, route }: Props) {
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
-    followApi.fetchFollowing(session.id).then((result) => {
+    followApi.fetchMutualFollowing(session.id).then((result) => {
       if (!cancelled) setUsers(result);
     });
     return () => {
@@ -85,7 +85,7 @@ export default function SendToChatScreen({ navigation, route }: Props) {
           {users === null ? (
             <ActivityIndicator color={colors.ink} style={{ paddingVertical: 20 }} />
           ) : users.length === 0 ? (
-            <Text style={styles.empty}>팔로우한 사람이 없어요. 먼저 누군가를 팔로우해보세요.</Text>
+            <Text style={styles.empty}>맞팔로우한 사람이 없어요.</Text>
           ) : (
             <FlatList
               data={users}

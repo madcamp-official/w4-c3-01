@@ -1,4 +1,5 @@
 import { ViroARSceneNavigator } from '@reactvision/react-viro';
+import { useIsFocused } from '@react-navigation/native';
 import {
   CameraView,
   useCameraPermissions,
@@ -132,6 +133,7 @@ async function fetchQrlyPayload(qrlyUrl: string): Promise<string> {
 
 export default function LoungeListScreen() {
   const { session } = useAppState();
+  const isFocused = useIsFocused();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [loungeId, setLoungeId] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -148,7 +150,23 @@ export default function LoungeListScreen() {
   const [onlineCount, setOnlineCount] = useState(1);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [arActive, setArActive] = useState(false);
+  const [cameraTransitioning, setCameraTransitioning] = useState(false);
   const scanInFlightRef = useRef(false);
+  const cameraTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (cameraTransitionTimerRef.current) clearTimeout(cameraTransitionTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isFocused) return;
+    setDrawing(false);
+    setToolsOpen(false);
+    setDeleteConfirmOpen(false);
+  }, [isFocused]);
 
   const refresh = useCallback(async () => {
     if (!loungeId) return;
@@ -301,10 +319,20 @@ export default function LoungeListScreen() {
     [alignRevision, color, contents, drawing, finishStroke, width],
   );
 
-  const alignQr = () => {
+  const enterAlignedLounge = () => {
+    if (!loungeId || loading || cameraTransitioning) return;
     setDrawing(false);
     setAligned(false);
-    setAlignRevision((revision) => revision + 1);
+    setCameraTransitioning(true);
+    // CameraView and Viro both own the native camera. Give the scanner time
+    // to release it before mounting Viro, then align from Viro's first camera
+    // transform so the user does not have to match the same QR twice.
+    cameraTransitionTimerRef.current = setTimeout(() => {
+      setAlignRevision((revision) => revision + 1);
+      setArActive(true);
+      setCameraTransitioning(false);
+      cameraTransitionTimerRef.current = null;
+    }, 500);
   };
 
   const handleQrScanned = async ({ data }: BarcodeScanningResult) => {
@@ -319,6 +347,7 @@ export default function LoungeListScreen() {
 
     scanInFlightRef.current = true;
     setScanError(qrlyUrl ? 'QR 링크에서 라운지를 확인하는 중…' : '라운지를 확인하는 중…');
+    let scanSucceeded = false;
     try {
       const scannedLounge = directLounge ?? loungeFromQr(await fetchQrlyPayload(qrlyUrl!));
       if (!scannedLounge) {
@@ -329,7 +358,10 @@ export default function LoungeListScreen() {
       setScanError(null);
       setContents([]);
       setOnlineCount(1);
+      setAligned(false);
+      setArActive(false);
       setLoungeId(scannedLounge.id);
+      scanSucceeded = true;
     } catch (scanFailure) {
       setScanError(
         scanFailure instanceof Error
@@ -337,11 +369,15 @@ export default function LoungeListScreen() {
           : '라운지를 열지 못했어요. 다시 시도해 주세요.',
       );
     } finally {
-      scanInFlightRef.current = false;
+      // Keep scanning locked after success until "QR 다시 맞추기" resets it.
+      // CameraView can emit the same QR several times before React commits the
+      // loungeId render, which otherwise starts duplicate lounge requests.
+      if (!scanSucceeded) scanInFlightRef.current = false;
     }
   };
 
   const scanAnotherQr = () => {
+    if (cameraTransitionTimerRef.current) clearTimeout(cameraTransitionTimerRef.current);
     setDrawing(false);
     setToolsOpen(false);
     setAligned(false);
@@ -349,8 +385,22 @@ export default function LoungeListScreen() {
     setError(null);
     setScanError(null);
     scanInFlightRef.current = false;
+    setCameraTransitioning(true);
+    setArActive(false);
     setLoungeId(null);
+    // Do not mount CameraView in the same frame that Viro unmounts; on some
+    // Android devices that races the camera release and crashes the app.
+    cameraTransitionTimerRef.current = setTimeout(() => {
+      setCameraTransitioning(false);
+      cameraTransitionTimerRef.current = null;
+    }, 500);
   };
+
+  // Tab screens stay mounted under the stack. Unmount both CameraView and
+  // Viro while Lounge is hidden so the regular camera can acquire the device.
+  if (!isFocused) {
+    return <View style={styles.loadingScreen} />;
+  }
 
   if (!session) {
     return (
@@ -360,7 +410,7 @@ export default function LoungeListScreen() {
     );
   }
 
-  if (!loungeId) {
+  if (!loungeId || !arActive) {
     if (!cameraPermission) {
       return (
         <View style={styles.loadingScreen}>
@@ -384,12 +434,21 @@ export default function LoungeListScreen() {
       );
     }
 
+    if (cameraTransitioning) {
+      return (
+        <View style={styles.loadingScreen}>
+          <ActivityIndicator color={colors.ink} />
+          <Text style={styles.loadingText}>카메라를 준비하는 중…</Text>
+        </View>
+      );
+    }
+
     return (
       <View style={styles.scannerScreen}>
         <CameraView
           barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
           facing="back"
-          onBarcodeScanned={handleQrScanned}
+          onBarcodeScanned={loungeId ? undefined : handleQrScanned}
           style={StyleSheet.absoluteFill}
         />
         <View pointerEvents="none" style={styles.scannerShade}>
@@ -404,9 +463,29 @@ export default function LoungeListScreen() {
             <View style={[styles.corner, styles.bottomRight]} />
           </View>
           <Text style={styles.scanError}>
-            {scanError ?? 'ALine-숫자가 같은 QR은 같은 라운지로 연결돼요'}
+            {loungeId
+              ? loading
+                ? '라운지를 불러오는 중…'
+                : 'QR 인식 완료'
+              : scanError ?? 'ALine-숫자가 같은 QR은 같은 라운지로 연결돼요'}
           </Text>
         </View>
+        {loungeId ? (
+          <SafeAreaView pointerEvents="box-none" edges={['bottom']} style={styles.scanConfirmArea}>
+            <Pressable
+              disabled={loading}
+              onPress={enterAlignedLounge}
+              style={({ pressed }) => [
+                styles.scanConfirmButton,
+                loading && styles.disabledButton,
+                pressed && styles.pressedButton,
+              ]}>
+              <Text style={styles.scanConfirmButtonText}>
+                {loading ? '라운지 준비 중…' : '이 위치에 정렬하기'}
+              </Text>
+            </Pressable>
+          </SafeAreaView>
+        ) : null}
       </View>
     );
   }
@@ -460,25 +539,12 @@ export default function LoungeListScreen() {
           </Pressable>
         ) : null}
 
-        {!aligned ? (
-          <View pointerEvents="none" style={styles.guideArea}>
-            <Text style={styles.guideTitle}>QR을 가이드에 맞춰주세요</Text>
-            <Text style={styles.guideDescription}>QR의 바깥 테두리를 네 모서리에 맞춥니다</Text>
-            <View style={styles.qrGuide}>
-              <View style={[styles.corner, styles.topLeft]} />
-              <View style={[styles.corner, styles.topRight]} />
-              <View style={[styles.corner, styles.bottomLeft]} />
-              <View style={[styles.corner, styles.bottomRight]} />
-              <View style={styles.crossHorizontal} />
-              <View style={styles.crossVertical} />
-            </View>
-          </View>
-        ) : (
+        {aligned ? (
           <View pointerEvents="none" style={styles.reticle}>
             <View style={styles.reticleHorizontal} />
             <View style={styles.reticleVertical} />
           </View>
-        )}
+        ) : null}
 
         {aligned ? (
           <View style={styles.toolsDock}>
@@ -536,11 +602,7 @@ export default function LoungeListScreen() {
         ) : null}
 
         <View style={styles.controls}>
-          {!aligned ? (
-            <Pressable onPress={alignQr} style={styles.alignButton}>
-              <Text style={styles.alignButtonText}>원점 설정</Text>
-            </Pressable>
-          ) : (
+          {aligned ? (
             <>
               <View style={styles.statusRow}>
                 <Text style={styles.statusText}>
@@ -610,7 +672,7 @@ export default function LoungeListScreen() {
                 </Pressable>
               </View>
             </>
-          )}
+          ) : null}
         </View>
       </SafeAreaView>
 
@@ -739,6 +801,27 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
+  scanConfirmArea: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 28,
+  },
+  scanConfirmButton: {
+    minWidth: 220,
+    minHeight: 52,
+    borderRadius: 26,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  scanConfirmButtonText: { color: '#101114', fontSize: 15, fontWeight: '900' },
   overlay: {
     position: 'absolute',
     top: 0,

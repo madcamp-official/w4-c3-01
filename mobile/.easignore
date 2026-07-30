@@ -1,0 +1,28 @@
+# Dependencies and local Expo state
+node_modules/
+.expo/
+dist/
+web-build/
+
+# Local-only environment files
+.env
+.env*.local
+
+# Native build caches and generated outputs
+android/.gradle/
+android/.cxx/
+android/build/
+android/app/.cxx/
+android/app/build/
+android/local.properties
+
+# Generated camera bundle is downloaded from Supabase at runtime
+assets/air-drawing-webview/
+
+# Editor and temporary files
+.DS_Store
+*.orig.*
+*.tsbuildinfo
+npm-debug.*
+yarn-debug.*
+yarn-error.*

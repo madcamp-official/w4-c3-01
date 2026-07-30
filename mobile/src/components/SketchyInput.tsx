@@ -47,10 +47,11 @@ const SketchyInput = forwardRef<TextInput, Props>(function SketchyInput(
         placeholderTextColor={colors.inkSoft}
         {...props}
         style={{
+          width: '100%',
           paddingHorizontal: 18,
           paddingVertical: 12,
           fontSize: 15,
-          color: colors.ink
+          color: colors.ink,
         }}
       />
     </Sketchy>

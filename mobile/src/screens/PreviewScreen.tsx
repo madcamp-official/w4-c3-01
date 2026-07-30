@@ -1,8 +1,9 @@
 // Ported from frontend/src/pages/PreviewPage.tsx — keep in sync.
-import { useState } from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { BackHandler, Image, Pressable, Text, View } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import Icon from '@/components/Icon';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import SketchyButton from '@/components/SketchyButton';
@@ -33,6 +34,24 @@ export default function PreviewScreen({ navigation, route }: Props) {
     player.loop = true;
     if (video) player.play();
   });
+
+  const handleBack = useCallback(() => {
+    if (isEditing) {
+      navigation.goBack();
+      return;
+    }
+    navigation.replace('Camera', { intent });
+  }, [intent, isEditing, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        handleBack();
+        return true;
+      });
+      return () => subscription.remove();
+    }, [handleBack]),
+  );
 
   async function handleShare() {
     if (isEditing) {
@@ -95,7 +114,7 @@ export default function PreviewScreen({ navigation, route }: Props) {
           )}
           <Pressable
             style={{ position: 'absolute', top: 14, left: 14, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}
-            onPress={() => navigation.goBack()}
+            onPress={handleBack}
           >
             <Icon name="chevron-left" size={22} color="#fff" />
           </Pressable>

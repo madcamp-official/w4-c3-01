@@ -18,6 +18,7 @@ import { useToast } from '@/state/ToastContext';
 import { radius } from '@/theme/colors';
 import { buildCommon } from '@/theme/common';
 import type { ChatMessage } from '@/types';
+import * as followApi from '@/api/followApi';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ChatThread'>;
 
@@ -33,7 +34,7 @@ function formatDateDivider(iso: string): string {
 
 export default function ChatThreadScreen({ navigation, route }: Props) {
   const { chatId } = route.params;
-  const { loadThread, sendText, getChat, subscribeToThread, markThreadRead } = useAppState();
+  const { session, loadThread, sendText, getChat, subscribeToThread, markThreadRead } = useAppState();
   const { openViewer, openViewerForMessage } = useOverlay();
   const { colors } = useTheme();
   const common = buildCommon(colors);
@@ -45,6 +46,7 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
   const keyboardHeight = useKeyboardHeight();
   const { showToast } = useToast();
   const [text, setText] = useState('');
+  const [canChat, setCanChat] = useState<boolean | null>(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const chat = getChat(chatId);
@@ -86,6 +88,25 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
   }, [threadReady]);
 
   useEffect(() => {
+    if (!session || !chat?.otherUserId) {
+      setCanChat(null);
+      return;
+    }
+    let cancelled = false;
+    void followApi
+      .isMutualFollowing(session.id, chat.otherUserId)
+      .then((mutual) => {
+        if (!cancelled) setCanChat(mutual);
+      })
+      .catch(() => {
+        if (!cancelled) setCanChat(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [chat?.otherUserId, session]);
+
+  useEffect(() => {
     const unsubscribe = subscribeToThread(chatId);
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -107,6 +128,10 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
   }, [chat]);
 
   async function handleSend() {
+    if (!canChat) {
+      showToast('서로 팔로우한 사용자와만 채팅할 수 있어요.');
+      return;
+    }
     if (!text.trim()) return;
     const value = text.trim();
     setText('');
@@ -235,19 +260,30 @@ export default function ChatThreadScreen({ navigation, route }: Props) {
         )}
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 10, paddingBottom: 10 + (keyboardHeight > 0 ? 0 : bottomInset) }}>
-          <Pressable onPress={() => navigation.navigate('Airwrite', { chatId })} accessibilityLabel="에어라이팅 메시지">
+          <Pressable
+            disabled={!canChat}
+            onPress={() => navigation.navigate('Airwrite', { chatId })}
+            accessibilityLabel="에어라이팅 메시지"
+            style={!canChat ? { opacity: 0.4 } : undefined}
+          >
             <Sketchy radius={20} color={colors.line} strokeWidth={1.4} seed="chat-round-edit" style={[roundIconStyle, { backgroundColor: colors.paper }]}>
               <Icon name="edit-2" size={18} color={colors.ink} />
             </Sketchy>
           </Pressable>
           <SketchyInput
             style={{ flex: 1 }}
-            placeholder="메시지 보내기..."
+            placeholder={canChat === false ? '맞팔로우해야 채팅할 수 있어요' : '메시지 보내기...'}
             value={text}
             onChangeText={setText}
             onSubmitEditing={handleSend}
+            editable={canChat === true}
           />
-          <Pressable onPress={handleSend} accessibilityLabel="전송">
+          <Pressable
+            disabled={!canChat}
+            onPress={handleSend}
+            accessibilityLabel="전송"
+            style={!canChat ? { opacity: 0.4 } : undefined}
+          >
             <Sketchy radius={20} strokeWidth={0} seed="chat-round-send" style={[roundIconStyle, { backgroundColor: colors.ink }]}>
               <Icon name="send" size={20} color={colors.paper} />
             </Sketchy>

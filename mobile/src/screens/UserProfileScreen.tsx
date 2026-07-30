@@ -39,6 +39,7 @@ export default function UserProfileScreen({ navigation, route }: Props) {
   const [loaded, setLoaded] = useState(false);
   const [counts, setCounts] = useState<FollowCounts>({ followers: 0, following: 0 });
   const [following, setFollowing] = useState(false);
+  const [followsMe, setFollowsMe] = useState(false);
   const [busy, setBusy] = useState(false);
   // This user's own posts only — never their likes, which is what the
   // global (follow-scoped) `posts` state can't show for someone the current
@@ -51,16 +52,18 @@ export default function UserProfileScreen({ navigation, route }: Props) {
     setAuthorPosts(null);
     let cancelled = false;
     (async () => {
-      const [p, c, isFollowing, userPosts] = await Promise.all([
+      const [p, c, isFollowing, isFollowingMe, userPosts] = await Promise.all([
         userApi.fetchProfile(userId),
         followApi.fetchFollowCounts(userId),
         followApi.isFollowing(session.id, userId),
+        followApi.isFollowing(userId, session.id),
         postsApi.fetchPostsByAuthor(userId, session.id)
       ]);
       if (cancelled) return;
       setProfile(p ?? null);
       setCounts(c);
       setFollowing(isFollowing);
+      setFollowsMe(isFollowingMe);
       setAuthorPosts(userPosts);
       setLoaded(true);
     })();
@@ -100,12 +103,16 @@ export default function UserProfileScreen({ navigation, route }: Props) {
   }
 
   async function handleChat() {
-    const chatId = await startConversationWith(userId);
-    if (!chatId) {
-      showToast('채팅은 아직 준비 중이에요');
-      return;
+    try {
+      const chatId = await startConversationWith(userId);
+      if (!chatId) {
+        showToast('채팅은 아직 준비 중이에요');
+        return;
+      }
+      navigation.navigate('ChatThread', { chatId });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '채팅을 시작하지 못했어요');
     }
-    navigation.navigate('ChatThread', { chatId });
   }
 
   return (
@@ -161,8 +168,17 @@ export default function UserProfileScreen({ navigation, route }: Props) {
                 {following ? '팔로잉' : '팔로우'}
               </Text>
             </SketchyButton>
-            <SketchyButton variant="ghost" blobVariant="b" style={{ flex: 1 }} contentStyle={{ paddingVertical: 9 }} onPress={handleChat}>
-              <Text style={[common.btnGhostText, { fontSize: 13 }]}>채팅하기</Text>
+            <SketchyButton
+              variant="ghost"
+              blobVariant="b"
+              style={{ flex: 1 }}
+              contentStyle={{ paddingVertical: 9 }}
+              disabled={!following || !followsMe}
+              onPress={handleChat}
+            >
+              <Text style={[common.btnGhostText, { fontSize: 13 }]}>
+                {following && followsMe ? '채팅하기' : '맞팔 후 채팅'}
+              </Text>
             </SketchyButton>
           </View>
           {authorPosts && authorPosts.length === 0 ? (

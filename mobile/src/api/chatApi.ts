@@ -1,5 +1,6 @@
 // Ported from frontend/src/api/chatApi.ts — keep in sync.
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { isMutualFollowing } from '@/api/followApi';
 import { supabase } from '@/lib/supabaseClient';
 import { uploadChatImage } from '@/lib/uploadImage';
 import { mockStore } from '@/mock/store';
@@ -40,6 +41,34 @@ function mapMessage(row: MessageRow, currentUserId: string): ChatMessage {
     time: formatMessageTime(row.created_at),
     createdAt: row.created_at
   };
+}
+
+const MUTUAL_FOLLOW_CHAT_ERROR = '서로 팔로우한 사용자와만 채팅할 수 있어요.';
+
+async function requireMutualFollow(currentUserId: string, otherUserId: string): Promise<void> {
+  if (!supabase) return;
+  if (!(await isMutualFollowing(currentUserId, otherUserId))) {
+    throw new Error(MUTUAL_FOLLOW_CHAT_ERROR);
+  }
+}
+
+async function requireConversationMutualFollow(chatId: string, currentUserId: string): Promise<void> {
+  if (!supabase) return;
+  const { data: conversation, error } = await supabase
+    .from('conversations')
+    .select('user_a, user_b')
+    .eq('id', chatId)
+    .single();
+  if (error || !conversation) throw new Error(error?.message ?? '대화방을 찾지 못했어요.');
+
+  const otherUserId =
+    conversation.user_a === currentUserId
+      ? conversation.user_b
+      : conversation.user_b === currentUserId
+        ? conversation.user_a
+        : null;
+  if (!otherUserId) throw new Error('이 대화방에 참여할 수 없어요.');
+  await requireMutualFollow(currentUserId, otherUserId);
 }
 
 async function fetchProfilesByIds(userIds: string[]): Promise<Map<string, ProfileLite>> {
@@ -163,6 +192,7 @@ export async function markThreadRead(chatId: string, currentUserId: string): Pro
 /** 두 사람 사이의 대화방을 찾고, 없으면 새로 만듭니다. Supabase가 없으면 null (검색에서 준비 중 토스트로 처리). */
 export async function findOrCreateConversation(currentUserId: string, otherUserId: string): Promise<string | null> {
   if (!supabase) return null;
+  await requireMutualFollow(currentUserId, otherUserId);
 
   const [userA, userB] = [currentUserId, otherUserId].sort();
 
@@ -200,6 +230,7 @@ export async function sendTextMessage(chatId: string, currentUserId: string, tex
     return mockStore.sendMessage(chatId, message) ? message : undefined;
   }
 
+  await requireConversationMutualFollow(chatId, currentUserId);
   const { data, error } = await supabase
     .from('messages')
     .insert({ conversation_id: chatId, sender_id: currentUserId, type: 'text', text })
@@ -228,6 +259,7 @@ export async function sendAirMessage(
     return mockStore.sendMessage(chatId, message) ? message : undefined;
   }
 
+  await requireConversationMutualFollow(chatId, currentUserId);
   const imageUrl = await uploadChatImage(currentUserId, imageDataUrl);
   const { data, error } = await supabase
     .from('messages')
@@ -258,6 +290,7 @@ export async function sendPostMessage(
     return mockStore.sendMessage(chatId, message) ? message : undefined;
   }
 
+  await requireConversationMutualFollow(chatId, currentUserId);
   const { data, error } = await supabase
     .from('messages')
     .insert({ conversation_id: chatId, sender_id: currentUserId, type: 'post', image_url: post.image, text: post.caption, post_id: post.id })
