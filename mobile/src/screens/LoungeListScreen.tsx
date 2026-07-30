@@ -41,6 +41,12 @@ import { colors } from '@/theme/colors';
 
 const LOUNGE_QR_PATTERN = /^ALine-([0-9]+)$/;
 const MAX_LOUNGE_NUMBER_LENGTH = 58;
+const QRLY_HOST = 'qrly.org';
+const QRLY_PATH_PATTERN = /^\/[A-Za-z0-9_-]+\/?$/;
+const QRLY_PAYLOAD_PATTERN =
+  /"payload"\s*:\s*\{\s*"text"\s*:\s*"((?:\\.|[^"\\])*)"/;
+const QRLY_REQUEST_TIMEOUT_MS = 8_000;
+const QRLY_MAX_RESPONSE_LENGTH = 1_000_000;
 
 function loungeFromQr(data: string): { id: string; name: string } | null {
   const digits = data.trim().match(LOUNGE_QR_PATTERN)?.[1];
@@ -53,6 +59,75 @@ function loungeFromQr(data: string): { id: string; name: string } | null {
     id: `aline-${normalizedNumber}`,
     name: `ALine-${normalizedNumber}`,
   };
+}
+
+function qrlyUrlFromQr(data: string): string | null {
+  const trimmed = data.trim();
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const url = new URL(candidate);
+    if (
+      url.protocol !== 'https:' ||
+      url.hostname !== QRLY_HOST ||
+      url.port ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash ||
+      !QRLY_PATH_PATTERN.test(url.pathname)
+    ) {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+async function fetchQrlyPayload(qrlyUrl: string): Promise<string> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), QRLY_REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(qrlyUrl, {
+      headers: { Accept: 'text/html' },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error('QR 링크를 열지 못했어요.');
+    if (!qrlyUrlFromQr(response.url)) {
+      throw new Error('허용되지 않은 주소로 이동한 QR 링크예요.');
+    }
+    if (!response.headers.get('content-type')?.toLowerCase().includes('text/html')) {
+      throw new Error('QR 링크가 올바른 페이지를 반환하지 않았어요.');
+    }
+
+    const contentLength = Number(response.headers.get('content-length') ?? 0);
+    if (contentLength > QRLY_MAX_RESPONSE_LENGTH) {
+      throw new Error('QR 링크 응답이 너무 커요.');
+    }
+
+    const html = await response.text();
+    if (html.length > QRLY_MAX_RESPONSE_LENGTH) {
+      throw new Error('QR 링크 응답이 너무 커요.');
+    }
+
+    const encodedText = html.match(QRLY_PAYLOAD_PATTERN)?.[1];
+    if (!encodedText) throw new Error('QR 링크에서 라운지 정보를 찾지 못했어요.');
+
+    try {
+      return JSON.parse(`"${encodedText}"`) as string;
+    } catch {
+      throw new Error('QR 링크의 라운지 정보를 읽지 못했어요.');
+    }
+  } catch (requestError) {
+    if (requestError instanceof Error && requestError.name === 'AbortError') {
+      throw new Error('QR 링크 응답 시간이 초과됐어요.');
+    }
+    throw requestError;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export default function LoungeListScreen() {
@@ -235,15 +310,21 @@ export default function LoungeListScreen() {
   const handleQrScanned = async ({ data }: BarcodeScanningResult) => {
     if (!session || scanInFlightRef.current) return;
 
-    const scannedLounge = loungeFromQr(data);
-    if (!scannedLounge) {
-      setScanError('ALine-숫자 형식의 QR만 사용할 수 있어요.');
+    const directLounge = loungeFromQr(data);
+    const qrlyUrl = directLounge ? null : qrlyUrlFromQr(data);
+    if (!directLounge && !qrlyUrl) {
+      setScanError('ALine-숫자 또는 qrly.org QR만 사용할 수 있어요.');
       return;
     }
 
     scanInFlightRef.current = true;
-    setScanError('라운지를 확인하는 중…');
+    setScanError(qrlyUrl ? 'QR 링크에서 라운지를 확인하는 중…' : '라운지를 확인하는 중…');
     try {
+      const scannedLounge = directLounge ?? loungeFromQr(await fetchQrlyPayload(qrlyUrl!));
+      if (!scannedLounge) {
+        throw new Error('QR 링크 내용이 ALine-숫자 형식이 아니에요.');
+      }
+
       await ensureSpatialLounge(scannedLounge.id, scannedLounge.name, session.id);
       setScanError(null);
       setContents([]);
