@@ -8,7 +8,7 @@
 
 | 이름 | GitHub | 역할 |
 |---|---|---|
-| 박지민 | [7immin](https://github.com/7immin) | 소셜 피드·채팅·알림, UI/UX, Supabase 연동 |
+| 김민 | [7immin](https://github.com/7immin) | 소셜 피드·채팅·알림, UI/UX, Supabase 연동 |
 | 이지오 | [easy0131](https://github.com/easy0131) | 에어 드로잉 카메라, AR 라운지, Android·Expo 빌드 |
 
 ---
